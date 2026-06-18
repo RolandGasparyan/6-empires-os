@@ -1,16 +1,24 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 
 export function FounderGate({ children }: { children: React.ReactNode }) {
   const { user, token, ready, hydrate } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  // The login page lives under /founder, so it shares this layout. It must
+  // render UNGATED — otherwise the gate hides the very form needed to log in
+  // (a circular lock: you'd have to be authenticated to see the login form).
+  const isLoginRoute = pathname === '/founder/login';
 
   useEffect(() => { if (!ready) hydrate(); }, [ready, hydrate]);
   useEffect(() => {
-    if (ready && (!token || !user)) router.replace('/founder/login');
-  }, [ready, token, user, router]);
+    if (!isLoginRoute && ready && (!token || !user)) router.replace('/founder/login');
+  }, [isLoginRoute, ready, token, user, router]);
+
+  // Always render the login route's children straight through.
+  if (isLoginRoute) return <>{children}</>;
 
   if (!ready) {
     return (

@@ -66,6 +66,13 @@ services:
     build:
       context: ../apps/web
       dockerfile: Dockerfile
+      # NEXT_PUBLIC_* are inlined at BUILD time — must be build args, not just
+      # runtime env, or the production bundle ships pointing at the wrong host /
+      # mock data (same bug fixed locally). The api subdomain uses HTTPS/WSS.
+      args:
+        NEXT_PUBLIC_API_BASE: https://api.6-empires.com/api/v1
+        NEXT_PUBLIC_WS_URL: wss://api.6-empires.com/api/v1/ws/updates
+        NEXT_PUBLIC_USE_MOCK: "false"
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_BASE: https://api.6-empires.com/api/v1

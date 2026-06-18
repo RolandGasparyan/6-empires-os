@@ -15,7 +15,17 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* are inlined into the client bundle at BUILD time, so they must
+# be present here as build args. Passing them only at runtime (compose
+# `environment:`) is too late — the bundle is already frozen, which is what
+# pinned the UI to mock/SIM data instead of the live twin.
+ARG NEXT_PUBLIC_API_BASE
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_USE_MOCK
+ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE \
+    NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL \
+    NEXT_PUBLIC_USE_MOCK=$NEXT_PUBLIC_USE_MOCK \
+    NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ---- run ----
