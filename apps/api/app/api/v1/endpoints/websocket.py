@@ -1,23 +1,32 @@
-from fastapi import APIRouter, WebSocket
+import asyncio
+import json
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from app.services import agent_state
 
 router = APIRouter(tags=["websocket"])
 
-class ConnectionManager:
-    def __init__(self):
-        self.active = set()
-    async def connect(self, ws):
-        await ws.accept()
-        self.active.add(ws)
-    def disconnect(self, ws):
-        self.active.discard(ws)
-
-mgr = ConnectionManager()
 
 @router.websocket("/ws/updates")
 async def ws_endpoint(ws: WebSocket):
-    await mgr.connect(ws)
+    """
+    Live digital-twin stream.
+
+    On connect we send a full snapshot so the client starts in sync, then we
+    forward every agent.status event the state engine emits. This is the
+    snapshot-on-reconnect pattern from the system design — no lost updates.
+    """
+    await ws.accept()
+    q = agent_state.subscribe()
     try:
+        # 1) initial snapshot
+        await ws.send_text(json.dumps({"type": "snapshot", "agents": agent_state.snapshot()}))
+        # 2) live event forwarding
         while True:
-            await ws.receive_text()
-    except:
-        mgr.disconnect(ws)
+            evt = await q.get()
+            await ws.send_text(json.dumps(evt))
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        agent_state.unsubscribe(q)

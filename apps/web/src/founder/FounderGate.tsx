@@ -1,0 +1,35 @@
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/store/auth';
+
+export function FounderGate({ children }: { children: React.ReactNode }) {
+  const { user, token, ready, hydrate } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => { if (!ready) hydrate(); }, [ready, hydrate]);
+  useEffect(() => {
+    if (ready && (!token || !user)) router.replace('/founder/login');
+  }, [ready, token, user, router]);
+
+  if (!ready) {
+    return (
+      <div className="absolute inset-0 grid place-items-center bg-obsidian-radial">
+        <div className="h-10 w-10 rounded-full border-2 border-gold-500/30 border-t-gold-400 animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return null;
+  if (!user.is_admin) {
+    return (
+      <div className="absolute inset-0 grid place-items-center bg-obsidian-radial">
+        <div className="glass rounded-2xl p-8 text-center max-w-sm">
+          <div className="text-empire-danger text-3xl mb-3">⊘</div>
+          <div className="font-display font-bold text-lg text-gold-liquid">Founder Access Only</div>
+          <p className="text-white/50 text-sm mt-2">This control center is restricted to the Founder account.</p>
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}

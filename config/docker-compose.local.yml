@@ -1,0 +1,85 @@
+version: "3.9"
+
+# Local development stack — run on your Mac. No Nginx/SSL/domains.
+# Web -> http://localhost:3000   API -> http://localhost:8000
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-empire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-empire_local}
+      POSTGRES_DB: ${POSTGRES_DB:-empires}
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-empire}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [empire]
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [empire]
+
+  qdrant:
+    image: qdrant/qdrant
+    restart: unless-stopped
+    ports: ["6334:6333"]
+    volumes: ["qdrantdata:/qdrant/storage"]
+    networks: [empire]
+
+  neo4j:
+    image: neo4j:5
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-neo4j_local}
+    ports: ["7474:7474", "7687:7687"]
+    volumes: ["neo4jdata:/data"]
+    networks: [empire]
+
+  api:
+    build: { context: ../apps/api, dockerfile: Dockerfile }
+    restart: unless-stopped
+    environment:
+      ENV: development
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-empire}:${POSTGRES_PASSWORD:-empire_local}@postgres:5432/${POSTGRES_DB:-empires}
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      NEO4J_URI: neo4j://neo4j:7687
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-neo4j_local}
+      JWT_SECRET: ${JWT_SECRET:-local_dev_secret_change_me}
+      FOUNDER_EMAIL: ${FOUNDER_EMAIL:-roland.gasparyan@gmail.com}
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [empire]
+
+  web:
+    build: { context: ../apps/web, dockerfile: Dockerfile }
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000/api/v1
+      NEXT_PUBLIC_WS_URL: ws://localhost:8000/api/v1/ws/updates
+      NEXT_PUBLIC_USE_MOCK: "false"
+    ports: ["3001:3000"]
+    depends_on: [api]
+    networks: [empire]
+
+volumes:
+  pgdata: {}
+  qdrantdata: {}
+  neo4jdata: {}
+
+networks:
+  empire: {}

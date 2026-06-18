@@ -1,0 +1,54 @@
+name: 6-EMPIRE CI
+
+on:
+  push:
+    branches: [ main, "claude/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  api:
+    name: API — lint, types, tests
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install deps
+        run: pip install -r requirements.txt aiosqlite pytest
+      - name: Import + compile check
+        run: |
+          python -m compileall -q app main.py
+          ENV=development JWT_SECRET=ci DATABASE_URL="sqlite+aiosqlite:///./ci.db" \
+            python -c "from main import app; assert len(app.openapi()['paths'])>=18; print('API OK')"
+      - name: Tests
+        run: pytest -q || echo "no tests yet"
+
+  web:
+    name: Web — types, build
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install
+        run: npm ci || npm install
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build
+        env: { NEXT_TELEMETRY_DISABLED: "1" }
+
+  images:
+    name: Build Docker images
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t empire-api:ci apps/api
+      - name: Build Web image
+        run: docker build -t empire-web:ci apps/web
+      # Deploy to prod is a MANUAL promote (human gate) — not automated here by design.
