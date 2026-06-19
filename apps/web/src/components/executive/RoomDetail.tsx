@@ -90,6 +90,43 @@ export function Shelf({ position, rotation = [0, 0, 0], accent }: { position: [n
   );
 }
 
+/* ---- trophy shelving (gold awards in lit niches — reference signature) ---- */
+export function TrophyShelf({ position, rotation = [0, 0, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh><boxGeometry args={[2.2, 2.4, 0.3]} /><meshStandardMaterial color="#140f0a" roughness={0.5} metalness={0.2} /></mesh>
+      {[-0.7, 0, 0.7].map((y) => (
+        <group key={y}>
+          <mesh position={[0, y, 0.16]}><boxGeometry args={[2.1, 0.04, 0.02]} /><meshStandardMaterial color={BASE.gold} metalness={0.8} roughness={0.3} emissive={BASE.gold} emissiveIntensity={0.3} /></mesh>
+          {/* warm niche light */}
+          <pointLight position={[0, y + 0.18, 0.3]} intensity={0.18} color={BASE.goldHi} distance={1.6} />
+          {[-0.7, 0, 0.7].map((x) => (
+            <group key={x} position={[x, y + 0.2, 0.18]}>
+              {/* trophy: cup on a base */}
+              <mesh position={[0, 0.04, 0]}><boxGeometry args={[0.12, 0.05, 0.1]} /><meshStandardMaterial color={BASE.goldDeep} metalness={0.9} roughness={0.25} /></mesh>
+              <mesh position={[0, 0.16, 0]}><cylinderGeometry args={[0.07, 0.03, 0.16, 12]} /><meshStandardMaterial color={BASE.gold} metalness={0.95} roughness={0.2} emissive={BASE.gold} emissiveIntensity={0.25} /></mesh>
+            </group>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/* ---- leather lounge sofa with gold cushions (reference) ---- */
+export function Lounge({ position, rotation = [0, 0, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
+  return (
+    <group position={position} rotation={rotation}>
+      <RoundedBox args={[2.6, 0.4, 0.95]} radius={0.1} position={[0, 0.32, 0]} castShadow><meshStandardMaterial color="#0e0b08" roughness={0.6} metalness={0.1} /></RoundedBox>
+      <RoundedBox args={[2.6, 0.5, 0.25]} radius={0.08} position={[0, 0.62, -0.35]} castShadow><meshStandardMaterial color="#0e0b08" roughness={0.6} /></RoundedBox>
+      {/* gold cushions */}
+      {[-0.8, 0.8].map((x) => <RoundedBox key={x} args={[0.5, 0.18, 0.5]} radius={0.06} position={[x, 0.5, 0.05]}><meshStandardMaterial color={BASE.gold} roughness={0.5} metalness={0.3} emissive={BASE.gold} emissiveIntensity={0.1} /></RoundedBox>)}
+      {/* gold feet */}
+      {[[-1.2, -0.4], [1.2, -0.4], [-1.2, 0.4], [1.2, 0.4]].map(([x, z], i) => <mesh key={i} position={[x, 0.06, z]}><boxGeometry args={[0.06, 0.12, 0.06]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.3} /></mesh>)}
+    </group>
+  );
+}
+
 /* ---- rug ---- */
 export function Rug({ position, accent, size = 3 }: { position: [number, number, number]; accent: string; size?: number }) {
   return (

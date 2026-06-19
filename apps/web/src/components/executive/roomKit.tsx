@@ -12,7 +12,18 @@ import * as THREE from 'three';
 import { Character, Gesture } from './Character';
 import { LivingOffice } from './LivingOffice';
 
-export const BASE = { marble: '#0e0f13', marbleHi: '#1b1d24', gold: '#d4af37', goldHi: '#f4d98b', white: '#e8e6df', glass: '#bcdce8', ink: '#06070a', charcoal: '#23252d', green: '#34f5a0', blue: '#3b82f6' };
+// Warm gold + dark-wood + black-marble luxury palette (matches the reference
+// renders: 6 EMPIRES executive interiors — warm ambient gold, trophy shelves,
+// wood paneling, city-night windows).
+export const BASE = {
+  marble: '#0c0a08',      // near-black warm marble
+  marbleHi: '#1a1510',    // warm dark wood panel
+  wood: '#2a1f14',        // deep walnut
+  woodHi: '#3d2c1a',
+  gold: '#d4af37', goldHi: '#f4d98b', goldDeep: '#9a7b2e',
+  white: '#efe9dc', glass: '#bcdce8', ink: '#06070a', charcoal: '#1c1814',
+  green: '#34f5a0', blue: '#3b82f6',
+};
 
 export interface DeptConfig {
   id: string;

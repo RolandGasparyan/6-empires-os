@@ -11,8 +11,9 @@ import { Suspense, useRef, useState, useMemo } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { Character } from './Character';
+import { HumanCharacter } from './HumanCharacter';
 import { Hologram, Particles, Inspect, BASE } from './roomKit';
-import { Workstation, WallScreen, Pot, Art, Shelf, Rug, Chair } from './RoomDetail';
+import { Workstation, WallScreen, Pot, Art, Rug, Chair, TrophyShelf, Lounge } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
 
 /** Room slots on the campus grid. */
@@ -44,26 +45,35 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
       {(hover || focused) && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><planeGeometry args={[W - 0.2, D - 0.2]} /><meshBasicMaterial color={slot.accent} transparent opacity={hover ? 0.08 : 0.04} /></mesh>}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}><ringGeometry args={[2.2, 2.35, 48]} /><meshStandardMaterial color={slot.accent} metalness={0.8} roughness={0.3} emissive={slot.accent} emissiveIntensity={0.25} /></mesh>
 
-      {/* two back walls (cutaway) */}
-      <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color={BASE.marbleHi} roughness={0.65} metalness={0.12} /></mesh>
-      <mesh position={[-W / 2, H / 2, 0]} receiveShadow><boxGeometry args={[0.16, H, D]} /><meshStandardMaterial color={BASE.charcoal} roughness={0.7} /></mesh>
+      {/* two back walls — warm dark-wood panels */}
+      <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color={BASE.wood} roughness={0.6} metalness={0.15} /></mesh>
+      <mesh position={[-W / 2, H / 2, 0]} receiveShadow><boxGeometry args={[0.16, H, D]} /><meshStandardMaterial color={BASE.woodHi} roughness={0.65} metalness={0.12} /></mesh>
+      {/* warm gold cove lighting along wall tops (the reference's signature glow) */}
+      <mesh position={[0, H - 0.15, -D / 2 + 0.12]}><boxGeometry args={[W * 0.9, 0.04, 0.04]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.2} /></mesh>
+      <mesh position={[-W / 2 + 0.12, H - 0.15, 0]}><boxGeometry args={[0.04, 0.04, D * 0.9]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.2} /></mesh>
       {/* gold baseboard */}
-      <mesh position={[0, 0.07, -D / 2 + 0.1]}><boxGeometry args={[W, 0.07, 0.04]} /><meshStandardMaterial color={slot.accent} metalness={0.9} roughness={0.3} /></mesh>
-      {/* label */}
-      <Text position={[0, H * 0.8, -D / 2 + 0.12]} fontSize={0.5} color={slot.accent} anchorX="center" letterSpacing={0.16} outlineWidth={0.005} outlineColor="#000">{slot.label}</Text>
-      {/* window glow */}
-      <mesh position={[W * 0.26, H * 0.6, -D / 2 + 0.1]}><planeGeometry args={[W * 0.34, H * 0.4]} /><meshStandardMaterial color="#0c1722" emissive={slot.accent} emissiveIntensity={0.22} /></mesh>
+      <mesh position={[0, 0.07, -D / 2 + 0.1]}><boxGeometry args={[W, 0.07, 0.04]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.3} emissive={BASE.gold} emissiveIntensity={0.2} /></mesh>
+      {/* big gold EMPIRE emblem + wordmark on back wall (reference) */}
+      <group position={[0, H * 0.62, -D / 2 + 0.14]}>
+        {[0, 1, 2, 3].map((i) => <mesh key={i} rotation={[0, 0, (i * Math.PI) / 2]}><torusGeometry args={[0.42, 0.07, 8, 24, Math.PI * 1.3]} /><meshStandardMaterial color={BASE.gold} metalness={0.95} roughness={0.18} emissive={BASE.gold} emissiveIntensity={0.4} /></mesh>)}
+        <mesh><sphereGeometry args={[0.08, 14, 14]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.1} /></mesh>
+      </group>
+      <Text position={[0, H * 0.32, -D / 2 + 0.14]} fontSize={0.34} color={BASE.gold} anchorX="center" letterSpacing={0.28}>6 EMPIRES</Text>
+      <Text position={[0, H * 0.86, -D / 2 + 0.12]} fontSize={0.32} color={slot.accent} anchorX="center" letterSpacing={0.16} outlineWidth={0.005} outlineColor="#000">{slot.label}</Text>
+      {/* warm city-night windows */}
+      <mesh position={[W * 0.3, H * 0.55, -D / 2 + 0.1]}><planeGeometry args={[W * 0.3, H * 0.42]} /><meshStandardMaterial color="#1a1408" emissive="#3a2c10" emissiveIntensity={0.5} /></mesh>
 
-      {/* fully-furnished workstations — agents seated, working */}
-      {home.slice(0, 3).map((m, i) => {
+      {/* fully-furnished workstations — agents seated, working (command room
+          uses the dedicated Boss Office below instead of generic stations) */}
+      {slot.id !== 'command' && home.slice(0, 3).map((m, i) => {
         const x = (i - 1) * 2.9, z = -1.6;
         const screenKind = m.gesture === 'scan' ? 'grid' : m.gesture === 'type' ? 'code' : m.gesture === 'point' ? 'ui' : 'chart';
         return (
           <group key={m.id} position={[x, 0, z]}>
             <Workstation position={[0, 0, 0]} color={m.color} kind={screenKind as any} />
-            {/* seated agent (lower so it reads as sitting in the chair) */}
+            {/* seated stylized-human agent */}
             <Inspect id={m.id} onPick={() => onAgent(m)}>
-              <Character position={[0, 0.42, 0.78]} color={m.color} accent={BASE.goldHi} gesture={m.gesture} name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.78} />
+              <HumanCharacter position={[0, 0.18, 0.78]} suit={m.color} hair={m.hair} beard={m.beard} glasses={m.glasses} bowtie={m.bowtie} gesture={m.gesture} name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.7} />
             </Inspect>
           </group>
         );
@@ -73,22 +83,52 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
       <WallScreen position={[-2.6, 3, -D / 2 + 0.12]} w={2.0} h={1.1} accent={slot.accent} kind="chart" />
       <WallScreen position={[2.6, 3, -D / 2 + 0.12]} w={2.0} h={1.1} accent={slot.accent} kind={slot.id === 'datalab' ? 'code' : slot.id === 'trading' ? 'chart' : 'grid'} />
 
-      {/* room-specific decor */}
-      {slot.id === 'command' && <Hologram position={[3.0, 0.05, 1.8]} primary={BASE.blue} secondary={BASE.green} />}
+      {/* === BOSS OFFICE — Roland Gasparyan's executive command (reference) === */}
+      {slot.id === 'command' && (() => {
+        const boss = byRoom('command')[0] ?? TEAM[0];
+        return (
+          <group>
+            {/* massive black-marble executive desk */}
+            <RoundedBox args={[4.4, 0.18, 1.7]} radius={0.06} position={[0, 0.82, -1.6]} castShadow receiveShadow><meshStandardMaterial color="#0a0806" metalness={0.45} roughness={0.28} /></RoundedBox>
+            <mesh position={[0, 0.72, -1.6]}><boxGeometry args={[4.44, 0.05, 1.74]} /><meshStandardMaterial color={BASE.gold} metalness={0.92} roughness={0.22} emissive={BASE.gold} emissiveIntensity={0.18} /></mesh>
+            <mesh position={[-2.0, 0.36, -1.6]}><boxGeometry args={[0.18, 0.72, 1.5]} /><meshStandardMaterial color="#0a0806" /></mesh>
+            <mesh position={[2.0, 0.36, -1.6]}><boxGeometry args={[0.18, 0.72, 1.5]} /><meshStandardMaterial color="#0a0806" /></mesh>
+            {/* curved triple command screens */}
+            <WallScreen position={[-1.5, 1.55, -2.0]} rotation={[0, 0.45, 0]} w={1.2} h={0.7} accent={BASE.green} kind="chart" />
+            <WallScreen position={[0, 1.65, -2.1]} w={1.5} h={0.85} accent={BASE.gold} kind="ui" />
+            <WallScreen position={[1.5, 1.55, -2.0]} rotation={[0, -0.45, 0]} w={1.2} h={0.7} accent={BASE.blue} kind="chart" />
+            {/* the boss in his leather chair */}
+            <Chair position={[0, 0, -0.7]} color="#0e0b08" />
+            <Inspect id={boss.id} onPick={() => onAgent(boss)}>
+              <HumanCharacter position={[0, 0.2, -0.7]} suit="#0a0806" hair="#141414" beard bowtie gesture="point" name="ROLAND" status="COMMANDING" scale={0.85} seed={9} />
+            </Inspect>
+            {/* desk accessories: gold lion, globe, flag, books (reference) */}
+            <mesh position={[1.5, 0.98, -1.4]} castShadow><boxGeometry args={[0.2, 0.18, 0.32]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.15} /></mesh>
+            <mesh position={[-1.5, 1.05, -1.4]}><sphereGeometry args={[0.16, 18, 14]} /><meshStandardMaterial color={BASE.goldDeep} metalness={0.85} roughness={0.3} wireframe /></mesh>
+            <mesh position={[-1.5, 1.05, -1.4]}><sphereGeometry args={[0.155, 14, 10]} /><meshStandardMaterial color="#0a0806" /></mesh>
+            <group position={[1.1, 0.95, -1.5]}>{[0,1,2].map(i=><mesh key={i} position={[0,i*0.05,0]}><boxGeometry args={[0.3,0.045,0.2]}/><meshStandardMaterial color={[BASE.gold,'#3a1010','#10243a'][i]} roughness={0.6}/></mesh>)}</group>
+            {/* gold floor emblem (interlocking rings) */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1.6]}><torusGeometry args={[0.9, 0.05, 10, 40]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.25} /></mesh>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0.02, 1.6]}><torusGeometry args={[0.6, 0.045, 10, 40]} /><meshStandardMaterial color={BASE.goldHi} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.3} /></mesh>
+            <Lounge position={[-3.0, 0, 2.0]} rotation={[0, 0.5, 0]} />
+            <pointLight position={[0, 2.2, -1]} intensity={0.5} color={BASE.goldHi} distance={6} />
+          </group>
+        );
+      })()}
       {slot.id === 'meeting' && <>
         <RoundedBox args={[3.6, 0.14, 1.4]} radius={0.06} position={[0, 0.78, 1.4]} castShadow><meshStandardMaterial color={BASE.marble} metalness={0.4} roughness={0.3} /></RoundedBox>
         {[-1.2, 0, 1.2].map((cx) => <Chair key={cx} position={[cx, 0, 2.4]} rotation={[0, Math.PI, 0]} />)}
         {[-1.2, 0, 1.2].map((cx) => <Chair key={'b' + cx} position={[cx, 0, 0.4]} />)}
       </>}
 
-      {/* shared interior detail: rug, art, shelf, plants */}
+      {/* shared luxury interior detail (reference style): rug, trophy shelf, lounge, art, plants */}
       <Rug position={[0, 0, 1.4]} accent={slot.accent} size={3.4} />
+      <TrophyShelf position={[W / 2 - 0.3, 1.2, -1.6]} rotation={[0, -Math.PI / 2, 0]} />
+      <Lounge position={[W / 2 - 1.6, 0, D / 2 - 1.4]} rotation={[0, -Math.PI / 2 - 0.3, 0]} />
       <Art position={[-W / 2 + 0.2, 2.6, -1.5]} rotation={[0, Math.PI / 2, 0]} accent={slot.accent} />
       <Art position={[-W / 2 + 0.2, 2.6, 1.0]} rotation={[0, Math.PI / 2, 0]} accent={BASE.gold} />
-      <Shelf position={[W / 2 - 0.35, 0.9, 1.5]} rotation={[0, -Math.PI / 2, 0]} accent={slot.accent} />
-      <Pot big position={[W / 2 - 1.0, 0, -D / 2 + 1.0]} />
+      <Pot big position={[-W / 2 + 1.0, 0, -D / 2 + 1.0]} />
       <Pot position={[-W / 2 + 1.0, 0, D / 2 - 1.0]} />
-      <Pot position={[W / 2 - 1.2, 0, D / 2 - 1.2]} />
     </group>
   );
 }
@@ -154,13 +194,16 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   return (
     <Canvas shadows dpr={[1, 1.8]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
-      <color attach="background" args={['#060708']} />
-      <fog attach="fog" args={['#060708', 36, 90]} />
-      <ambientLight intensity={0.34} />
-      <directionalLight position={[16, 26, 12]} intensity={1.05} color="#fff2d6" castShadow shadow-mapSize={[2048, 2048]}>
+      <color attach="background" args={['#080603']} />
+      <fog attach="fog" args={['#080603', 36, 90]} />
+      <ambientLight intensity={0.3} color="#ffe8c0" />
+      <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[2048, 2048]}>
         <orthographicCamera attach="shadow-camera" args={[-40, 40, 40, -40, 0.1, 80]} />
       </directionalLight>
-      <pointLight position={[0, 10, 0]} intensity={0.6} color={BASE.gold} distance={50} />
+      {/* warm gold ambient fills (the reference's signature glow) */}
+      <pointLight position={[0, 10, 0]} intensity={0.8} color={BASE.gold} distance={55} />
+      <pointLight position={[14, 6, 14]} intensity={0.5} color={BASE.goldHi} distance={30} />
+      <pointLight position={[-14, 6, -14]} intensity={0.5} color={BASE.goldHi} distance={30} />
 
       <Suspense fallback={null}>
         {/* big reflective base floor */}
