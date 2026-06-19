@@ -44,15 +44,20 @@ export const DEPARTMENTS: Dept[] = [
 ];
 
 function CameraRig({ target }: { target: [number, number, number] | null }) {
-  const { camera } = useThree();
+  const { camera, invalidate } = useThree();
   const desired = useRef(new THREE.Vector3(16, 16, 16));
   const look = useRef(new THREE.Vector3(0, 0, 0));
+  const intro = useRef(0); // forces frames + a gentle intro orbit on mount so the
+                           // scene always paints its first frame (no drag needed)
   useFrame(() => {
+    if (intro.current < 140) { intro.current += 1; invalidate(); }
     if (target) {
       desired.current.set(target[0] + 7, 8.5, target[2] + 7);
       look.current.set(target[0], 1.2, target[2]);
     } else {
-      desired.current.set(16, 17, 16);
+      // slow establishing orbit around the campus while idle
+      const a = intro.current < 140 ? intro.current * 0.012 : 0;
+      desired.current.set(16 + Math.sin(a) * 2, 17, 16 + Math.cos(a) * 2 - 2);
       look.current.set(0, 0, 0);
     }
     camera.position.lerp(desired.current, 0.045);
