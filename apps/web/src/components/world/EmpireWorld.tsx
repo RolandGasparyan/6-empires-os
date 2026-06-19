@@ -7,12 +7,14 @@
  */
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useRef, useState } from 'react';
+import { LiveStatusCtx } from './liveContext';
 import { Environment, ContactShadows, AdaptiveDpr } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Room, Mezzanine } from './Room';
 import { AgentWorker } from './AgentWorker';
 import { Sofa, Chair, Beanbag, CoffeeTable, IslandCounter, Planter, Rug, WallArt, PALETTE } from './Furniture';
+import { useWorldLive } from './useWorldLive';
 
 export interface Dept {
   id: string; label: string; accent: string; pos: [number, number, number];
@@ -140,6 +142,7 @@ function DeptRoom({ dept, onPick, focused }: { dept: Dept; onPick: (d: Dept) => 
 
 export default function EmpireWorld({ onEnter }: { onEnter?: (d: Dept) => void }) {
   const [focus, setFocus] = useState<[number, number, number] | null>(null);
+  const { statuses } = useWorldLive(); // live agent.status from the twin
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [16, 17, 16], fov: 34, near: 0.1, far: 200 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
@@ -150,14 +153,16 @@ export default function EmpireWorld({ onEnter }: { onEnter?: (d: Dept) => void }
         <orthographicCamera attach="shadow-camera" args={[-30, 30, 30, -30, 0.1, 60]} />
       </directionalLight>
       <pointLight position={[0, 8, 0]} intensity={0.5} color={PALETTE.gold} distance={40} />
-      <Suspense fallback={null}>
-        {DEPARTMENTS.map((d) => (
-          <DeptRoom key={d.id} dept={d} focused={focus?.[0] === d.pos[0] && focus?.[2] === d.pos[2]}
-            onPick={(dd) => { setFocus(dd.pos); onEnter?.(dd); }} />
-        ))}
-        <ContactShadows position={[0, 0, 0]} opacity={0.5} scale={60} blur={2.2} far={10} />
-        <Environment preset="night" />
-      </Suspense>
+      <LiveStatusCtx.Provider value={statuses}>
+        <Suspense fallback={null}>
+          {DEPARTMENTS.map((d) => (
+            <DeptRoom key={d.id} dept={d} focused={focus?.[0] === d.pos[0] && focus?.[2] === d.pos[2]}
+              onPick={(dd) => { setFocus(dd.pos); onEnter?.(dd); }} />
+          ))}
+          <ContactShadows position={[0, 0, 0]} opacity={0.5} scale={60} blur={2.2} far={10} />
+          <Environment preset="night" />
+        </Suspense>
+      </LiveStatusCtx.Provider>
       <CameraRig target={focus} />
       <AdaptiveDpr pixelated />
     </Canvas>

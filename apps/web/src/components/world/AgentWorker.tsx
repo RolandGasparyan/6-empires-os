@@ -9,6 +9,7 @@ import { useFrame } from '@react-three/fiber';
 import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { PALETTE } from './Furniture';
+import { useLiveStatus } from './liveContext';
 
 export interface WorkerProps {
   position?: [number, number, number];
@@ -19,9 +20,10 @@ export interface WorkerProps {
   seed?: number;
 }
 
-export function AgentWorker({ position = [0, 0, 0], rotation = [0, 0, 0], color, name, status, seed = 0 }: WorkerProps) {
+export function AgentWorker({ position = [0, 0, 0], rotation = [0, 0, 0], color, name, status: staticStatus, seed = 0 }: WorkerProps) {
   const bot = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
+  const status = useLiveStatus(name, staticStatus); // real status from the live twin
   useFrame((s) => {
     const t = s.clock.elapsedTime + seed;
     if (bot.current) bot.current.position.y = 0.92 + Math.sin(t * 1.6) * 0.04;
