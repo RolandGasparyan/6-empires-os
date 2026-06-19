@@ -25,7 +25,7 @@ const ROOMS: Slot[] = [
   { id: 'datalab',   label: 'DATA LAB',  accent: '#a855f7', pos: [-GAP, 0] },
   { id: 'trading',   label: 'TRADING',   accent: '#22c55e', pos: [0, GAP] },
   { id: 'meeting',   label: 'MEETING',   accent: '#3b82f6', pos: [0, -GAP] },
-  { id: 'lounge',    label: 'LOUNGE',    accent: '#06b6d4', pos: [GAP, GAP] },
+  { id: 'media',     label: 'MEDIA STUDIO', accent: '#06b6d4', pos: [GAP, GAP] },
 ];
 
 /* ---- one department room with its furniture + home agents ---- */
@@ -110,7 +110,13 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             {/* gold floor emblem (interlocking rings) */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1.6]}><torusGeometry args={[0.9, 0.05, 10, 40]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.25} /></mesh>
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0.02, 1.6]}><torusGeometry args={[0.6, 0.045, 10, 40]} /><meshStandardMaterial color={BASE.goldHi} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.3} /></mesh>
-            <Lounge position={[-3.0, 0, 2.0]} rotation={[0, 0.5, 0]} />
+            <Lounge position={[-3.4, 0, 2.4]} rotation={[0, 0.5, 0]} />
+            {/* boss-office wall tagline (reference) */}
+            <Text position={[0, H * 0.2, -D / 2 + 0.14]} fontSize={0.16} color={BASE.goldHi} anchorX="center" letterSpacing={0.18}>WE BUILD · WE SCALE · WE OWN</Text>
+            {/* team seating facing the boss desk */}
+            {[-1.0, 1.0].map((cx) => <Chair key={cx} position={[cx, 0, 1.2]} color="#0e0b08" />)}
+            {/* cinematic key light on the CEO */}
+            <spotLight position={[0, 4, 0.5]} angle={0.4} penumbra={0.7} intensity={1.6} color={BASE.goldHi} target-position={[0, 0.6, -0.7]} castShadow />
             <pointLight position={[0, 2.2, -1]} intensity={0.5} color={BASE.goldHi} distance={6} />
           </group>
         );
@@ -119,6 +125,14 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         <RoundedBox args={[3.6, 0.14, 1.4]} radius={0.06} position={[0, 0.78, 1.4]} castShadow><meshStandardMaterial color={BASE.marble} metalness={0.4} roughness={0.3} /></RoundedBox>
         {[-1.2, 0, 1.2].map((cx) => <Chair key={cx} position={[cx, 0, 2.4]} rotation={[0, Math.PI, 0]} />)}
         {[-1.2, 0, 1.2].map((cx) => <Chair key={'b' + cx} position={[cx, 0, 0.4]} />)}
+      </>}
+      {slot.id === 'media' && <>
+        {/* media studio: big content wall + color swatches + studio light */}
+        <WallScreen position={[0, 2.4, -D / 2 + 0.13]} w={4.2} h={2.0} accent={slot.accent} kind="ui" />
+        {['#e8772e', '#ec4899', '#06b6d4', '#34f5a0', '#a855f7'].map((c, i) => <mesh key={c} position={[-1 + i * 0.5, 1.2, -D / 2 + 0.15]}><boxGeometry args={[0.4, 0.4, 0.03]} /><meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.3} /></mesh>)}
+        <mesh position={[3, 1.4, 1.5]}><cylinderGeometry args={[0.02, 0.02, 2.4, 6]} /><meshStandardMaterial color="#23252d" /></mesh>
+        <mesh position={[3, 2.5, 1.5]}><coneGeometry args={[0.22, 0.3, 16, 1, true]} /><meshStandardMaterial color="#2a2c33" side={2} /></mesh>
+        <pointLight position={[3, 2.4, 1.5]} intensity={0.4} color="#fff" distance={4} />
       </>}
 
       {/* shared luxury interior detail (reference style): rug, trophy shelf, lounge, art, plants */}

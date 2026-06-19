@@ -34,7 +34,7 @@ export const TEAM: TeamMember[] = [
   { id: 'data',  name: 'Ava Mitchell',     title: 'DATA SCIENTIST',     color: '#d946ef', tagline: 'Data. Models. Insights.',          blurb: 'Turning data into advantage.',    gesture: 'scan',  status: 'MODELING',     room: 'datalab',   hair: '#4a2a5a', glasses: true },
   { id: 'risk',  name: 'James Foster',     title: 'RISK MANAGER',       color: '#1a1a1a', tagline: 'Protect. Manage. Control.',        blurb: 'Securing every move.',            gesture: 'think', status: 'MONITORING',   room: 'trading',   hair: '#141414', beard: true },
   { id: 'auto',  name: 'Noah Parker',      title: 'AUTOMATION LEAD',    color: '#0ea5e9', tagline: 'Automate. Optimize. Scale.',       blurb: 'Building systems that scale.',    gesture: 'type',  status: 'AUTOMATING',   room: 'workspace', hair: '#141414' },
-  { id: 'mkt',   name: 'Mia Coleman',      title: 'MARKETING DIRECTOR', color: '#06b6d4', tagline: 'Brand. Growth. Positioning.',      blurb: 'Making an empire known.',         gesture: 'wave',  status: 'CREATING',     room: 'lounge',    hair: '#1a6a7a' },
+  { id: 'mkt',   name: 'Mia Coleman',      title: 'MARKETING DIRECTOR', color: '#06b6d4', tagline: 'Brand. Growth. Positioning.',      blurb: 'Making an empire known.',         gesture: 'wave',  status: 'CREATING',     room: 'media',     hair: '#1a6a7a' },
   { id: 'ops',   name: 'Liam Turner',      title: 'OPERATIONS MANAGER', color: '#1e3a5f', tagline: 'Systems. Flow. Efficiency.',       blurb: 'Making everything run.',          gesture: 'idle',  status: 'RUNNING',      room: 'workspace', hair: '#141414' },
 ];
 
