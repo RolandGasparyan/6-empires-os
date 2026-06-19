@@ -181,6 +181,43 @@ function Commuter({ from, to, color, phase, speed = 0.18 }: { from: [number, num
   return <group ref={g}><Character color={color} scale={0.7} gesture="idle" /></group>;
 }
 
+/* === unified building shell — glass curtain wall + warm base uplights (reference) === */
+function BuildingShell() {
+  const R = 22;     // half-extent of the building footprint
+  const H = 5.5;    // wall height
+  // warm exterior uplights spaced around the base
+  const uplights = useMemo(() => {
+    const pts: [number, number][] = [];
+    const N = 7;
+    for (let i = 0; i <= N; i++) { const t = (i / N) * 2 - 1; pts.push([t * R, R + 1]); pts.push([t * R, -R - 1]); pts.push([R + 1, t * R]); pts.push([-R - 1, t * R]); }
+    return pts;
+  }, []);
+  return (
+    <group>
+      {/* dark base plinth under the building */}
+      <mesh position={[0, -0.6, 0]}><boxGeometry args={[R * 2 + 4, 1.0, R * 2 + 4]} /><meshStandardMaterial color="#0a0b0e" roughness={0.8} metalness={0.2} /></mesh>
+      <mesh position={[0, -0.08, 0]}><boxGeometry args={[R * 2 + 0.4, 0.16, R * 2 + 0.4]} /><meshStandardMaterial color="#1a1510" metalness={0.5} roughness={0.5} emissive={BASE.gold} emissiveIntensity={0.06} /></mesh>
+      {/* glass curtain walls on all 4 sides */}
+      {([[0, -R], [0, R], [-R, 0], [R, 0]] as [number, number][]).map(([x, z], i) => (
+        <group key={i} position={[x, H / 2, z]} rotation={[0, i < 2 ? 0 : Math.PI / 2, 0]}>
+          <mesh><boxGeometry args={[R * 2, H, 0.06]} /><meshStandardMaterial color="#9fc4d8" transparent opacity={0.07} metalness={0.5} roughness={0.05} /></mesh>
+          {/* gold mullions */}
+          {Array.from({ length: 9 }).map((_, m) => <mesh key={m} position={[-R + (m * R) / 4, 0, 0.04]}><boxGeometry args={[0.05, H, 0.05]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.3} emissive={BASE.gold} emissiveIntensity={0.12} /></mesh>)}
+          <mesh position={[0, H / 2 - 0.05, 0.04]}><boxGeometry args={[R * 2, 0.06, 0.06]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.3} /></mesh>
+          <mesh position={[0, -H / 2 + 0.05, 0.04]}><boxGeometry args={[R * 2, 0.06, 0.06]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.3} /></mesh>
+        </group>
+      ))}
+      {/* warm exterior uplights around the base (the reference's signature glow) */}
+      {uplights.map(([x, z], i) => (
+        <group key={i} position={[x, 0, z]}>
+          <mesh position={[0, 0.05, 0]}><cylinderGeometry args={[0.12, 0.14, 0.1, 10]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.4} /></mesh>
+          <pointLight position={[0, 0.4, 0]} intensity={0.5} color="#ffb347" distance={6} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function CamRig({ target }: { target: [number, number] | null }) {
   const { camera } = useThree();
   const t0 = useRef(0);
@@ -220,6 +257,8 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
       <pointLight position={[-14, 6, -14]} intensity={0.5} color={BASE.goldHi} distance={30} />
 
       <Suspense fallback={null}>
+        {/* === UNIFIED BUILDING SHELL (reference: glass-perimeter floor with warm base uplights) === */}
+        <BuildingShell />
         {/* big reflective base floor */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[70, 70]} />
