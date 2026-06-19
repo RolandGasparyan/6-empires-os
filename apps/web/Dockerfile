@@ -35,6 +35,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
+# Static assets (logo SVGs, hero render) — `next start` serves these from /public.
+COPY --from=build /app/public ./public
 # next.config.js is needed at runtime so `next start` applies the same config
 # (React-dedup webpack alias, transpilePackages) used during the build.
 COPY --from=build /app/next.config.js ./next.config.js

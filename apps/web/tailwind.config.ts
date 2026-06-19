@@ -35,9 +35,27 @@ const config: Config = {
           danger: '#ff4d5e',
           success: '#34f5a0',
         },
+        // Marble tones from the reference office shots (green-black + obsidian).
+        marble: {
+          green: '#0c1410',
+          'green-2': '#0f1a14',
+          black: '#0a0a0b',
+        },
+        // Exact agent accent colors from the reference bot roster.
+        agent: {
+          strategist: '#2ecc71', // green (Chief Strategist / Data Hunter green bot)
+          data: '#2ecc71',
+          risk: '#a855f7',       // purple (Risk Guardian)
+          scout: '#f4c430',      // yellow (Market Scout)
+          news: '#ff5d8f',       // pink (News Analyst)
+          trend: '#3b82f6',      // blue (Trend Tracker)
+          dev: '#ef4444',        // red (Developer)
+          cyan: '#22d3ee',
+        },
       },
       fontFamily: {
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },

@@ -4,6 +4,7 @@
 
 :root {
   --font-display: 'Sora', system-ui, sans-serif;
+  --font-serif: 'Cinzel', 'Trajan Pro', Georgia, serif; /* EMPIRE wordmark / luxury display */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
