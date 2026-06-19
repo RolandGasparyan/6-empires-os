@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>EMPIRE AI</title>
+<style>
+  :root{
+    --gold:#d4af37; --gold-hi:#f4d98b; --gold-deep:#9a7b2e;
+    --bg:#000; --panel:#0c0b09; --ink:#f3ecd9; --muted:#8a8270;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
+  .serif{font-family:Georgia,"Times New Roman",serif;}
+
+  /* header */
+  header{display:flex;align-items:center;gap:14px;padding:16px 20px;
+    border-bottom:1px solid #ffffff10;background:linear-gradient(180deg,#0a0906,#000);}
+  .logo{width:54px;height:54px;border-radius:14px;flex:0 0 auto;
+    background:radial-gradient(120% 120% at 50% 30%,#1a1408,#000);
+    border:1px solid var(--gold-deep);display:grid;place-items:center;
+    box-shadow:0 0 26px -8px var(--gold);}
+  .logo svg{width:38px;height:38px}
+  .brand{line-height:1.05;flex:1}
+  .brand .t{font-size:22px;letter-spacing:.32em;color:var(--gold);font-weight:600}
+  .brand .s{font-size:10px;letter-spacing:.34em;color:var(--gold-deep);margin-top:3px}
+  .status{display:flex;align-items:center;gap:8px;font-size:15px;color:#cfcab8}
+  .dot{width:11px;height:11px;border-radius:50%;background:#1fd17a;box-shadow:0 0 10px #1fd17a}
+
+  /* chat scroll area */
+  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+  .hero{margin:auto;text-align:center;max-width:560px;padding:30px 16px}
+  .hero .mark{width:170px;height:170px;margin:0 auto 6px;border-radius:34px;
+    background:radial-gradient(120% 120% at 50% 28%,#1a1408,#000);
+    border:1px solid var(--gold-deep);display:grid;place-items:center;
+    box-shadow:0 0 70px -16px var(--gold);}
+  .hero .mark svg{width:120px;height:120px}
+  .hero h1{font-size:46px;letter-spacing:.22em;margin:18px 0 10px;
+    background:linear-gradient(180deg,var(--gold-hi),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:19px;margin:0}
+
+  .msg{display:flex;gap:12px;max-width:860px;width:100%;margin:0 auto;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg .av{width:34px;height:34px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .msg.user .av{background:#15130d;border:1px solid #ffffff14;color:var(--muted)}
+  .msg.ai .av{background:radial-gradient(120% 120% at 50% 30%,#1a1408,#000);border:1px solid var(--gold-deep);color:var(--gold)}
+  .bubble{padding:12px 15px;border-radius:14px;font-size:15.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
+  .msg.user .bubble{background:#15130d;border:1px solid #ffffff12;color:#efe9da}
+  .msg.ai .bubble{background:#0c0b08;border:1px solid var(--gold-deep);color:#f3ecd9;box-shadow:0 0 30px -18px var(--gold)}
+  .bubble .cursor{display:inline-block;width:7px;height:16px;background:var(--gold);margin-left:2px;animation:blink 1s steps(2) infinite;vertical-align:middle}
+  @keyframes blink{50%{opacity:0}}
+
+  /* composer */
+  footer{padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #ffffff10;background:linear-gradient(0deg,#0a0906,#000)}
+  .composer{display:flex;align-items:flex-end;gap:10px;max-width:880px;margin:0 auto;
+    background:#0e0d0a;border:1px solid #ffffff14;border-radius:20px;padding:10px 10px 10px 18px;
+    box-shadow:0 0 40px -22px var(--gold)}
+  .composer textarea{flex:1;background:transparent;border:0;outline:0;color:var(--ink);
+    font-size:17px;resize:none;max-height:140px;line-height:1.4;padding:8px 0;font-family:inherit}
+  .composer textarea::placeholder{color:#6f6857}
+  .send{width:58px;height:54px;border:0;border-radius:15px;flex:0 0 auto;cursor:pointer;
+    background:linear-gradient(135deg,var(--gold-hi),var(--gold-deep));
+    display:grid;place-items:center;transition:transform .15s ease,box-shadow .2s ease}
+  .send:hover{transform:scale(1.05);box-shadow:0 0 22px -4px var(--gold)}
+  .send:disabled{opacity:.5;cursor:default;transform:none}
+  .send svg{width:24px;height:24px}
+  .modelbar{max-width:880px;margin:0 auto 8px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .modelbar select{background:#0e0d0a;color:var(--gold);border:1px solid var(--gold-deep);border-radius:8px;padding:4px 8px;font-size:12px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo"><img src="/empire-mark.svg" alt="6 Empire" width="38" height="38" /></div>
+    <div class="brand">
+      <div class="t serif">EMPIRE</div>
+      <div class="s">6 · EMPIRE AI</div>
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">Online</span></div>
+  </header>
+
+  <main id="main">
+    <div class="hero" id="hero">
+      <div class="mark"><img src="/empire-mark.svg" alt="6 Empire" width="120" height="120" /></div>
+      <h1 class="serif">EMPIRE AI</h1>
+      <p>Your intelligent assistant. Ask anything to begin.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="modelbar"><span>Model:</span>
+      <select id="model"><option>loading…</option></select>
+    </div>
+    <div class="composer">
+      <textarea id="input" rows="1" placeholder="Message Empire AI…"></textarea>
+      <button class="send" id="send" title="Send">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h14M12 5l7 7-7 7" stroke="#0a0a0b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </footer>
+
+<script>
+const main=document.getElementById('main'), hero=document.getElementById('hero');
+const input=document.getElementById('input'), send=document.getElementById('send');
+const modelSel=document.getElementById('model'), dot=document.getElementById('dot'), statusText=document.getElementById('statusText');
+const history=[];
+
+// auto-grow textarea
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
+send.addEventListener('click',submit);
+
+async function loadModels(){
+  try{
+    const r=await fetch('/api/health'); const j=await r.json();
+    if(j.ok&&j.models.length){
+      modelSel.innerHTML=j.models.map(m=>`<option>${m}</option>`).join('');
+      dot.style.background='#1fd17a';statusText.textContent='Online';
+    }else{
+      modelSel.innerHTML='<option>no models</option>';
+      dot.style.background='#e0a92e';statusText.textContent='No model';
+    }
+  }catch{ dot.style.background='#e04e4e';statusText.textContent='Offline'; modelSel.innerHTML='<option>offline</option>'; }
+}
+loadModels();
+
+function bubble(role,text){
+  if(hero) {hero.remove();}
+  const wrap=document.createElement('div');wrap.className='msg '+role;
+  wrap.innerHTML=`<div class="av">${role==='user'?'You':'AI'}</div><div class="bubble"></div>`;
+  wrap.querySelector('.bubble').textContent=text;
+  main.appendChild(wrap);main.scrollTop=main.scrollHeight;
+  return wrap.querySelector('.bubble');
+}
+
+async function submit(){
+  const text=input.value.trim(); if(!text) return;
+  input.value='';input.style.height='auto';send.disabled=true;
+  bubble('user',text); history.push({role:'user',content:text});
+  const out=bubble('ai',''); out.innerHTML='<span class="cursor"></span>';
+  let acc='';
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:modelSel.value,messages:history})});
+    const reader=res.body.getReader(); const dec=new TextDecoder();
+    while(true){const{done,value}=await reader.read();if(done)break;
+      acc+=dec.decode(value,{stream:true}); out.textContent=acc; out.innerHTML=out.textContent+'<span class="cursor"></span>';
+      main.scrollTop=main.scrollHeight;}
+    out.textContent=acc||'(no response)'; history.push({role:'assistant',content:acc});
+  }catch(e){ out.textContent='⚠️ '+e.message; }
+  send.disabled=false; input.focus();
+}
+</script>
+</body>
+</html>
