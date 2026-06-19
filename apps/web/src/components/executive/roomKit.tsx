@@ -9,6 +9,8 @@ import { useRef, useState, useMemo, ReactNode } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Environment, ContactShadows, Float, Text, Billboard, RoundedBox, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
+import { Character, Gesture } from './Character';
+import { LivingOffice } from './LivingOffice';
 
 export const BASE = { marble: '#0e0f13', marbleHi: '#1b1d24', gold: '#d4af37', goldHi: '#f4d98b', white: '#e8e6df', glass: '#bcdce8', ink: '#06070a', charcoal: '#23252d' };
 
@@ -21,6 +23,8 @@ export interface DeptConfig {
   agentColor: string;
   agentName: string;
   agentStatus: string;
+  agentGesture?: Gesture;   // signature motion (type/scan/point/…)
+  walkerColors?: string[];  // background NPCs walking the office
   bubbles: string[];
   screens: { kind: 'chart' | 'bars' | 'map' | 'code' | 'grid'; accent: 'primary' | 'secondary' | 'gold' | 'green' }[];
   inspect: Record<string, { title: string; accent: string; body: string; lines: [string, string][] }>;
@@ -96,33 +100,15 @@ export function Particles({ count = 110, color = BASE.goldHi }: { count?: number
   return <points ref={ref} geometry={geo}><pointsMaterial size={0.02} color={color} transparent opacity={0.5} sizeAttenuation /></points>;
 }
 
-/* ---------- working agent ---------- */
-export function Agent({ color, name, status, bubbles, onPick }: { color: string; name: string; status: string; bubbles: string[]; onPick: (id: string) => void }) {
-  const body = useRef<THREE.Group>(null); const arm = useRef<THREE.Group>(null); const [b, setB] = useState(0);
-  useFrame((s) => { const t = s.clock.elapsedTime; if (body.current) { body.current.position.y = 1.0 + Math.sin(t * 1.4) * 0.025; body.current.rotation.y = Math.sin(t * 0.5) * 0.12; } if (arm.current) arm.current.rotation.x = -0.5 + Math.sin(t * 6) * 0.25; setB(Math.floor(t / 4) % Math.max(1, bubbles.length)); });
+/* ---------- working agent (now the appealing Character rig) ---------- */
+export function Agent({ color, name, status, bubbles, gesture = 'type', onPick }: { color: string; name: string; status: string; bubbles: string[]; gesture?: Gesture; onPick: (id: string) => void }) {
+  const [b, setB] = useState(0);
+  useFrame((s) => setB(Math.floor(s.clock.elapsedTime / 4) % Math.max(1, bubbles.length)));
   return (
     <group position={[0, 0, -1.4]}>
       <Inspect id="agent" onPick={onPick}>
-        <group ref={body} position={[0, 1.0, 0]}>
-          <mesh castShadow><sphereGeometry args={[0.3, 24, 18]} /><meshStandardMaterial color={color} roughness={0.4} metalness={0.12} emissive={color} emissiveIntensity={0.1} /></mesh>
-          <mesh position={[0, -0.26, 0]} castShadow><sphereGeometry args={[0.24, 18, 14]} /><meshStandardMaterial color={color} roughness={0.45} /></mesh>
-          <mesh position={[-0.1, 0.04, 0.26]}><sphereGeometry args={[0.055, 12, 12]} /><meshStandardMaterial color={BASE.ink} /></mesh>
-          <mesh position={[0.1, 0.04, 0.26]}><sphereGeometry args={[0.055, 12, 12]} /><meshStandardMaterial color={BASE.ink} /></mesh>
-          <mesh position={[-0.085, 0.06, 0.3]}><sphereGeometry args={[0.018, 8, 8]} /><meshStandardMaterial color="#fff" /></mesh>
-          <mesh position={[0.115, 0.06, 0.3]}><sphereGeometry args={[0.018, 8, 8]} /><meshStandardMaterial color="#fff" /></mesh>
-          <mesh position={[0, 0.32, 0]}><cylinderGeometry args={[0.012, 0.012, 0.16, 6]} /><meshStandardMaterial color={color} /></mesh>
-          <mesh position={[0, 0.42, 0]}><sphereGeometry args={[0.04, 10, 10]} /><meshStandardMaterial color={BASE.gold} emissive={BASE.gold} emissiveIntensity={0.6} /></mesh>
-          <group ref={arm} position={[0.18, -0.2, 0.18]}><mesh><capsuleGeometry args={[0.04, 0.2, 4, 8]} /><meshStandardMaterial color={color} /></mesh></group>
-        </group>
+        <Character color={color} accent={BASE.goldHi} gesture={gesture} name={name} status={status} bubble={bubbles[b]} seed={2} />
       </Inspect>
-      <Billboard position={[0.7, 1.7, 0]}>
-        <mesh><planeGeometry args={[1.7, 0.4]} /><meshBasicMaterial color={BASE.ink} transparent opacity={0.82} /></mesh>
-        <Text position={[0, 0, 0.01]} fontSize={0.12} color={BASE.goldHi} anchorX="center" maxWidth={1.6}>{bubbles[b] ?? ''}</Text>
-      </Billboard>
-      <Billboard position={[0, 1.75, 0]}>
-        <Text fontSize={0.14} color={BASE.gold} anchorX="center" outlineWidth={0.004} outlineColor="#000">{name}</Text>
-        <Text position={[0, -0.16, 0]} fontSize={0.09} color={color} anchorX="center">● {status}</Text>
-      </Billboard>
     </group>
   );
 }
@@ -221,12 +207,15 @@ export function DepartmentRoom({ cfg, onPick, signature }: { cfg: DeptConfig; on
       {/* hologram */}
       <Inspect id="hologram" onPick={onPick}><Hologram position={[2.8, 0.05, 1.2]} primary={cfg.primary} secondary={cfg.secondary} /></Inspect>
 
-      {/* agent */}
-      <Agent color={cfg.agentColor} name={cfg.agentName} status={cfg.agentStatus} bubbles={cfg.bubbles} onPick={onPick} />
+      {/* agent (appealing Character rig) */}
+      <Agent color={cfg.agentColor} name={cfg.agentName} status={cfg.agentStatus} bubbles={cfg.bubbles} gesture={cfg.agentGesture ?? 'type'} onPick={onPick} />
 
       {/* board + base props */}
       <ProjectBoard position={[-5.4, 2.2, -2]} primary={cfg.primary} secondary={cfg.secondary} onPick={onPick} />
       <Plant position={[-3.4, 0, 2.6]} /><Plant position={[3.6, 0, 2.8]} />
+
+      {/* LIVING OFFICE — walkers, coffee cluster, notifications, chatter */}
+      <LivingOffice accent={cfg.primary} walkerColors={cfg.walkerColors ?? [cfg.primary, cfg.secondary, '#34f5a0']} />
 
       {/* department signature props */}
       {signature}

@@ -5,7 +5,8 @@ export const DEPARTMENTS: Record<string, DeptConfig> = {
   executive: {
     id: 'executive', title: '6 EMPIRES', subtitle: 'EXECUTIVE COMMAND CENTER',
     primary: '#d4af37', secondary: '#3b82f6', agentColor: '#e8e6df',
-    agentName: 'EMPIRE BOSS', agentStatus: 'COMMANDING',
+    agentName: 'EMPIRE BOSS', agentStatus: 'COMMANDING', agentGesture: 'point',
+    walkerColors: ['#3b82f6', '#34f5a0', '#a855f7', '#e8772e'],
     bubbles: ['Reviewing Q3 strategy…', 'Markets up 8.2% ✦', 'Deploying agents…', 'Empire status: optimal'],
     screens: [{ kind: 'chart', accent: 'green' }, { kind: 'bars', accent: 'gold' }, { kind: 'map', accent: 'secondary' }],
     inspect: {
@@ -21,7 +22,8 @@ export const DEPARTMENTS: Record<string, DeptConfig> = {
   research: {
     id: 'research', title: 'RESEARCH CENTER', subtitle: 'INTELLIGENCE & KNOWLEDGE',
     primary: '#a855f7', secondary: '#6366f1', agentColor: '#a855f7',
-    agentName: 'DATA HUNTER', agentStatus: 'SCANNING',
+    agentName: 'DATA HUNTER', agentStatus: 'SCANNING', agentGesture: 'scan',
+    walkerColors: ['#a855f7', '#6366f1', '#3b82f6'],
     bubbles: ['Scanning 1,240 sources…', 'New trend detected ✦', 'Indexing knowledge graph…', 'Sentiment: bullish'],
     screens: [{ kind: 'grid', accent: 'primary' }, { kind: 'chart', accent: 'secondary' }, { kind: 'bars', accent: 'primary' }],
     inspect: {
