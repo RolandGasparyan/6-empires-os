@@ -21,18 +21,9 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
-  webpack: (config) => {
-    // Force a SINGLE copy of @react-three/fiber and its zustand store across
-    // all chunks. The "Hooks can only be used within the Canvas" error happens
-    // when <Canvas> and the child useFrame/useThree resolve different fiber
-    // module instances, so the child can't see the Canvas's context store.
-    // Aliasing fiber + zustand to one resolved path is safe (no React/RSC).
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      '@react-three/fiber': path.resolve(__dirname, 'node_modules/@react-three/fiber'),
-      zustand: path.resolve(__dirname, 'node_modules/zustand'),
-    };
-    return config;
-  },
+  // No webpack resolve.alias: deduping is handled by package.json `overrides`
+  // (react/react-dom/three pinned) + transpilePackages. Webpack aliases on
+  // these packages repeatedly broke deep sub-path imports
+  // (three/examples/jsm/*, fiber dist) → "d(...) is not a function".
 };
 module.exports = nextConfig;

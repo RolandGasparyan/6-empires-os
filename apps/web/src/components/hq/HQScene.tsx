@@ -31,9 +31,13 @@ export default function HQScene({
         {agents.map((a, i) => (
           <AgentPod key={a.key} agent={a} selected={i === selected} onSelect={() => onSelect(i)} />
         ))}
+        {/* CameraRig (useThree) and AdaptiveDpr live INSIDE Suspense so they
+            never commit against a renderer store that AdaptiveDpr is tearing
+            down/recreating — that race threw "Hooks can only be used within
+            the Canvas component!" on /hq specifically. */}
+        <CameraRig target={camTarget} autoSpin={autoSpin} />
+        <AdaptiveDpr pixelated />
       </Suspense>
-      <CameraRig target={camTarget} autoSpin={autoSpin} />
-      <AdaptiveDpr pixelated />
     </Canvas>
   );
 }
