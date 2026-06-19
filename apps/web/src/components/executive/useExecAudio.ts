@@ -63,6 +63,33 @@ export function createExecAudio() {
       timers.push(window.setTimeout(tick, 180 + Math.random() * 500));
     };
     timers.push(window.setTimeout(tick, 1500));
+
+    // --- chair movement / soft creak (low-freq filtered noise sweep) ---
+    const chair = () => {
+      if (!ctx || !master) return;
+      const dur = 0.5; const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * 0.6;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 320; bp.Q.value = 6;
+      const g = ctx.createGain(); g.gain.value = 0.012;
+      src.connect(bp); bp.connect(g); g.connect(master); src.start();
+      timers.push(window.setTimeout(chair, 9000 + Math.random() * 12000));
+    };
+    timers.push(window.setTimeout(chair, 6000));
+
+    // --- distant voices (very low murmur: two slow band-passed noise pads) ---
+    const voices = ctx.createGain(); voices.gain.value = 0.0; voices.connect(master);
+    voices.gain.linearRampToValueAtTime(0.018, ctx.currentTime + 6);
+    [180, 240].forEach((f, i) => {
+      const nb = ctx!.createBuffer(1, ctx!.sampleRate * 2, ctx!.sampleRate);
+      const nd = nb.getChannelData(0); for (let j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
+      const ns = ctx!.createBufferSource(); ns.buffer = nb; ns.loop = true;
+      const bp = ctx!.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 0.8;
+      const vg = ctx!.createGain(); vg.gain.value = 0.5;
+      const lfo = ctx!.createOscillator(); lfo.frequency.value = 0.12 + i * 0.05;
+      const lg = ctx!.createGain(); lg.gain.value = 0.4; lfo.connect(lg); lg.connect(vg.gain); lfo.start();
+      ns.connect(bp); bp.connect(vg); vg.connect(voices); ns.start();
+    });
   }
 
   function setVolume(v: number) { if (master && ctx) master.gain.linearRampToValueAtTime(v, ctx.currentTime + 0.3); }

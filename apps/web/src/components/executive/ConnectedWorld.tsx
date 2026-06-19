@@ -99,6 +99,9 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             <WallScreen position={[1.5, 1.55, -2.0]} rotation={[0, -0.45, 0]} w={1.2} h={0.7} accent={BASE.blue} kind="chart" />
             {/* the boss in his leather chair */}
             <Chair position={[0, 0, -0.7]} color="#0e0b08" />
+            {/* gold rim / halo light behind the chair (authority presence) */}
+            <mesh position={[0, 1.5, -1.15]} rotation={[0, 0, 0]}><torusGeometry args={[0.66, 0.05, 14, 40]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.5} metalness={0.8} roughness={0.2} /></mesh>
+            <PulseLight position={[0, 1.6, -1.25]} color={BASE.goldHi} base={0.7} amp={0.35} dist={5} />
             <Inspect id={boss.id} onPick={() => onAgent(boss)}>
               <HumanCharacter position={[0, 0.2, -0.7]} suit="#0a0806" hair="#141414" beard bowtie gesture="point" name="ROLAND" status="COMMANDING" scale={0.85} seed={9} />
             </Inspect>
@@ -113,8 +116,13 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             <Lounge position={[-3.4, 0, 2.4]} rotation={[0, 0.5, 0]} />
             {/* boss-office wall tagline (reference) */}
             <Text position={[0, H * 0.2, -D / 2 + 0.14]} fontSize={0.16} color={BASE.goldHi} anchorX="center" letterSpacing={0.18}>WE BUILD · WE SCALE · WE OWN</Text>
-            {/* team seating facing the boss desk */}
-            {[-1.0, 1.0].map((cx) => <Chair key={cx} position={[cx, 0, 1.2]} color="#0e0b08" />)}
+            {/* team seating — 4 chairs in a slight arc facing the boss desk */}
+            {[{ x: -1.8, z: 1.5, r: -0.5 }, { x: -0.6, z: 1.2, r: -0.18 }, { x: 0.6, z: 1.2, r: 0.18 }, { x: 1.8, z: 1.5, r: 0.5 }].map((c, i) => (
+              <group key={i}>
+                <Chair position={[c.x, 0, c.z]} rotation={[0, Math.PI + c.r, 0]} color="#0e0b08" />
+                <HumanCharacter position={[c.x, 0.16, c.z]} rotation={[0, Math.PI + c.r, 0]} suit={TEAM[(i % 4) + 1].color} hair={TEAM[(i % 4) + 1].hair} glasses={TEAM[(i % 4) + 1].glasses} gesture={i % 2 === 0 ? 'think' : 'idle'} scale={0.62} seed={20 + i} />
+              </group>
+            ))}
             {/* cinematic key light on the CEO */}
             <spotLight position={[0, 4, 0.5]} angle={0.4} penumbra={0.7} intensity={1.6} color={BASE.goldHi} target-position={[0, 0.6, -0.7]} castShadow />
             <pointLight position={[0, 2.2, -1]} intensity={0.5} color={BASE.goldHi} distance={6} />
@@ -127,12 +135,32 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         {[-1.2, 0, 1.2].map((cx) => <Chair key={'b' + cx} position={[cx, 0, 0.4]} />)}
       </>}
       {slot.id === 'media' && <>
-        {/* media studio: big content wall + color swatches + studio light */}
-        <WallScreen position={[0, 2.4, -D / 2 + 0.13]} w={4.2} h={2.0} accent={slot.accent} kind="ui" />
-        {['#e8772e', '#ec4899', '#06b6d4', '#34f5a0', '#a855f7'].map((c, i) => <mesh key={c} position={[-1 + i * 0.5, 1.2, -D / 2 + 0.15]}><boxGeometry args={[0.4, 0.4, 0.03]} /><meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.3} /></mesh>)}
+        {/* === MEDIA STUDIO — content factory === */}
+        {/* big hero content wall */}
+        <WallScreen position={[-1.4, 2.7, -D / 2 + 0.13]} w={3.0} h={1.7} accent="#e8772e" kind="ui" />
+        {/* social feed column */}
+        <WallScreen position={[1.4, 3.0, -D / 2 + 0.13]} w={1.3} h={1.0} accent="#ec4899" kind="grid" />
+        {/* chart panel */}
+        <WallScreen position={[1.4, 1.8, -D / 2 + 0.13]} w={1.3} h={0.9} accent="#06b6d4" kind="chart" />
+        {/* video timeline strip (orange editing line) */}
+        <mesh position={[-1.4, 1.5, -D / 2 + 0.16]}><boxGeometry args={[3.0, 0.34, 0.02]} /><meshStandardMaterial color="#140d05" emissive="#e8772e" emissiveIntensity={0.25} /></mesh>
+        {[0,1,2,3,4,5].map(i => <mesh key={i} position={[-2.7 + i*0.52, 1.5, -D / 2 + 0.17]}><boxGeometry args={[0.42, 0.26, 0.02]} /><meshStandardMaterial color="#e8772e" emissive="#e8772e" emissiveIntensity={0.5} transparent opacity={0.85} /></mesh>)}
+        {/* glowing orange UI side panels */}
+        {[-0.6, 0.6].map(z => <mesh key={z} position={[-W/2 + 0.16, 2.4, z]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[1.2, 0.7]} /><meshStandardMaterial color="#1a0f04" emissive="#e8772e" emissiveIntensity={0.4} transparent opacity={0.9} /></mesh>)}
+        {/* editing agent — typing bursts at the edit desk */}
+        <Workstation position={[-1.4, 0, -1.6]} color="#e8772e" kind="ui" />
+        <HumanCharacter position={[-1.4, 0.18, -0.82]} suit="#e8772e" hair="#1a6a7a" gesture="type" name="MEDIA" status="EDITING" scale={0.7} seed={55} />
+        {/* camera rig + studio lights */}
         <mesh position={[3, 1.4, 1.5]}><cylinderGeometry args={[0.02, 0.02, 2.4, 6]} /><meshStandardMaterial color="#23252d" /></mesh>
         <mesh position={[3, 2.5, 1.5]}><coneGeometry args={[0.22, 0.3, 16, 1, true]} /><meshStandardMaterial color="#2a2c33" side={2} /></mesh>
-        <pointLight position={[3, 2.4, 1.5]} intensity={0.4} color="#fff" distance={4} />
+        <SceneFlicker position={[3, 2.4, 1.5]} color="#ffffff" base={0.4} dist={4} />
+        {/* second studio light (warm) on a tripod */}
+        <mesh position={[-3.2, 1.5, 1.2]}><cylinderGeometry args={[0.02, 0.02, 2.6, 6]} /><meshStandardMaterial color="#23252d" /></mesh>
+        <mesh position={[-3.2, 2.7, 1.2]} rotation={[0.4,0,0]}><coneGeometry args={[0.2, 0.28, 16, 1, true]} /><meshStandardMaterial color="#2a2c33" side={2} /></mesh>
+        <SceneFlicker position={[-3.2, 2.6, 1.2]} color="#ffb347" base={0.45} dist={4.5} />
+        {/* on-air camera body */}
+        <mesh position={[3, 1.55, 1.5]} rotation={[0,-0.5,0]}><boxGeometry args={[0.3, 0.22, 0.42]} /><meshStandardMaterial color="#0d0d10" metalness={0.5} roughness={0.4} /></mesh>
+        <mesh position={[2.78, 1.55, 1.32]}><sphereGeometry args={[0.05, 10, 10]} /><meshStandardMaterial color="#e8772e" emissive="#e8772e" emissiveIntensity={1.2} /></mesh>
       </>}
 
       {/* shared luxury interior detail (reference style): rug, trophy shelf, lounge, art, plants */}
@@ -181,6 +209,20 @@ function Commuter({ from, to, color, phase, speed = 0.18 }: { from: [number, num
   return <group ref={g}><Character color={color} scale={0.7} gesture="idle" /></group>;
 }
 
+/* === micro-animation helpers (presence layer) === */
+// soft cinematic breathing point light
+function PulseLight({ position, color, base = 0.5, amp = 0.2, dist = 6, speed = 1.1 }: { position: [number, number, number]; color: string; base?: number; amp?: number; dist?: number; speed?: number }) {
+  const l = useRef<THREE.PointLight>(null);
+  useFrame((s) => { if (l.current) l.current.intensity = base + Math.sin(s.clock.elapsedTime * speed) * amp; });
+  return <pointLight ref={l} position={position} color={color} intensity={base} distance={dist} />;
+}
+// random screen-flicker light (studio / on-air feel)
+function SceneFlicker({ position, color, base = 0.4, dist = 4 }: { position: [number, number, number]; color: string; base?: number; dist?: number }) {
+  const l = useRef<THREE.PointLight>(null);
+  useFrame((s) => { if (l.current) { const t = s.clock.elapsedTime; l.current.intensity = base + (Math.sin(t * 13.3) * 0.5 + 0.5) * (Math.sin(t * 7.1) > 0.7 ? 0.5 : 0.12); } });
+  return <pointLight ref={l} position={position} color={color} intensity={base} distance={dist} />;
+}
+
 /* === unified building shell — glass curtain wall + warm base uplights (reference) === */
 function BuildingShell() {
   const R = 22;     // half-extent of the building footprint
@@ -220,15 +262,32 @@ function BuildingShell() {
 
 function CamRig({ target }: { target: [number, number] | null }) {
   const { camera } = useThree();
-  const t0 = useRef(0);
-  useFrame((_, dt) => {
-    t0.current = Math.min(t0.current + dt, 8);
-    const desired = target
-      ? new THREE.Vector3(target[0] + 8, 9, target[1] + 8)
-      : new THREE.Vector3(22, 24, 22);
-    camera.position.lerp(desired, 0.04);
-    camera.lookAt(target ? target[0] : 0, 1, target ? target[1] : 0);
+  const idle = useRef(0);   // seconds since last interaction
+  const tmp = useRef(new THREE.Vector3());
+  useFrame((s, dt) => {
+    idle.current += dt;
+    if (target) {
+      // cinematic zoom-in on the focused room
+      tmp.current.set(target[0] + 7, 8, target[1] + 7);
+      camera.position.lerp(tmp.current, 0.045);
+      camera.lookAt(target[0], 1, target[1]);
+    } else {
+      // slow idle orbit around the campus when inactive (smooth easing)
+      const a = s.clock.elapsedTime * 0.05;
+      const r = 30, h = 24;
+      tmp.current.set(Math.cos(a) * r, h, Math.sin(a) * r);
+      camera.position.lerp(tmp.current, 0.02);
+      camera.lookAt(0, 1.5, 0);
+    }
   });
+  // reset idle timer on any pointer activity
+  useMemo(() => {
+    if (typeof window === 'undefined') return;
+    const reset = () => { idle.current = 0; };
+    window.addEventListener('pointerdown', reset);
+    window.addEventListener('wheel', reset);
+    return () => { window.removeEventListener('pointerdown', reset); window.removeEventListener('wheel', reset); };
+  }, []);
   return null;
 }
 
@@ -251,10 +310,10 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
       <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[2048, 2048]}>
         <orthographicCamera attach="shadow-camera" args={[-40, 40, 40, -40, 0.1, 80]} />
       </directionalLight>
-      {/* warm gold ambient fills (the reference's signature glow) */}
-      <pointLight position={[0, 10, 0]} intensity={0.8} color={BASE.gold} distance={55} />
-      <pointLight position={[14, 6, 14]} intensity={0.5} color={BASE.goldHi} distance={30} />
-      <pointLight position={[-14, 6, -14]} intensity={0.5} color={BASE.goldHi} distance={30} />
+      {/* warm gold ambient fills — gently breathing (the reference's signature glow) */}
+      <PulseLight position={[0, 10, 0]} color={BASE.gold} base={0.8} amp={0.12} dist={55} speed={0.6} />
+      <PulseLight position={[14, 6, 14]} color={BASE.goldHi} base={0.5} amp={0.1} dist={30} speed={0.8} />
+      <PulseLight position={[-14, 6, -14]} color={BASE.goldHi} base={0.5} amp={0.1} dist={30} speed={0.7} />
 
       <Suspense fallback={null}>
         {/* === UNIFIED BUILDING SHELL (reference: glass-perimeter floor with warm base uplights) === */}

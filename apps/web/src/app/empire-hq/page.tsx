@@ -39,9 +39,11 @@ export default function EmpireHQPage() {
       <div className="absolute left-5 top-1/2 -translate-y-1/2 max-h-[70vh] overflow-auto pr-1 space-y-1">
         {TEAM.map((m) => (
           <button key={m.id} onClick={() => setSel(m)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] w-[190px] text-left transition-colors"
-            style={{ background: sel?.id === m.id ? `${m.color}22` : '#0c0c0e99', border: `1px solid ${sel?.id === m.id ? m.color : '#ffffff10'}` }}>
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: m.color, boxShadow: `0 0 6px ${m.color}` }} />
+            className="group flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] w-[190px] text-left transition-all duration-200 ease-out hover:translate-x-1 hover:scale-[1.03]"
+            style={{ background: sel?.id === m.id ? `${m.color}22` : '#0c0c0e99', border: `1px solid ${sel?.id === m.id ? m.color : '#ffffff10'}`, boxShadow: sel?.id === m.id ? `0 0 18px -6px ${m.color}` : 'none' }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 18px -4px ${m.color}`; e.currentTarget.style.borderColor = `${m.color}aa`; }}
+            onMouseLeave={(e) => { if (sel?.id !== m.id) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#ffffff10'; } }}>
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover:scale-125" style={{ background: m.color, boxShadow: `0 0 6px ${m.color}` }} />
             <span className="text-white/85 truncate flex-1">{m.name}</span>
             <span className="text-[8px] text-white/35 truncate">{m.title.split(' ')[0]}</span>
           </button>
