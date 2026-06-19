@@ -11,7 +11,8 @@ import { Suspense, useRef, useState, useMemo } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { Character } from './Character';
-import { Screen, Hologram, Particles, Plant, Inspect, BASE } from './roomKit';
+import { Hologram, Particles, Inspect, BASE } from './roomKit';
+import { Workstation, WallScreen, Pot, Art, Shelf, Rug, Chair } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
 
 /** Room slots on the campus grid. */
@@ -53,23 +54,41 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
       {/* window glow */}
       <mesh position={[W * 0.26, H * 0.6, -D / 2 + 0.1]}><planeGeometry args={[W * 0.34, H * 0.4]} /><meshStandardMaterial color="#0c1722" emissive={slot.accent} emissiveIntensity={0.22} /></mesh>
 
-      {/* a couple of desks + screens */}
+      {/* fully-furnished workstations — agents seated, working */}
       {home.slice(0, 3).map((m, i) => {
-        const x = (i - 1) * 2.7, z = -1.4;
+        const x = (i - 1) * 2.9, z = -1.6;
+        const screenKind = m.gesture === 'scan' ? 'grid' : m.gesture === 'type' ? 'code' : m.gesture === 'point' ? 'ui' : 'chart';
         return (
           <group key={m.id} position={[x, 0, z]}>
-            <RoundedBox args={[1.7, 0.12, 0.85]} radius={0.04} position={[0, 0.74, -0.4]} castShadow receiveShadow><meshStandardMaterial color={BASE.marbleHi} metalness={0.4} roughness={0.35} /></RoundedBox>
-            <mesh position={[0, 0.68, -0.4]}><boxGeometry args={[1.72, 0.03, 0.87]} /><meshStandardMaterial color={m.color} metalness={0.6} roughness={0.35} emissive={m.color} emissiveIntensity={0.2} /></mesh>
-            <Screen position={[0, 1.12, -0.66]} w={0.95} h={0.52} accent={m.color} kind={m.gesture === 'scan' ? 'grid' : m.gesture === 'type' ? 'code' : 'chart'} />
+            <Workstation position={[0, 0, 0]} color={m.color} kind={screenKind as any} />
+            {/* seated agent (lower so it reads as sitting in the chair) */}
             <Inspect id={m.id} onPick={() => onAgent(m)}>
-              <Character position={[0, 0, 0.2]} color={m.color} accent={BASE.goldHi} gesture={m.gesture} name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.92} />
+              <Character position={[0, 0.42, 0.78]} color={m.color} accent={BASE.goldHi} gesture={m.gesture} name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.78} />
             </Inspect>
           </group>
         );
       })}
-      {slot.id === 'command' && <Hologram position={[2.6, 0.05, 1.6]} primary={BASE.blue} secondary={BASE.green} />}
-      {slot.id === 'meeting' && <RoundedBox args={[3.4, 0.14, 1.3]} radius={0.06} position={[0, 0.78, 1]} castShadow><meshStandardMaterial color={BASE.marble} metalness={0.4} roughness={0.3} /></RoundedBox>}
-      <Plant position={[W / 2 - 1.2, 0, D / 2 - 1.2]} />
+
+      {/* wall screens (big animated displays) on the back wall */}
+      <WallScreen position={[-2.6, 3, -D / 2 + 0.12]} w={2.0} h={1.1} accent={slot.accent} kind="chart" />
+      <WallScreen position={[2.6, 3, -D / 2 + 0.12]} w={2.0} h={1.1} accent={slot.accent} kind={slot.id === 'datalab' ? 'code' : slot.id === 'trading' ? 'chart' : 'grid'} />
+
+      {/* room-specific decor */}
+      {slot.id === 'command' && <Hologram position={[3.0, 0.05, 1.8]} primary={BASE.blue} secondary={BASE.green} />}
+      {slot.id === 'meeting' && <>
+        <RoundedBox args={[3.6, 0.14, 1.4]} radius={0.06} position={[0, 0.78, 1.4]} castShadow><meshStandardMaterial color={BASE.marble} metalness={0.4} roughness={0.3} /></RoundedBox>
+        {[-1.2, 0, 1.2].map((cx) => <Chair key={cx} position={[cx, 0, 2.4]} rotation={[0, Math.PI, 0]} />)}
+        {[-1.2, 0, 1.2].map((cx) => <Chair key={'b' + cx} position={[cx, 0, 0.4]} />)}
+      </>}
+
+      {/* shared interior detail: rug, art, shelf, plants */}
+      <Rug position={[0, 0, 1.4]} accent={slot.accent} size={3.4} />
+      <Art position={[-W / 2 + 0.2, 2.6, -1.5]} rotation={[0, Math.PI / 2, 0]} accent={slot.accent} />
+      <Art position={[-W / 2 + 0.2, 2.6, 1.0]} rotation={[0, Math.PI / 2, 0]} accent={BASE.gold} />
+      <Shelf position={[W / 2 - 0.35, 0.9, 1.5]} rotation={[0, -Math.PI / 2, 0]} accent={slot.accent} />
+      <Pot big position={[W / 2 - 1.0, 0, -D / 2 + 1.0]} />
+      <Pot position={[-W / 2 + 1.0, 0, D / 2 - 1.0]} />
+      <Pot position={[W / 2 - 1.2, 0, D / 2 - 1.2]} />
     </group>
   );
 }
