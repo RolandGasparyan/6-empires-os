@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { Character, Gesture } from './Character';
 import { LivingOffice } from './LivingOffice';
 
-export const BASE = { marble: '#0e0f13', marbleHi: '#1b1d24', gold: '#d4af37', goldHi: '#f4d98b', white: '#e8e6df', glass: '#bcdce8', ink: '#06070a', charcoal: '#23252d' };
+export const BASE = { marble: '#0e0f13', marbleHi: '#1b1d24', gold: '#d4af37', goldHi: '#f4d98b', white: '#e8e6df', glass: '#bcdce8', ink: '#06070a', charcoal: '#23252d', green: '#34f5a0', blue: '#3b82f6' };
 
 export interface DeptConfig {
   id: string;

@@ -7,7 +7,7 @@ import { TopBar } from './TopBar';
 // Flagship reference dashboards render their OWN full-bleed chrome (top stat bar,
 // left nav, right rail) to match the 6 EMPIRES master design. They must NOT be
 // wrapped in the generic AppShell sidebar/topbar.
-const FULL_BLEED = ['/', '/empire', '/office', '/world', '/executive', '/research'];
+const FULL_BLEED = ['/', '/empire', '/office', '/world', '/executive', '/research', '/command'];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
