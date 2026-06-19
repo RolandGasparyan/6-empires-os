@@ -19,6 +19,32 @@ const PORT = process.env.PORT || 8090;
 const OLLAMA = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';
 
+// 6-EMPIRE router (VPS) — serves the 8 branded EMPIRE models. Any model whose
+// name starts with "empire-" is routed here instead of local Ollama.
+const EMPIRE_ROUTER = process.env.EMPIRE_ROUTER || 'http://64.227.6.197:8000/v1';
+const EMPIRE_KEY = process.env.EMPIRE_KEY || 'sk-empire-local';
+const EMPIRE_MODELS = [
+  'empire-prime', 'empire-ceo', 'empire-trading', 'empire-coder',
+  'empire-strategist', 'empire-research', 'empire-media', 'empire-fast',
+];
+const isEmpire = (m) => typeof m === 'string' && m.startsWith('empire-');
+
+// Call the EMPIRE router (OpenAI-compatible, non-stream) and return the text.
+function empireChat(model, messages) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(EMPIRE_ROUTER + '/chat/completions');
+    const data = JSON.stringify({ model, messages, stream: false });
+    const lib = u.protocol === 'https:' ? require('https') : http;
+    const r = lib.request(
+      { hostname: u.hostname, port: u.port || (u.protocol === 'https:' ? 443 : 80), path: u.pathname, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + EMPIRE_KEY, 'Content-Length': Buffer.byteLength(data) } },
+      (res) => { let b = ''; res.on('data', (c) => (b += c)); res.on('end', () => {
+        try { resolve(JSON.parse(b).choices[0].message.content); } catch (e) { reject(e); } }); }
+    );
+    r.on('error', reject); r.write(data); r.end();
+  });
+}
+
 const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
 function ollama(reqPath, method, body) {
@@ -61,12 +87,15 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url === '/api/health') {
     try {
       const tags = await ollama('/api/tags', 'GET');
-      const models = JSON.parse(tags.body).models?.map((m) => m.name) || [];
+      const local = JSON.parse(tags.body).models?.map((m) => m.name) || [];
+      // EMPIRE models first, then any local Ollama models.
+      const models = [...EMPIRE_MODELS, ...local];
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, ollama: 'up', models }));
     } catch (e) {
+      // Ollama down locally — still expose the EMPIRE (VPS) models.
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ ok: false, ollama: 'down', error: String(e) }));
+      return res.end(JSON.stringify({ ok: true, ollama: 'down', models: EMPIRE_MODELS }));
     }
   }
 
@@ -96,6 +125,16 @@ const server = http.createServer(async (req, res) => {
       // GOD MODE: prepend the academic-level system prompt (replace any client system msg)
       const sys = { role: 'system', content: systemFor(mode) };
       const messages = [sys, ...incoming.filter((m) => m.role !== 'system')];
+
+      // EMPIRE models → route to the VPS router (OpenAI-compatible).
+      if (isEmpire(model)) {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+        empireChat(model, messages)
+          .then((text) => res.end(text))
+          .catch((e) => res.end('⚠️ EMPIRE router unreachable: ' + e.message));
+        return;
+      }
+
       const u = new URL(OLLAMA);
       const data = JSON.stringify({ model, messages, stream: true, options: { temperature: 0.7, num_ctx: 8192 } });
       const upstream = http.request(
