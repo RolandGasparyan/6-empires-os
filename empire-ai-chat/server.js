@@ -74,10 +74,10 @@ const server = http.createServer(async (req, res) => {
     return res.end(INDEX);
   }
 
-  // --- brand mark (served from the app dir so the logo always loads) ---
-  if (req.method === 'GET' && url === '/empire-mark.svg') {
+  // --- brand marks (served from the app dir so the logo always loads) ---
+  if (req.method === 'GET' && (url === '/empire-mark.svg' || url === '/empire-symbol.svg')) {
     try {
-      const svg = fs.readFileSync(path.join(__dirname, 'empire-mark.svg'));
+      const svg = fs.readFileSync(path.join(__dirname, url.slice(1)));
       res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' });
       return res.end(svg);
     } catch { res.writeHead(404); return res.end(); }

@@ -1,0 +1,30 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6 Empire">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbe9a8"/>
+      <stop offset="0.35" stop-color="#e6b53c"/>
+      <stop offset="0.7" stop-color="#b8841f"/>
+      <stop offset="1" stop-color="#7a5512"/>
+    </linearGradient>
+    <linearGradient id="gh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#d4a128"/>
+    </linearGradient>
+    <radialGradient id="sp" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe6"/><stop offset="0.5" stop-color="#ffd86b"/><stop offset="1" stop-color="#c8941a"/>
+    </radialGradient>
+    <filter id="gl" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(120 120)" filter="url(#gl)" stroke="url(#g)" stroke-width="15" stroke-linecap="round" fill="none">
+    <path d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(90)"  d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(180)" d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(270)" d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+  </g>
+  <g transform="translate(120 120)">
+    <path d="M0,-30 L9,0 L0,30 L-9,0 Z" fill="url(#sp)"/>
+    <path d="M-30,0 L0,-9 L30,0 L0,9 Z" fill="url(#gh)"/>
+    <circle r="4" fill="#fffbe6"/>
+  </g>
+</svg>
