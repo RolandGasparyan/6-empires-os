@@ -13,6 +13,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const { systemFor } = require('./prompts');
+
 const PORT = process.env.PORT || 8090;
 const OLLAMA = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';
@@ -35,14 +37,19 @@ function ollama(reqPath, method, body) {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Normalize the URL so the app works whether mounted at "/" or behind "/chat".
+  // nginx proxies /chat → here without stripping, so strip a leading /chat ourselves.
+  let url = req.url.replace(/^\/chat(?=\/|$)/, '') || '/';
+  if (url === '') url = '/';
+
   // --- UI ---
-  if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+  if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(INDEX);
   }
 
   // --- brand mark (served from the app dir so the logo always loads) ---
-  if (req.method === 'GET' && req.url === '/empire-mark.svg') {
+  if (req.method === 'GET' && url === '/empire-mark.svg') {
     try {
       const svg = fs.readFileSync(path.join(__dirname, 'empire-mark.svg'));
       res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' });
@@ -51,7 +58,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- health ---
-  if (req.method === 'GET' && req.url === '/api/health') {
+  if (req.method === 'GET' && url === '/api/health') {
     try {
       const tags = await ollama('/api/tags', 'GET');
       const models = JSON.parse(tags.body).models?.map((m) => m.name) || [];
@@ -64,7 +71,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- list models ---
-  if (req.method === 'GET' && req.url === '/api/models') {
+  if (req.method === 'GET' && url === '/api/models') {
     try {
       const tags = await ollama('/api/tags', 'GET');
       const models = JSON.parse(tags.body).models?.map((m) => m.name) || [];
@@ -77,16 +84,20 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- streaming chat ---
-  if (req.method === 'POST' && req.url === '/api/chat') {
+  if (req.method === 'POST' && url === '/api/chat') {
     let raw = '';
     req.on('data', (c) => (raw += c));
     req.on('end', () => {
       let payload;
       try { payload = JSON.parse(raw); } catch { payload = {}; }
       const model = payload.model || DEFAULT_MODEL;
-      const messages = payload.messages || [];
+      const mode = payload.mode || 'god';
+      const incoming = payload.messages || [];
+      // GOD MODE: prepend the academic-level system prompt (replace any client system msg)
+      const sys = { role: 'system', content: systemFor(mode) };
+      const messages = [sys, ...incoming.filter((m) => m.role !== 'system')];
       const u = new URL(OLLAMA);
-      const data = JSON.stringify({ model, messages, stream: true });
+      const data = JSON.stringify({ model, messages, stream: true, options: { temperature: 0.7, num_ctx: 8192 } });
       const upstream = http.request(
         { hostname: u.hostname, port: u.port || 11434, path: '/api/chat', method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } },

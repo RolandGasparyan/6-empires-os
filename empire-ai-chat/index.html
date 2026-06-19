@@ -73,7 +73,7 @@
 </head>
 <body>
   <header>
-    <div class="logo"><img src="/empire-mark.svg" alt="6 Empire" width="38" height="38" /></div>
+    <div class="logo"><img src="empire-mark.svg" alt="6 Empire" width="38" height="38" /></div>
     <div class="brand">
       <div class="t serif">EMPIRE</div>
       <div class="s">6 · EMPIRE AI</div>
@@ -83,7 +83,7 @@
 
   <main id="main">
     <div class="hero" id="hero">
-      <div class="mark"><img src="/empire-mark.svg" alt="6 Empire" width="120" height="120" /></div>
+      <div class="mark"><img src="empire-mark.svg" alt="6 Empire" width="120" height="120" /></div>
       <h1 class="serif">EMPIRE AI</h1>
       <p>Your intelligent assistant. Ask anything to begin.</p>
     </div>
@@ -92,6 +92,14 @@
   <footer>
     <div class="modelbar"><span>Model:</span>
       <select id="model"><option>loading…</option></select>
+      <span style="margin-left:10px">Mode:</span>
+      <select id="mode" title="EMPIRE prompt mode">
+        <option value="empire">👑 EMPIRE CORE</option>
+        <option value="god">⚡ GOD MODE</option>
+        <option value="academic">🎓 Academic / Research</option>
+        <option value="trading">📈 Markets / Trading</option>
+        <option value="builder">🛠️ Systems / Engineering</option>
+      </select>
     </div>
     <div class="composer">
       <textarea id="input" rows="1" placeholder="Message Empire AI…"></textarea>
@@ -102,9 +110,13 @@
   </footer>
 
 <script>
+// API base = current directory, so it works at "/" or "/chat" (with or without trailing slash)
+const BASE=(location.pathname.replace(/\/[^/]*$/,'')+'/').replace(/\/+$/,'/');
+const api=(p)=>BASE.replace(/\/$/,'')+p;
+
 const main=document.getElementById('main'), hero=document.getElementById('hero');
 const input=document.getElementById('input'), send=document.getElementById('send');
-const modelSel=document.getElementById('model'), dot=document.getElementById('dot'), statusText=document.getElementById('statusText');
+const modelSel=document.getElementById('model'), modeSel=document.getElementById('mode'), dot=document.getElementById('dot'), statusText=document.getElementById('statusText');
 const history=[];
 
 // auto-grow textarea
@@ -114,7 +126,7 @@ send.addEventListener('click',submit);
 
 async function loadModels(){
   try{
-    const r=await fetch('/api/health'); const j=await r.json();
+    const r=await fetch(api('/api/health')); const j=await r.json();
     if(j.ok&&j.models.length){
       modelSel.innerHTML=j.models.map(m=>`<option>${m}</option>`).join('');
       dot.style.background='#1fd17a';statusText.textContent='Online';
@@ -142,8 +154,8 @@ async function submit(){
   const out=bubble('ai',''); out.innerHTML='<span class="cursor"></span>';
   let acc='';
   try{
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:modelSel.value,messages:history})});
+    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:modelSel.value,mode:modeSel.value,messages:history})});
     const reader=res.body.getReader(); const dec=new TextDecoder();
     while(true){const{done,value}=await reader.read();if(done)break;
       acc+=dec.decode(value,{stream:true}); out.textContent=acc; out.innerHTML=out.textContent+'<span class="cursor"></span>';

@@ -69,19 +69,38 @@ systemctl daemon-reload
 systemctl enable --now empire-ai
 sleep 2
 
-say "6/7  nginx reverse proxy on :80 …"
+say "6/7  nginx reverse proxy — EMPIRE AI at /chat on 6-empires.com …"
+# Serve the chat app under the /chat path of the main domain. The block below
+# is additive: if a 6-empires.com server block already exists for the 3D world,
+# only the /chat location is what EMPIRE AI needs — but we ship a complete server
+# block so a fresh box works standalone too.
 cat >/etc/nginx/sites-available/empire-ai <<'EOF'
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
+    listen 80;
+    listen [::]:80;
+    server_name 6-empires.com www.6-empires.com;
 
-    location / {
+    # EMPIRE AI private chat  →  https://6-empires.com/chat
+    location /chat {
         proxy_pass http://127.0.0.1:8090;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_buffering off;            # allow token streaming
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;            # token streaming
+        proxy_read_timeout 600s;
+    }
+
+    # (optional) root → the 3D world if/when it is deployed on this box.
+    # If nothing is on 3010 yet, this returns 502 only for "/", not for /chat.
+    location / {
+        proxy_pass http://127.0.0.1:3010;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
         proxy_read_timeout 600s;
     }
 }
@@ -89,6 +108,15 @@ EOF
 ln -sf /etc/nginx/sites-available/empire-ai /etc/nginx/sites-enabled/empire-ai
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
+
+# --- HTTPS via Let's Encrypt (only if DNS already points here) ---
+if command -v certbot >/dev/null 2>&1 || apt-get install -y certbot python3-certbot-nginx >/dev/null 2>&1; then
+  if dig +short 6-empires.com | grep -q "$(curl -s ifconfig.me)"; then
+    certbot --nginx -d 6-empires.com -d www.6-empires.com --non-interactive --agree-tos -m roland.gasparyan@gmail.com --redirect || say "certbot skipped (DNS not pointing here yet) — run later"
+  else
+    say "DNS for 6-empires.com does not point to this box yet — skipping SSL. Re-run certbot after repointing the A record."
+  fi
+fi
 
 say "7/7  Verifying…"
 sleep 1
