@@ -75,7 +75,7 @@ export default function CommandRoomScene({ onPick }: { onPick?: (m: TeamMember) 
         <Inspect id="ceo" onPick={() => pick(CEO)}>
           <RoundedBox args={[3.0, 0.16, 1.2]} radius={0.06} position={[0, 0.8, -2.0]} castShadow receiveShadow><meshStandardMaterial color={BASE.marble} metalness={0.4} roughness={0.3} /></RoundedBox>
           <mesh position={[0, 0.71, -2.0]}><boxGeometry args={[3.04, 0.04, 1.24]} /><meshStandardMaterial color={CEO.color} metalness={0.7} roughness={0.3} emissive={CEO.color} emissiveIntensity={0.2} /></mesh>
-          <Character position={[0, 0, -1.3]} color={CEO.color} accent={BASE.goldHi} gesture={CEO.gesture} name="ARAM" status={CEO.status} scale={1.1} seed={9} />
+          <Character position={[0, 0, -1.3]} color={CEO.color} accent={BASE.goldHi} gesture={CEO.gesture} name={CEO.name.split(' ')[0].toUpperCase()} status={CEO.status} scale={1.1} seed={9} />
           <Screen position={[-0.9, 1.45, -2.3]} rotation={[0, 0.4, 0]} w={0.9} h={0.55} accent={BASE.green} kind="chart" />
           <Screen position={[0.9, 1.45, -2.3]} rotation={[0, -0.4, 0]} w={0.9} h={0.55} accent={BASE.gold} kind="bars" />
         </Inspect>
