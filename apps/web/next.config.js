@@ -19,6 +19,11 @@ const nextConfig = {
     'postprocessing',
   ],
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  // Mount under a sub-path (e.g. /world) when NEXT_PUBLIC_BASE_PATH is set at
+  // build time. Empty by default so local dev + the root deploy are unaffected.
+  ...(process.env.NEXT_PUBLIC_BASE_PATH
+    ? { basePath: process.env.NEXT_PUBLIC_BASE_PATH, assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH }
+    : {}),
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   // No webpack resolve.alias: deduping is handled by package.json `overrides`
