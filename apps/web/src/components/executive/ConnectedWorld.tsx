@@ -10,10 +10,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useRef, useState, useMemo } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import { Character } from './Character';
 import { HumanCharacter } from './HumanCharacter';
-import { Hologram, Particles, Inspect, BASE } from './roomKit';
-import { Workstation, WallScreen, Pot, Art, Rug, Chair, TrophyShelf, Lounge } from './RoomDetail';
+import { Hologram, Inspect, BASE } from './roomKit';
+import { Workstation, WallScreen, Pot, Art, Chair, TrophyShelf, Lounge } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
 
 /** Room slots on the campus grid. */
@@ -40,10 +39,9 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}>
         <planeGeometry args={[W, D]} />
-        <meshStandardMaterial color={BASE.marble} roughness={0.4} metalness={0.2} />
+        <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
       </mesh>
       {(hover || focused) && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><planeGeometry args={[W - 0.2, D - 0.2]} /><meshBasicMaterial color={slot.accent} transparent opacity={hover ? 0.08 : 0.04} /></mesh>}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}><ringGeometry args={[2.2, 2.35, 48]} /><meshStandardMaterial color={slot.accent} metalness={0.8} roughness={0.3} emissive={slot.accent} emissiveIntensity={0.25} /></mesh>
 
       {/* two back walls — warm dark-wood panels */}
       <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color={BASE.wood} roughness={0.6} metalness={0.15} /></mesh>
@@ -163,8 +161,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         <mesh position={[2.78, 1.55, 1.32]}><sphereGeometry args={[0.05, 10, 10]} /><meshStandardMaterial color="#e8772e" emissive="#e8772e" emissiveIntensity={1.2} /></mesh>
       </>}
 
-      {/* shared luxury interior detail (reference style): rug, trophy shelf, lounge, art, plants */}
-      <Rug position={[0, 0, 1.4]} accent={slot.accent} size={3.4} />
+      {/* shared luxury interior detail (clean black floor — no rug) */}
       <TrophyShelf position={[W / 2 - 0.3, 1.2, -1.6]} rotation={[0, -Math.PI / 2, 0]} />
       <Lounge position={[W / 2 - 1.6, 0, D / 2 - 1.4]} rotation={[0, -Math.PI / 2 - 0.3, 0]} />
       <Art position={[-W / 2 + 0.2, 2.6, -1.5]} rotation={[0, Math.PI / 2, 0]} accent={slot.accent} />
@@ -184,29 +181,12 @@ function Corridors() {
         return (
           <mesh key={r.id} position={[x / 2, 0.015, z / 2]} rotation={[-Math.PI / 2, 0, -ang]} receiveShadow>
             <planeGeometry args={[len, 2.4]} />
-            <meshStandardMaterial color="#0b0c10" roughness={0.5} metalness={0.2} emissive={r.accent} emissiveIntensity={0.04} />
+            <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
           </mesh>
         );
       })}
-      {/* atrium ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><ringGeometry args={[3.4, 3.6, 64]} /><meshStandardMaterial color={BASE.gold} metalness={0.9} roughness={0.25} emissive={BASE.gold} emissiveIntensity={0.18} /></mesh>
     </group>
   );
-}
-
-/* ---- agents WALKING between rooms along the corridors ---- */
-function Commuter({ from, to, color, phase, speed = 0.18 }: { from: [number, number]; to: [number, number]; color: string; phase: number; speed?: number }) {
-  const g = useRef<THREE.Group>(null);
-  useFrame((s) => {
-    const tt = (Math.sin(s.clock.elapsedTime * speed + phase) + 1) / 2; // ping-pong 0..1
-    if (g.current) {
-      const x = from[0] + (to[0] - from[0]) * tt;
-      const z = from[1] + (to[1] - from[1]) * tt;
-      g.current.position.set(x, Math.abs(Math.sin(s.clock.elapsedTime * 6 + phase)) * 0.04, z);
-      g.current.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]) * (tt < 0.5 ? 1 : 1);
-    }
-  });
-  return <group ref={g}><Character color={color} scale={0.7} gesture="idle" /></group>;
 }
 
 /* === micro-animation helpers (presence layer) === */
@@ -262,45 +242,21 @@ function BuildingShell() {
 
 function CamRig({ target }: { target: [number, number] | null }) {
   const { camera } = useThree();
-  const idle = useRef(0);   // seconds since last interaction
   const tmp = useRef(new THREE.Vector3());
-  useFrame((s, dt) => {
-    idle.current += dt;
-    if (target) {
-      // cinematic zoom-in on the focused room
-      tmp.current.set(target[0] + 7, 8, target[1] + 7);
-      camera.position.lerp(tmp.current, 0.045);
-      camera.lookAt(target[0], 1, target[1]);
-    } else {
-      // slow idle orbit around the campus when inactive (smooth easing)
-      const a = s.clock.elapsedTime * 0.05;
-      const r = 30, h = 24;
-      tmp.current.set(Math.cos(a) * r, h, Math.sin(a) * r);
-      camera.position.lerp(tmp.current, 0.02);
-      camera.lookAt(0, 1.5, 0);
-    }
+  useFrame(() => {
+    // static overview by default; smooth fly-in only when a room is focused.
+    const desired = target
+      ? tmp.current.set(target[0] + 7, 8, target[1] + 7)
+      : tmp.current.set(22, 24, 22);
+    camera.position.lerp(desired, 0.06);
+    camera.lookAt(target ? target[0] : 0, target ? 1 : 1.5, target ? target[1] : 0);
   });
-  // reset idle timer on any pointer activity
-  useMemo(() => {
-    if (typeof window === 'undefined') return;
-    const reset = () => { idle.current = 0; };
-    window.addEventListener('pointerdown', reset);
-    window.addEventListener('wheel', reset);
-    return () => { window.removeEventListener('pointerdown', reset); window.removeEventListener('wheel', reset); };
-  }, []);
   return null;
 }
 
 export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) => void }) {
   const pick = onAgent ?? (() => {});
   const [focus, setFocus] = useState<[number, number] | null>(null);
-  // a few commuters walking room↔atrium
-  const commuters = useMemo(() => [
-    { from: [0, 0] as [number, number], to: ROOMS[1].pos, color: '#34f5a0', phase: 0 },
-    { from: ROOMS[2].pos, to: [0, 0] as [number, number], color: '#a855f7', phase: 2 },
-    { from: ROOMS[3].pos, to: [0, 0] as [number, number], color: '#22c55e', phase: 4 },
-    { from: ROOMS[1].pos, to: ROOMS[5].pos, color: '#06b6d4', phase: 1.5 },
-  ], []);
   return (
     <Canvas shadows dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
@@ -310,10 +266,10 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
       <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[1024, 1024]}>
         <orthographicCamera attach="shadow-camera" args={[-40, 40, 40, -40, 0.1, 80]} />
       </directionalLight>
-      {/* warm gold ambient fills — gently breathing (the reference's signature glow) */}
-      <PulseLight position={[0, 10, 0]} color={BASE.gold} base={0.8} amp={0.12} dist={55} speed={0.6} />
-      <PulseLight position={[14, 6, 14]} color={BASE.goldHi} base={0.5} amp={0.1} dist={30} speed={0.8} />
-      <PulseLight position={[-14, 6, -14]} color={BASE.goldHi} base={0.5} amp={0.1} dist={30} speed={0.7} />
+      {/* warm gold ambient fills — static (no per-frame animation) */}
+      <pointLight position={[0, 10, 0]} color={BASE.gold} intensity={0.8} distance={55} />
+      <pointLight position={[14, 6, 14]} color={BASE.goldHi} intensity={0.5} distance={30} />
+      <pointLight position={[-14, 6, -14]} color={BASE.goldHi} intensity={0.5} distance={30} />
 
       <Suspense fallback={null}>
         {/* === UNIFIED BUILDING SHELL (reference: glass-perimeter floor with warm base uplights) === */}
@@ -325,12 +281,9 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         </mesh>
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
-        {commuters.map((c, i) => <Commuter key={i} {...c} />)}
         {/* central emblem */}
         <Text position={[0, 5.5, 0]} fontSize={0.7} color={BASE.gold} anchorX="center" letterSpacing={0.3}>6 EMPIRES</Text>
-        <Particles color={BASE.gold} count={70} />
-        <ContactShadows position={[0, 0.005, 0]} opacity={0.45} scale={70} blur={2.6} far={14} />
-        <Environment preset="night" />
+        <ContactShadows position={[0, 0.005, 0]} opacity={0.4} scale={70} blur={2} far={14} />
       </Suspense>
       <CamRig target={focus} />
     </Canvas>
