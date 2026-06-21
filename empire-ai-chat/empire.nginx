@@ -1,0 +1,61 @@
+# 6-EMPIRES — single clean nginx config (HTTP→HTTPS, SSL, all routes)
+# Root (/) -> 3D corporation world.  /chat -> EMPIRE AI.  /webui -> Open WebUI.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name 6-empires.com www.6-empires.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name 6-empires.com www.6-empires.com;
+    client_max_body_size 50M;
+
+    ssl_certificate     /etc/letsencrypt/live/6-empires.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/6-empires.com/privkey.pem;
+
+    # === EMPIRE AI chat ===  https://6-empires.com/chat
+    location = /chat { return 301 /chat/; }
+    location /chat {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 600s;
+    }
+
+    # === Open WebUI (your model admin) ===  https://6-empires.com/webui
+    location /webui/ {
+        proxy_pass http://127.0.0.1:9090/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+
+    # === ROOT = the 3D corporation world ===  https://6-empires.com/
+    # The Next.js app is built with basePath /world. We rewrite "/" to the
+    # app's /world entry and proxy /world/* (its assets) straight through.
+    location = / { return 302 /world/empire-hq; }
+    location /world {
+        proxy_pass http://127.0.0.1:3010;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+}
