@@ -189,18 +189,12 @@ function Corridors() {
   );
 }
 
-/* === micro-animation helpers (presence layer) === */
-// soft cinematic breathing point light
-function PulseLight({ position, color, base = 0.5, amp = 0.2, dist = 6, speed = 1.1 }: { position: [number, number, number]; color: string; base?: number; amp?: number; dist?: number; speed?: number }) {
-  const l = useRef<THREE.PointLight>(null);
-  useFrame((s) => { if (l.current) l.current.intensity = base + Math.sin(s.clock.elapsedTime * speed) * amp; });
-  return <pointLight ref={l} position={position} color={color} intensity={base} distance={dist} />;
+/* === static light helpers (no per-frame animation) === */
+function PulseLight({ position, color, base = 0.5, dist = 6 }: { position: [number, number, number]; color: string; base?: number; amp?: number; dist?: number; speed?: number }) {
+  return <pointLight position={position} color={color} intensity={base} distance={dist} />;
 }
-// random screen-flicker light (studio / on-air feel)
 function SceneFlicker({ position, color, base = 0.4, dist = 4 }: { position: [number, number, number]; color: string; base?: number; dist?: number }) {
-  const l = useRef<THREE.PointLight>(null);
-  useFrame((s) => { if (l.current) { const t = s.clock.elapsedTime; l.current.intensity = base + (Math.sin(t * 13.3) * 0.5 + 0.5) * (Math.sin(t * 7.1) > 0.7 ? 0.5 : 0.12); } });
-  return <pointLight ref={l} position={position} color={color} intensity={base} distance={dist} />;
+  return <pointLight position={position} color={color} intensity={base} distance={dist} />;
 }
 
 /* === unified building shell — glass curtain wall + warm base uplights (reference) === */
@@ -258,14 +252,12 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   const pick = onAgent ?? (() => {});
   const [focus, setFocus] = useState<[number, number] | null>(null);
   return (
-    <Canvas shadows dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
+    <Canvas dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
-      <color attach="background" args={['#080603']} />
-      <fog attach="fog" args={['#080603', 36, 90]} />
-      <ambientLight intensity={0.3} color="#ffe8c0" />
-      <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[1024, 1024]}>
-        <orthographicCamera attach="shadow-camera" args={[-40, 40, 40, -40, 0.1, 80]} />
-      </directionalLight>
+      <color attach="background" args={['#060504']} />
+      <fog attach="fog" args={['#060504', 36, 90]} />
+      <ambientLight intensity={0.5} color="#ffe8c0" />
+      <directionalLight position={[16, 26, 12]} intensity={0.9} color="#ffdfa6" />
       {/* warm gold ambient fills — static (no per-frame animation) */}
       <pointLight position={[0, 10, 0]} color={BASE.gold} intensity={0.8} distance={55} />
       <pointLight position={[14, 6, 14]} color={BASE.goldHi} intensity={0.5} distance={30} />
@@ -283,7 +275,6 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
         {/* central emblem */}
         <Text position={[0, 5.5, 0]} fontSize={0.7} color={BASE.gold} anchorX="center" letterSpacing={0.3}>6 EMPIRES</Text>
-        <ContactShadows position={[0, 0.005, 0]} opacity={0.4} scale={70} blur={2} far={14} />
       </Suspense>
       <CamRig target={focus} />
     </Canvas>

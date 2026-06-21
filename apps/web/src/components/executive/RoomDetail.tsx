@@ -11,26 +11,19 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { BASE } from './roomKit';
 
-/* ---- animated wall screen (charts / code / ui) ---- */
+/* ---- static wall screen (charts / code / ui) — no per-frame animation ---- */
 export function WallScreen({ position, rotation = [0, 0, 0], w = 1.6, h = 0.95, accent, kind = 'chart' }:
   { position: [number, number, number]; rotation?: [number, number, number]; w?: number; h?: number; accent: string; kind?: 'chart' | 'code' | 'ui' | 'grid' }) {
-  const mat = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame((s) => { if (mat.current) mat.current.emissiveIntensity = 0.55 + Math.sin(s.clock.elapsedTime * 2.4) * 0.1; });
   const line = useMemo(() => new THREE.BufferGeometry().setFromPoints(Array.from({ length: 22 }, (_, i) => new THREE.Vector3((i / 21 - 0.5) * w * 0.82, (Math.sin(i * 0.7) * 0.12 + (i / 21) * 0.18 - 0.09) * h, 0.03))), [w, h]);
   return (
     <group position={position} rotation={rotation}>
       <RoundedBox args={[w + 0.08, h + 0.08, 0.05]} radius={0.02}><meshStandardMaterial color="#15171d" metalness={0.6} roughness={0.4} /></RoundedBox>
-      <mesh position={[0, 0, 0.03]}><planeGeometry args={[w, h]} /><meshStandardMaterial ref={mat} color="#05080a" emissive={accent} emissiveIntensity={0.55} /></mesh>
+      <mesh position={[0, 0, 0.03]}><planeGeometry args={[w, h]} /><meshStandardMaterial color="#05080a" emissive={accent} emissiveIntensity={0.4} /></mesh>
       {kind === 'chart' && <primitive object={new THREE.Line(line, new THREE.LineBasicMaterial({ color: accent }))} />}
-      {kind === 'code' && Array.from({ length: 9 }).map((_, i) => <CodeRow key={i} y={h * 0.4 - i * (h * 0.09)} w={w} accent={accent} seed={i} />)}
+      {kind === 'code' && Array.from({ length: 9 }).map((_, i) => <mesh key={i} position={[-w * 0.18, h * 0.4 - i * (h * 0.09), 0.04]}><planeGeometry args={[w * (0.3 + (i % 3) * 0.18), 0.03]} /><meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.5} /></mesh>)}
       {(kind === 'grid' || kind === 'ui') && <gridHelper args={[w, 8, accent, accent]} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.04]} />}
     </group>
   );
-}
-function CodeRow({ y, w, accent, seed }: { y: number; w: number; accent: string; seed: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((s) => { if (ref.current) { const l = 0.25 + Math.abs(Math.sin(s.clock.elapsedTime * 0.9 + seed)) * 0.6; ref.current.scale.x = l; ref.current.position.x = -w * 0.38 + (l * w * 0.66) / 2; } });
-  return <mesh ref={ref} position={[-w * 0.3, y, 0.04]}><planeGeometry args={[w * 0.66, 0.03]} /><meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.6} /></mesh>;
 }
 
 /* ---- ergonomic office chair ---- */
