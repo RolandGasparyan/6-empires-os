@@ -12,6 +12,8 @@ import { TEAM, type TeamMember } from '@/components/executive/team';
 
 const Scene = clientScene(() => import('@/components/executive/ConnectedWorld'));
 const GOLD = '#d4af37';
+// basePath-aware asset prefix (so /empire-mark.svg resolves under /world on the VPS)
+const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export default function EmpireHQPage() {
   const [entered, setEntered] = useState(false);
@@ -25,7 +27,7 @@ export default function EmpireHQPage() {
       <div className="absolute inset-0"><Scene onAgent={(m: TeamMember) => setSel(m)} /></div>
 
       <div className="absolute top-4 left-5 flex items-center gap-3 pointer-events-none">
-        <img src="/empire-mark.svg" width={40} height={40} alt="6 Empires" />
+        <img src={`${BP}/empire-mark.svg`} width={40} height={40} alt="6 Empires" />
         <div className="leading-none">
           <div className="font-serif tracking-[0.24em] text-[17px]" style={{ color: GOLD }}>6 EMPIRES</div>
           <div className="text-[9px] tracking-[0.3em] text-[#d4af37]/55 mt-1">CORPORATION · LIVE HQ</div>
@@ -83,7 +85,7 @@ export default function EmpireHQPage() {
       {!entered && (
         <div className="absolute inset-0 grid place-items-center backdrop-blur-sm" style={{ background: '#060708e6' }}>
           <div className="text-center">
-            <img src="/empire-logo.svg" width={160} height={186} alt="6 Empire" className="mx-auto" />
+            <img src={`${BP}/empire-logo.svg`} width={160} height={186} alt="6 Empire" className="mx-auto" />
             <div className="mt-1 font-serif tracking-[0.28em] text-[12px] text-white/60">CORPORATION · LIVING HQ</div>
             <button onClick={enter} className="mt-5 px-10 py-4 rounded-xl font-serif tracking-[0.2em] text-[15px] font-semibold"
               style={{ background: 'linear-gradient(135deg,#f4d98b,#c8941a)', color: '#0a0a0b', boxShadow: `0 0 50px -8px ${GOLD}` }}>
