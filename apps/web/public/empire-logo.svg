@@ -1,40 +1,49 @@
-<svg width="240" height="280" viewBox="0 0 240 280" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6 EMPIRE">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6 EMPIRE">
   <defs>
-    <linearGradient id="eg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#9A7B2E"/>
-      <stop offset="0.35" stop-color="#D4AF37"/>
-      <stop offset="0.5" stop-color="#F4D98B"/>
-      <stop offset="0.65" stop-color="#D4AF37"/>
-      <stop offset="1" stop-color="#9A7B2E"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbe9a8"/>
+      <stop offset="0.35" stop-color="#e6b53c"/>
+      <stop offset="0.7" stop-color="#b8841f"/>
+      <stop offset="1" stop-color="#7a5512"/>
     </linearGradient>
-    <radialGradient id="star" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#FFF3C4"/>
-      <stop offset="0.5" stop-color="#F4D98B"/>
-      <stop offset="1" stop-color="#9A7B2E"/>
+    <linearGradient id="goldHi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="1" stop-color="#d4a128"/>
+    </linearGradient>
+    <radialGradient id="spark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.5" stop-color="#ffd86b"/>
+      <stop offset="1" stop-color="#c8941a"/>
     </radialGradient>
-    <filter id="gl" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="2.2" result="b"/>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <!-- four interlocking 6-strokes in rotational symmetry around center -->
-  <g filter="url(#gl)" stroke="url(#eg)" stroke-width="13" stroke-linecap="round" fill="none">
-    <g>
-      <path d="M120 116 C120 70 150 44 176 52 C150 58 142 84 142 116 C142 140 130 150 120 150"/>
-      <path d="M124 120 C170 120 196 150 188 176 C182 150 156 142 124 142 C100 142 90 130 90 120"/>
-      <path d="M120 124 C120 170 90 196 64 188 C90 182 98 156 98 124 C98 100 110 90 120 90"/>
-      <path d="M116 120 C70 120 44 90 52 64 C58 90 84 98 116 98 C140 98 150 110 150 120"/>
-    </g>
+
+  <rect width="512" height="512" fill="#000"/>
+
+  <!-- four interlocking "6" arcs forming the gold quatrefoil -->
+  <g transform="translate(256 230)" filter="url(#glow)" stroke="url(#gold)" stroke-width="26" stroke-linecap="round" fill="none">
+    <path d="M0,-122 A122,122 0 0 1 98,-42 A54,54 0 1 1 14,-80"/>
+    <path transform="rotate(90)"  d="M0,-122 A122,122 0 0 1 98,-42 A54,54 0 1 1 14,-80"/>
+    <path transform="rotate(180)" d="M0,-122 A122,122 0 0 1 98,-42 A54,54 0 1 1 14,-80"/>
+    <path transform="rotate(270)" d="M0,-122 A122,122 0 0 1 98,-42 A54,54 0 1 1 14,-80"/>
   </g>
+
   <!-- central 4-point star -->
-  <path d="M120 96 L128 120 L120 144 L112 120 Z M96 120 L120 112 L144 120 L120 128 Z" fill="url(#star)"/>
-  <circle cx="120" cy="120" r="3.2" fill="#FFF8E1"/>
-  <!-- EMPIRE wordmark -->
-  <text x="120" y="232" text-anchor="middle" font-family="'Cinzel','Trajan Pro',serif" font-size="34" letter-spacing="9" fill="url(#eg)" font-weight="600">EMPIRE</text>
-  <g stroke="url(#eg)" stroke-width="1.2">
-    <line x1="46" y1="248" x2="108" y2="248"/>
-    <line x1="132" y1="248" x2="194" y2="248"/>
+  <g transform="translate(256 230)">
+    <path d="M0,-48 L14,0 L0,48 L-14,0 Z" fill="url(#spark)"/>
+    <path d="M-48,0 L0,-14 L48,0 L0,14 Z" fill="url(#goldHi)"/>
+    <circle r="6" fill="#fffbe6"/>
   </g>
-  <path d="M120 242 l5 6 l-5 6 l-5 -6 Z" fill="url(#star)"/>
-  <text x="120" y="270" text-anchor="middle" font-family="'Cinzel',serif" font-size="11" letter-spacing="6" fill="#C9A24B">6-EMPIRE</text>
+
+  <!-- wordmark -->
+  <text x="256" y="432" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="11" fill="url(#goldHi)" font-weight="700">EMPIRE</text>
+  <g stroke="url(#gold)" stroke-width="2">
+    <line x1="146" y1="460" x2="232" y2="460"/>
+    <line x1="280" y1="460" x2="366" y2="460"/>
+  </g>
+  <path d="M256,451 l9,9 l-9,9 l-9,-9 Z" fill="url(#spark)"/>
+  <text x="256" y="494" text-anchor="middle" font-family="Georgia, serif" font-size="20" letter-spacing="8" fill="#c8a13a">6 - EMPIRE</text>
 </svg>

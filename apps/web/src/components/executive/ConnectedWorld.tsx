@@ -8,7 +8,7 @@
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useRef, useState, useMemo } from 'react';
-import { Environment, ContactShadows, Text, RoundedBox, MeshReflectorMaterial } from '@react-three/drei';
+import { Environment, ContactShadows, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { Character } from './Character';
 import { HumanCharacter } from './HumanCharacter';
@@ -302,12 +302,12 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
     { from: ROOMS[1].pos, to: ROOMS[5].pos, color: '#06b6d4', phase: 1.5 },
   ], []);
   return (
-    <Canvas shadows dpr={[1, 1.8]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
+    <Canvas shadows dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
       <color attach="background" args={['#080603']} />
       <fog attach="fog" args={['#080603', 36, 90]} />
       <ambientLight intensity={0.3} color="#ffe8c0" />
-      <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[2048, 2048]}>
+      <directionalLight position={[16, 26, 12]} intensity={0.95} color="#ffdfa6" castShadow shadow-mapSize={[1024, 1024]}>
         <orthographicCamera attach="shadow-camera" args={[-40, 40, 40, -40, 0.1, 80]} />
       </directionalLight>
       {/* warm gold ambient fills — gently breathing (the reference's signature glow) */}
@@ -318,17 +318,17 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
       <Suspense fallback={null}>
         {/* === UNIFIED BUILDING SHELL (reference: glass-perimeter floor with warm base uplights) === */}
         <BuildingShell />
-        {/* big reflective base floor */}
+        {/* flat black ground — no reflection, no animation (faster load) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[70, 70]} />
-          <MeshReflectorMaterial mirror={0.35} resolution={1024} mixBlur={10} mixStrength={1} blur={[300, 100]} roughness={0.7} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.2} color="#070809" metalness={0.5} />
+          <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
         </mesh>
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
         {commuters.map((c, i) => <Commuter key={i} {...c} />)}
         {/* central emblem */}
         <Text position={[0, 5.5, 0]} fontSize={0.7} color={BASE.gold} anchorX="center" letterSpacing={0.3}>6 EMPIRES</Text>
-        <Particles color={BASE.gold} count={140} />
+        <Particles color={BASE.gold} count={70} />
         <ContactShadows position={[0, 0.005, 0]} opacity={0.45} scale={70} blur={2.6} far={14} />
         <Environment preset="night" />
       </Suspense>

@@ -1,16 +1,30 @@
-<svg width="48" height="48" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6 Empire mark">
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6 Empire">
   <defs>
-    <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#B8922E"/>
-      <stop offset="0.5" stop-color="#F4D98B"/>
-      <stop offset="1" stop-color="#B8922E"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbe9a8"/>
+      <stop offset="0.35" stop-color="#e6b53c"/>
+      <stop offset="0.7" stop-color="#b8841f"/>
+      <stop offset="1" stop-color="#7a5512"/>
     </linearGradient>
+    <linearGradient id="gh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#d4a128"/>
+    </linearGradient>
+    <radialGradient id="sp" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe6"/><stop offset="0.5" stop-color="#ffd86b"/><stop offset="1" stop-color="#c8941a"/>
+    </radialGradient>
+    <filter id="gl" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <g stroke="url(#mg)" stroke-width="11" stroke-linecap="round" fill="none">
-    <path d="M120 116 C120 70 150 44 176 52 C150 58 142 84 142 116 C142 140 130 150 120 150"/>
-    <path d="M124 120 C170 120 196 150 188 176 C182 150 156 142 124 142 C100 142 90 130 90 120"/>
-    <path d="M120 124 C120 170 90 196 64 188 C90 182 98 156 98 124 C98 100 110 90 120 90"/>
-    <path d="M116 120 C70 120 44 90 52 64 C58 90 84 98 116 98 C140 98 150 110 150 120"/>
+  <g transform="translate(120 120)" filter="url(#gl)" stroke="url(#g)" stroke-width="15" stroke-linecap="round" fill="none">
+    <path d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(90)"  d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(180)" d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
+    <path transform="rotate(270)" d="M0,-74 A74,74 0 0 1 60,-26 A33,33 0 1 1 8,-49"/>
   </g>
-  <path d="M120 100 L126 120 L120 140 L114 120 Z M100 120 L120 114 L140 120 L120 126 Z" fill="#F4D98B"/>
+  <g transform="translate(120 120)">
+    <path d="M0,-30 L9,0 L0,30 L-9,0 Z" fill="url(#sp)"/>
+    <path d="M-30,0 L0,-9 L30,0 L0,9 Z" fill="url(#gh)"/>
+    <circle r="4" fill="#fffbe6"/>
+  </g>
 </svg>
