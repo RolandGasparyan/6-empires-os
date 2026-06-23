@@ -18,11 +18,8 @@
   /* header */
   header{display:flex;align-items:center;gap:14px;padding:16px 20px;
     border-bottom:1px solid #ffffff10;background:linear-gradient(180deg,#0a0906,#000);}
-  .logo{width:54px;height:54px;border-radius:14px;flex:0 0 auto;
-    background:radial-gradient(120% 120% at 50% 30%,#1a1408,#000);
-    border:1px solid var(--gold-deep);display:grid;place-items:center;
-    box-shadow:0 0 26px -8px var(--gold);}
-  .logo svg{width:38px;height:38px}
+  .logo{width:54px;height:54px;flex:0 0 auto;display:grid;place-items:center;}
+  .logo svg,.logo img{width:50px;height:50px}
   .brand{line-height:1.05;flex:1}
   .brand .t{font-size:22px;letter-spacing:.32em;color:var(--gold);font-weight:600}
   .brand .s{font-size:10px;letter-spacing:.34em;color:var(--gold-deep);margin-top:3px}
@@ -32,11 +29,9 @@
   /* chat scroll area */
   main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
   .hero{margin:auto;text-align:center;max-width:560px;padding:30px 16px}
-  .hero .mark{width:170px;height:170px;margin:0 auto 6px;border-radius:34px;
-    background:radial-gradient(120% 120% at 50% 28%,#1a1408,#000);
-    border:1px solid var(--gold-deep);display:grid;place-items:center;
-    box-shadow:0 0 70px -16px var(--gold);}
-  .hero .mark svg{width:120px;height:120px}
+  .hero .mark{width:190px;height:190px;margin:0 auto 6px;display:grid;place-items:center;
+    filter:drop-shadow(0 0 60px rgba(212,175,55,0.35));}
+  .hero .mark svg,.hero .mark img{width:180px;height:180px;object-fit:contain}
   .hero h1{font-size:46px;letter-spacing:.22em;margin:18px 0 10px;
     background:linear-gradient(180deg,var(--gold-hi),var(--gold-deep));
     -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -73,7 +68,7 @@
 </head>
 <body>
   <header>
-    <div class="logo"><img src="empire-symbol.svg" alt="6 Empire" width="40" height="40" /></div>
+    <div class="logo"><img src="empire-logo.png" alt="6 Empire" width="46" height="46" style="object-fit:contain" /></div>
     <div class="brand">
       <div class="t serif">EMPIRE</div>
       <div class="s">6 · EMPIRE AI</div>
@@ -83,7 +78,7 @@
 
   <main id="main">
     <div class="hero" id="hero">
-      <div class="mark"><img src="empire-symbol.svg" alt="6 Empire" width="124" height="124" /></div>
+      <div class="mark"><img src="empire-logo.png" alt="6 Empire" width="150" height="150" style="object-fit:contain" /></div>
       <h1 class="serif">EMPIRE AI</h1>
       <p>Your intelligent assistant. Ask anything to begin.</p>
     </div>

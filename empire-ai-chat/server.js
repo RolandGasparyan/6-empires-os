@@ -82,6 +82,14 @@ const server = http.createServer(async (req, res) => {
       return res.end(svg);
     } catch { res.writeHead(404); return res.end(); }
   }
+  // --- real EMPIRE logo PNG ---
+  if (req.method === 'GET' && url === '/empire-logo.png') {
+    try {
+      const png = fs.readFileSync(path.join(__dirname, 'empire-logo.png'));
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      return res.end(png);
+    } catch { res.writeHead(404); return res.end(); }
+  }
 
   // --- health ---
   if (req.method === 'GET' && url === '/api/health') {
