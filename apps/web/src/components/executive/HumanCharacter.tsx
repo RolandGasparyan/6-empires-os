@@ -44,8 +44,8 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
 
   const skin = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.55, metalness: 0.02 }), []);
   const skinSh = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN_SH, roughness: 0.6 }), []);
-  // ALL agents Simpsons-yellow: body/limbs use the yellow skin tone (identity stays in nameplate + ring)
-  const cloth = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.7, metalness: 0.04 }), []);
+  // Simpsons-yellow SKIN (head/hands) + colored SUIT per agent identity (matches mockup)
+  const cloth = useMemo(() => new THREE.MeshStandardMaterial({ color: suit, roughness: 0.7, metalness: 0.05 }), [suit]);
   const hairM = useMemo(() => new THREE.MeshStandardMaterial({ color: hair, roughness: 0.5 }), [hair]);
 
   // STATIC pose — set once, no per-frame animation (clean + fast)
