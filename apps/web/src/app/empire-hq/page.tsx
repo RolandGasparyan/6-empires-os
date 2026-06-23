@@ -15,12 +15,39 @@ const GOLD = '#d4af37';
 // basePath-aware asset prefix (so /empire-mark.svg resolves under /world on the VPS)
 const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+// map each agent to one of the EMPIRE models on the chat backend
+const AGENT_MODEL: Record<string, string> = {
+  ceo: 'empire-prime', strat: 'empire-strategist', analyst: 'empire-trading',
+  cto: 'empire-coder', ai: 'empire-coder', data: 'empire-research',
+  mkt: 'empire-media', risk: 'empire-trading',
+};
+
 export default function EmpireHQPage() {
   const [entered, setEntered] = useState(false);
   const [sel, setSel] = useState<TeamMember | null>(null);
+  const [ask, setAsk] = useState('');
+  const [reply, setReply] = useState('');
+  const [busy, setBusy] = useState(false);
   const audio = useRef(createExecAudio());
   useEffect(() => () => audio.current.stop(), []);
   function enter() { audio.current.start(); setEntered(true); }
+
+  // reset the conversation when switching agents
+  useEffect(() => { setReply(''); setAsk(''); }, [sel?.id]);
+
+  async function askAgent() {
+    if (!sel || !ask.trim() || busy) return;
+    const q = ask.trim(); setAsk(''); setBusy(true); setReply('');
+    const model = AGENT_MODEL[sel.id] || 'empire-prime';
+    const sys = `You are ${sel.name}, the ${sel.title} of 6 EMPIRES. ${sel.blurb} Answer in character, sharp and brief.`;
+    try {
+      const res = await fetch('/chat/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, mode: 'empire', messages: [{ role: 'system', content: sys }, { role: 'user', content: q }] }) });
+      const reader = res.body!.getReader(); const dec = new TextDecoder(); let acc = '';
+      while (true) { const { done, value } = await reader.read(); if (done) break; acc += dec.decode(value, { stream: true }); setReply(acc); }
+    } catch (e: any) { setReply('⚠️ ' + (e?.message || 'error')); }
+    setBusy(false);
+  }
 
   return (
     <div className="absolute inset-0" style={{ background: '#060708' }}>
@@ -77,6 +104,26 @@ export default function EmpireHQPage() {
             <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
               <span className="text-[10px] tracking-[0.2em] text-white/40">STATUS</span>
               <span className="flex items-center gap-1.5 font-mono text-[11px]" style={{ color: sel.color }}><span className="w-2 h-2 rounded-full animate-pulse" style={{ background: sel.color }} />{sel.status}</span>
+            </div>
+
+            {/* Ask this agent — talks to the live EMPIRE model */}
+            <div className="mt-4">
+              {reply && (
+                <div className="mb-2 max-h-40 overflow-auto text-[12px] leading-relaxed text-white/85 rounded-lg p-2.5"
+                  style={{ background: '#ffffff08', border: `1px solid ${sel.color}33` }}>{reply}{busy && <span className="opacity-50"> ▍</span>}</div>
+              )}
+              <div className="flex items-center gap-2">
+                <input value={ask} onChange={(e) => setAsk(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') askAgent(); }}
+                  placeholder={`Ask ${sel.name.split(' ')[0]}…`} disabled={busy}
+                  className="flex-1 bg-transparent text-[12px] text-white/90 px-3 py-2 rounded-lg outline-none"
+                  style={{ border: `1px solid ${sel.color}44` }} />
+                <button onClick={askAgent} disabled={busy}
+                  className="px-3 py-2 rounded-lg text-[12px] font-semibold"
+                  style={{ background: `linear-gradient(135deg, ${sel.color}, #0a0a0c)`, color: '#fff', opacity: busy ? 0.5 : 1 }}>
+                  {busy ? '…' : '→'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

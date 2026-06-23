@@ -39,7 +39,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}>
         <planeGeometry args={[W, D]} />
-        <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
+        <meshStandardMaterial color="#1c1630" roughness={0.85} metalness={0.05} />
       </mesh>
       {(hover || focused) && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><planeGeometry args={[W - 0.2, D - 0.2]} /><meshBasicMaterial color={slot.accent} transparent opacity={hover ? 0.08 : 0.04} /></mesh>}
 
@@ -181,7 +181,7 @@ function Corridors() {
         return (
           <mesh key={r.id} position={[x / 2, 0.015, z / 2]} rotation={[-Math.PI / 2, 0, -ang]} receiveShadow>
             <planeGeometry args={[len, 2.4]} />
-            <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
+            <meshStandardMaterial color="#1c1630" roughness={0.85} metalness={0.05} />
           </mesh>
         );
       })}
@@ -254,10 +254,11 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   return (
     <Canvas dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
-      <color attach="background" args={['#060504']} />
-      <fog attach="fog" args={['#060504', 36, 90]} />
-      <ambientLight intensity={0.5} color="#ffe8c0" />
-      <directionalLight position={[16, 26, 12]} intensity={0.9} color="#ffdfa6" />
+      <color attach="background" args={['#161020']} />
+      <fog attach="fog" args={['#161020', 48, 120]} />
+      <ambientLight intensity={0.95} color="#fff2d8" />
+      <directionalLight position={[16, 26, 12]} intensity={1.25} color="#fff0c8" />
+      <hemisphereLight args={['#ffe9c0', '#3a2a5a', 0.6]} />
       {/* warm gold ambient fills — static (no per-frame animation) */}
       <pointLight position={[0, 10, 0]} color={BASE.gold} intensity={0.8} distance={55} />
       <pointLight position={[14, 6, 14]} color={BASE.goldHi} intensity={0.5} distance={30} />
@@ -269,7 +270,7 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         {/* flat black ground — no reflection, no animation (faster load) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[70, 70]} />
-          <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
+          <meshStandardMaterial color="#1c1630" roughness={0.85} metalness={0.05} />
         </mesh>
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
