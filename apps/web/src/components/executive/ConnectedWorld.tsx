@@ -15,6 +15,9 @@ import { Hologram, Inspect, BASE } from './roomKit';
 import { Workstation, WallScreen, Pot, Art, Chair, TrophyShelf, Lounge } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
 
+// chunky rounded "cartoon/Simpsons" display font for all 3D wall text
+const TOON_FONT = 'https://cdn.jsdelivr.net/fontsource/fonts/luckiest-guy@latest/latin-400-normal.woff';
+
 /** Room slots on the campus grid. */
 interface Slot { id: string; label: string; accent: string; pos: [number, number]; }
 const GAP = 14;
@@ -56,8 +59,8 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         {[0, 1, 2, 3].map((i) => <mesh key={i} rotation={[0, 0, (i * Math.PI) / 2]}><torusGeometry args={[0.42, 0.07, 8, 24, Math.PI * 1.3]} /><meshStandardMaterial color="#c79be0" metalness={0.1} roughness={0.5} emissive="#c79be0" emissiveIntensity={0.18} /></mesh>)}
         <mesh><sphereGeometry args={[0.08, 14, 14]} /><meshStandardMaterial color="#fff4f8" emissive="#ffe1ee" emissiveIntensity={0.5} /></mesh>
       </group>
-      <Text position={[0, H * 0.32, -D / 2 + 0.14]} fontSize={0.34} color="#3a2440" anchorX="center" letterSpacing={0.28}>6 EMPIRES</Text>
-      <Text position={[0, H * 0.86, -D / 2 + 0.12]} fontSize={0.32} color="#3a2440" anchorX="center" letterSpacing={0.16} outlineWidth={0.004} outlineColor="#ffffff">{slot.label}</Text>
+      <Text font={TOON_FONT} position={[0, H * 0.32, -D / 2 + 0.14]} fontSize={0.4} color="#ffd21e" anchorX="center" letterSpacing={0.1} outlineWidth={0.012} outlineColor="#000">6 EMPIRES</Text>
+      <Text font={TOON_FONT} position={[0, H * 0.86, -D / 2 + 0.12]} fontSize={0.34} color="#ffd21e" anchorX="center" letterSpacing={0.05} outlineWidth={0.012} outlineColor="#000">{slot.label}</Text>
       {/* soft pastel feature windows */}
       <mesh position={[W * 0.3, H * 0.55, -D / 2 + 0.1]}><planeGeometry args={[W * 0.3, H * 0.42]} /><meshStandardMaterial color="#bfeaf0" emissive="#9fdce6" emissiveIntensity={0.3} /></mesh>
 
@@ -113,7 +116,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0.02, 1.6]}><torusGeometry args={[0.6, 0.045, 10, 40]} /><meshStandardMaterial color="#e8a8c8" metalness={0.1} roughness={0.5} emissive="#ffd9e8" emissiveIntensity={0.15} /></mesh>
             <Lounge position={[-3.4, 0, 2.4]} rotation={[0, 0.5, 0]} />
             {/* boss-office wall tagline */}
-            <Text position={[0, H * 0.2, -D / 2 + 0.14]} fontSize={0.16} color="#3a2440" anchorX="center" letterSpacing={0.18}>WE BUILD · WE SCALE · WE OWN</Text>
+            <Text font={TOON_FONT} position={[0, H * 0.2, -D / 2 + 0.14]} fontSize={0.18} color="#ffd21e" anchorX="center" letterSpacing={0.06} outlineWidth={0.008} outlineColor="#000">WE BUILD · WE SCALE · WE OWN</Text>
             {/* team seating — 2 chairs facing the boss desk + 2 empty chairs */}
             {[{ x: -1.8, z: 1.5, r: -0.5 }, { x: 1.8, z: 1.5, r: 0.5 }].map((c) => <Chair key={'e' + c.x} position={[c.x, 0, c.z]} rotation={[0, Math.PI + c.r, 0]} color="#b48fd0" />)}
             {[{ x: -0.6, z: 1.2, r: -0.18 }, { x: 0.6, z: 1.2, r: 0.18 }].map((c, i) => (
@@ -277,7 +280,7 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
         {/* central emblem */}
-        <Text position={[0, 5.5, 0]} fontSize={0.7} color="#3a2440" anchorX="center" letterSpacing={0.3}>6 EMPIRES</Text>
+        <Text font={TOON_FONT} position={[0, 5.5, 0]} fontSize={0.85} color="#ffd21e" anchorX="center" letterSpacing={0.08} outlineWidth={0.02} outlineColor="#000">6 EMPIRES</Text>
       </Suspense>
       <CamRig target={focus} />
     </Canvas>

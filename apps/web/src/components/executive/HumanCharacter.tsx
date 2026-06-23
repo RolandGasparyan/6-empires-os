@@ -10,8 +10,7 @@
  * captures the look (yellow skin, hair, suit, proportions) far better than the
  * bot avatars, in the limits of procedural R3F.
  */
-import { useRef, useMemo, useEffect, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useMemo, useEffect } from 'react';
 import { Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Gesture } from './Character';
@@ -41,40 +40,28 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
   const rArm = useRef<THREE.Group>(null);
   const lEye = useRef<THREE.Mesh>(null);
   const rEye = useRef<THREE.Mesh>(null);
-  const [blink, setBlink] = useState(1);
-
-  // periodic blink (cheap timer, not per-frame)
-  useEffect(() => {
-    let id: number;
-    const loop = () => { setBlink(0.1); window.setTimeout(() => setBlink(1), 110); id = window.setTimeout(loop, 2400 + Math.random() * 2800); };
-    id = window.setTimeout(loop, 800 + Math.random() * 2000);
-    return () => clearTimeout(id);
-  }, []);
+  const blink = 1;
 
   const skin = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.55, metalness: 0.02 }), []);
   const skinSh = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN_SH, roughness: 0.6 }), []);
-  const cloth = useMemo(() => new THREE.MeshStandardMaterial({ color: suit, roughness: 0.7, metalness: 0.06 }), [suit]);
+  // ALL agents Simpsons-yellow: body/limbs use the yellow skin tone (identity stays in nameplate + ring)
+  const cloth = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.7, metalness: 0.04 }), []);
   const hairM = useMemo(() => new THREE.MeshStandardMaterial({ color: hair, roughness: 0.5 }), [hair]);
 
-  // LIVING animation — idle sway, head movement, blink, role gesture (per-frame)
-  useFrame((s) => {
-    const t = s.clock.elapsedTime + seed;
-    if (root.current) root.current.position.y = position[1] + Math.sin(t * 1.3) * 0.012;
-    if (head.current) { head.current.rotation.y = Math.sin(t * 0.5) * 0.12; head.current.rotation.x = Math.sin(t * 0.7) * 0.04; }
-    [lEye.current, rEye.current].forEach((e) => { if (e) e.scale.y = blink; });
+  // STATIC pose — set once, no per-frame animation (clean + fast)
+  useEffect(() => {
     const L = lArm.current, R = rArm.current;
     if (L && R) {
       switch (gesture) {
-        case 'type': R.rotation.x = -1.1 + Math.sin(t * 9) * 0.18; L.rotation.x = -1.1 + Math.cos(t * 9) * 0.18; break;
-        case 'wave': R.rotation.z = -0.5 + Math.sin(t * 8) * 0.5; R.rotation.x = -1.6; L.rotation.x = 0.05; break;
-        case 'point': R.rotation.x = -1.2; R.rotation.z = 0.15; L.rotation.x = 0.05; break;
-        case 'think': R.rotation.x = -1.9; R.rotation.z = 0.4; if (head.current) head.current.rotation.z = 0.1; L.rotation.x = 0.05; break;
-        case 'celebrate': { const u = -2.5 + Math.sin(t * 6) * 0.2; L.rotation.x = u; R.rotation.x = u; break; }
-        case 'scan': if (head.current) head.current.rotation.y = Math.sin(t * 1.3) * 0.5; R.rotation.x = -0.4; break;
-        default: R.rotation.x = Math.sin(t * 1.3) * 0.08; L.rotation.x = Math.cos(t * 1.3) * 0.08;
+        case 'type': R.rotation.x = -1.1; L.rotation.x = -1.1; break;
+        case 'wave': R.rotation.z = -0.2; R.rotation.x = -1.6; break;
+        case 'point': R.rotation.x = -1.2; R.rotation.z = 0.15; break;
+        case 'think': R.rotation.x = -1.9; R.rotation.z = 0.4; if (head.current) head.current.rotation.z = 0.1; break;
+        case 'scan': R.rotation.x = -0.4; break;
+        default: break;
       }
     }
-  });
+  }, [gesture]);
 
   return (
     <group ref={root} position={position} rotation={rotation} scale={scale}>
@@ -137,8 +124,8 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
       {/* nameplate */}
       {name && (
         <Billboard position={[0, 1.95, 0]}>
-          <Text fontSize={0.13} color="#3a2440" anchorX="center" outlineWidth={0.006} outlineColor="#fff">{name}</Text>
-          {status && <Text position={[0, -0.15, 0]} fontSize={0.085} color={suit} anchorX="center">● {status}</Text>}
+          <Text font="https://cdn.jsdelivr.net/fontsource/fonts/luckiest-guy@latest/latin-400-normal.woff" fontSize={0.14} color="#ffd21e" anchorX="center" outlineWidth={0.008} outlineColor="#000">{name}</Text>
+          {status && <Text position={[0, -0.16, 0]} fontSize={0.085} color={suit} anchorX="center" outlineWidth={0.004} outlineColor="#000">● {status}</Text>}
         </Billboard>
       )}
       {/* status ring */}
