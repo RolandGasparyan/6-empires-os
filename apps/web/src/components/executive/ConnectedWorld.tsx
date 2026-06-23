@@ -43,9 +43,9 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
       </mesh>
       {(hover || focused) && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><planeGeometry args={[W - 0.2, D - 0.2]} /><meshBasicMaterial color={slot.accent} transparent opacity={hover ? 0.08 : 0.04} /></mesh>}
 
-      {/* two back walls — warm EMPIRE dark-wood panels */}
-      <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color={BASE.wood} roughness={0.6} metalness={0.15} /></mesh>
-      <mesh position={[-W / 2, H / 2, 0]} receiveShadow><boxGeometry args={[0.16, H, D]} /><meshStandardMaterial color={BASE.woodHi} roughness={0.65} metalness={0.12} /></mesh>
+      {/* two back walls — soft pastel pink (Arturitu mockup) */}
+      <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color="#f4b8cf" roughness={0.95} metalness={0} /></mesh>
+      <mesh position={[-W / 2, H / 2, 0]} receiveShadow><boxGeometry args={[0.16, H, D]} /><meshStandardMaterial color="#f0a8c4" roughness={0.95} metalness={0} /></mesh>
       {/* warm gold cove lighting along wall tops (the reference's signature glow) */}
       <mesh position={[0, H - 0.15, -D / 2 + 0.12]}><boxGeometry args={[W * 0.9, 0.04, 0.04]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.2} /></mesh>
       <mesh position={[-W / 2 + 0.12, H - 0.15, 0]}><boxGeometry args={[0.04, 0.04, D * 0.9]} /><meshStandardMaterial color={BASE.goldHi} emissive={BASE.goldHi} emissiveIntensity={1.2} /></mesh>
@@ -182,7 +182,7 @@ function Corridors() {
         return (
           <mesh key={r.id} position={[x / 2, 0.015, z / 2]} rotation={[-Math.PI / 2, 0, -ang]} receiveShadow>
             <planeGeometry args={[len, 2.4]} />
-            <meshStandardMaterial color="#1a1424" roughness={0.85} metalness={0.05} />
+            <meshStandardMaterial color="#2aa39a" roughness={0.92} metalness={0} />
           </mesh>
         );
       })}
@@ -255,12 +255,12 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   return (
     <Canvas dpr={[1, 1.25]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
-      {/* EMPIRE warm-gold office theme (your mockup) — with Arturitu blob agents */}
-      <color attach="background" args={['#16111d']} />
-      <fog attach="fog" args={['#16111d', 50, 120]} />
-      <ambientLight intensity={0.85} color="#fff0d0" />
-      <directionalLight position={[16, 28, 12]} intensity={1.15} color="#fff0c8" />
-      <hemisphereLight args={['#ffe9c0', '#2a2138', 0.55]} />
+      {/* Arturitu pastel theme — bright teal backdrop, soft cheerful lighting */}
+      <color attach="background" args={['#1fb8d8']} />
+      <fog attach="fog" args={['#1fb8d8', 70, 150]} />
+      <ambientLight intensity={1.15} color="#ffffff" />
+      <directionalLight position={[18, 30, 14]} intensity={1.05} color="#fff4ea" />
+      <hemisphereLight args={['#ffe0ec', '#1fb8d8', 0.7]} />
       {/* warm gold ambient fills — static (no per-frame animation) */}
       <pointLight position={[0, 10, 0]} color={BASE.gold} intensity={0.8} distance={55} />
       <pointLight position={[14, 6, 14]} color={BASE.goldHi} intensity={0.5} distance={30} />
@@ -272,7 +272,7 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         {/* flat black ground — no reflection, no animation (faster load) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[70, 70]} />
-          <meshStandardMaterial color="#1a1424" roughness={0.85} metalness={0.05} />
+          <meshStandardMaterial color="#2aa39a" roughness={0.92} metalness={0} />
         </mesh>
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}

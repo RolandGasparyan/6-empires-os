@@ -137,7 +137,7 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
       {/* nameplate */}
       {name && (
         <Billboard position={[0, 1.95, 0]}>
-          <Text fontSize={0.13} color="#f4d98b" anchorX="center" outlineWidth={0.004} outlineColor="#000">{name}</Text>
+          <Text fontSize={0.13} color="#3a2440" anchorX="center" outlineWidth={0.006} outlineColor="#fff">{name}</Text>
           {status && <Text position={[0, -0.15, 0]} fontSize={0.085} color={suit} anchorX="center">● {status}</Text>}
         </Billboard>
       )}

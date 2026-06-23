@@ -50,7 +50,7 @@ export default function EmpireHQPage() {
   }
 
   return (
-    <div className="absolute inset-0" style={{ background: '#060708' }}>
+    <div className="absolute inset-0" style={{ background: '#1fb8d8' }}>
       <div className="absolute inset-0"><Scene onAgent={(m: TeamMember) => setSel(m)} /></div>
 
       <div className="absolute top-4 left-5 flex items-center gap-3 pointer-events-none">
