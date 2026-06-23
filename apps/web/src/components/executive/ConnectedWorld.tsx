@@ -242,12 +242,13 @@ function CamRig({ target }: { target: [number, number] | null }) {
   const { camera } = useThree();
   const tmp = useRef(new THREE.Vector3());
   useFrame(() => {
-    // static overview by default; smooth fly-in only when a room is focused.
+    // high doll-house top-down overview by default (whole corporation from above);
+    // smooth fly-in only when a room is focused.
     const desired = target
-      ? tmp.current.set(target[0] + 7, 8, target[1] + 7)
-      : tmp.current.set(22, 24, 22);
+      ? tmp.current.set(target[0] + 6, 9, target[1] + 6)
+      : tmp.current.set(2, 40, 30);
     camera.position.lerp(desired, 0.06);
-    camera.lookAt(target ? target[0] : 0, target ? 1 : 1.5, target ? target[1] : 0);
+    camera.lookAt(target ? target[0] : 0, target ? 1 : 0, target ? target[1] : 0);
   });
   return null;
 }
@@ -256,7 +257,7 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   const pick = onAgent ?? (() => {});
   const [focus, setFocus] = useState<[number, number] | null>(null);
   return (
-    <Canvas dpr={[1, 1.25]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
+    <Canvas dpr={[1, 1.25]} camera={{ position: [2, 40, 30], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
       {/* Arturitu pastel theme — bright teal backdrop, soft cheerful lighting */}
       <color attach="background" args={['#1fb8d8']} />
