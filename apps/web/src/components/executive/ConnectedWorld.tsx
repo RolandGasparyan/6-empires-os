@@ -10,7 +10,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useRef, useState, useMemo } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import { BlobCharacter as HumanCharacter } from './BlobCharacter';
+import { HumanCharacter } from './HumanCharacter';
 import { Hologram, Inspect, BASE } from './roomKit';
 import { Workstation, WallScreen, Pot, Art, Chair, TrophyShelf, Lounge } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
