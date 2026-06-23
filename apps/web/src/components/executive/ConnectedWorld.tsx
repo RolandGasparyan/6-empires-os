@@ -7,7 +7,7 @@
  * agent → profile; click a room → camera flies in. Premium stylized R3F.
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useRef, useState, useMemo } from 'react';
+import { Suspense, useRef, useState, useMemo, useEffect } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { HumanCharacter } from './HumanCharacter';
@@ -72,9 +72,10 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         return (
           <group key={m.id} position={[x, 0, z]}>
             <Workstation position={[0, 0, 0]} color={m.color} kind={screenKind as any} />
-            {/* seated stylized-human agent */}
+            {/* seated stylized-human agent — sits IN the chair (z=0.78) facing the
+                desk/monitors (-Z) and typing; rotation π so they face the screens */}
             <Inspect id={m.id} onPick={() => onAgent(m)}>
-              <HumanCharacter position={[0, 0.18, 0.78]} suit={m.color} hair={m.hair} beard={m.beard} glasses={m.glasses} bowtie={m.bowtie} gesture={m.gesture} name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.7} />
+              <HumanCharacter seated position={[0, 0.06, 0.62]} rotation={[0, Math.PI, 0]} suit={m.color} hair={m.hair} beard={m.beard} glasses={m.glasses} bowtie={m.bowtie} gesture="type" name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.7} />
             </Inspect>
           </group>
         );
@@ -98,13 +99,13 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             <WallScreen position={[-1.5, 1.55, -2.0]} rotation={[0, 0.45, 0]} w={1.2} h={0.7} accent={BASE.green} kind="chart" />
             <WallScreen position={[0, 1.65, -2.1]} w={1.5} h={0.85} accent="#c79be0" kind="ui" />
             <WallScreen position={[1.5, 1.55, -2.0]} rotation={[0, -0.45, 0]} w={1.2} h={0.7} accent={BASE.blue} kind="chart" />
-            {/* the boss in his chair */}
-            <Chair position={[0, 0, -0.7]} color="#b48fd0" />
+            {/* the boss in his chair — chair faces the desk (-Z) */}
+            <Chair position={[0, 0, -0.7]} rotation={[0, Math.PI, 0]} color="#b48fd0" />
             {/* soft pastel rim / halo light behind the chair */}
             <mesh position={[0, 1.5, -1.15]} rotation={[0, 0, 0]}><torusGeometry args={[0.66, 0.05, 14, 40]} /><meshStandardMaterial color="#fff4f8" emissive="#ffe1ee" emissiveIntensity={0.6} metalness={0.1} roughness={0.4} /></mesh>
             <PulseLight position={[0, 1.6, -1.25]} color="#ffe1ee" base={0.5} amp={0.2} dist={5} />
             <Inspect id={boss.id} onPick={() => onAgent(boss)}>
-              <HumanCharacter position={[0, 0.2, -0.7]} suit="#8a6db0" hair="#141414" beard bowtie gesture="point" name="ROLAND" status="COMMANDING" scale={0.85} seed={9} />
+              <HumanCharacter seated position={[0, 0.08, -0.78]} rotation={[0, Math.PI, 0]} suit="#8a6db0" hair="#141414" beard bowtie gesture="type" name="ROLAND" status="COMMANDING" scale={0.85} seed={9} />
             </Inspect>
             {/* desk accessories: pastel sculpture, globe, flag, books */}
             <mesh position={[1.5, 0.98, -1.4]} castShadow><boxGeometry args={[0.2, 0.18, 0.32]} /><meshStandardMaterial color="#e8a8c8" metalness={0.1} roughness={0.5} emissive="#ffd9e8" emissiveIntensity={0.1} /></mesh>
@@ -122,7 +123,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             {[{ x: -0.6, z: 1.2, r: -0.18 }, { x: 0.6, z: 1.2, r: 0.18 }].map((c, i) => (
               <group key={i}>
                 <Chair position={[c.x, 0, c.z]} rotation={[0, Math.PI + c.r, 0]} color="#b48fd0" />
-                <HumanCharacter position={[c.x, 0.16, c.z]} rotation={[0, Math.PI + c.r, 0]} suit={TEAM[i + 1].color} hair={TEAM[i + 1].hair} glasses={TEAM[i + 1].glasses} gesture={i % 2 === 0 ? 'think' : 'idle'} scale={0.62} seed={20 + i} />
+                <HumanCharacter seated position={[c.x, 0.06, c.z - 0.16]} rotation={[0, Math.PI + c.r, 0]} suit={TEAM[i + 1].color} hair={TEAM[i + 1].hair} glasses={TEAM[i + 1].glasses} gesture="type" scale={0.62} seed={20 + i} />
               </group>
             ))}
             {/* gentle even key light on the CEO */}
@@ -151,7 +152,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
         {[-0.6, 0.6].map(z => <mesh key={z} position={[-W/2 + 0.16, 2.4, z]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[1.2, 0.7]} /><meshStandardMaterial color="#fbe6d6" emissive="#f6a96a" emissiveIntensity={0.3} transparent opacity={0.92} /></mesh>)}
         {/* editing agent — typing bursts at the edit desk */}
         <Workstation position={[-1.4, 0, -1.6]} color="#e8772e" kind="ui" />
-        <HumanCharacter position={[-1.4, 0.18, -0.82]} suit="#e8772e" hair="#1a6a7a" gesture="type" name="MEDIA" status="EDITING" scale={0.7} seed={55} />
+        <HumanCharacter seated position={[-1.4, 0.06, -0.98]} rotation={[0, Math.PI, 0]} suit="#e8772e" hair="#1a6a7a" gesture="type" name="MEDIA" status="EDITING" scale={0.7} seed={55} />
         {/* camera rig + studio lights */}
         <mesh position={[3, 1.4, 1.5]}><cylinderGeometry args={[0.02, 0.02, 2.4, 6]} /><meshStandardMaterial color="#bfb3cc" /></mesh>
         <mesh position={[3, 2.5, 1.5]}><coneGeometry args={[0.22, 0.3, 16, 1, true]} /><meshStandardMaterial color="#cdc2d8" side={2} /></mesh>
@@ -241,23 +242,126 @@ function BuildingShell() {
 function CamRig({ target }: { target: [number, number] | null }) {
   const { camera } = useThree();
   const tmp = useRef(new THREE.Vector3());
+  const settled = useRef(false);
+  // reset the settle latch whenever the focus target changes
+  useEffect(() => { settled.current = false; }, [target]);
   useFrame(() => {
     // high doll-house top-down overview by default (whole corporation from above);
-    // smooth fly-in only when a room is focused.
+    // smooth fly-in only when a room is focused. Once the camera reaches its
+    // target it SNAPS and stops — perfectly still scene, no per-frame drift
+    // (this is what made the floor look like it was animating).
+    if (settled.current) return;
     const desired = target
       ? tmp.current.set(target[0] + 6, 9, target[1] + 6)
-      : tmp.current.set(2, 40, 30);
-    camera.position.lerp(desired, 0.06);
-    camera.lookAt(target ? target[0] : 0, target ? 1 : 0, target ? target[1] : 0);
+      : tmp.current.set(0, 26, 23);   // doll-house view of the single square room
+    const lx = target ? target[0] : 0, ly = target ? 1 : 0, lz = target ? target[1] : 0;
+    if (camera.position.distanceTo(desired) < 0.05) {
+      // arrived: snap exactly and freeze
+      camera.position.copy(desired);
+      camera.lookAt(lx, ly, lz);
+      settled.current = true;
+      return;
+    }
+    camera.position.lerp(desired, 0.08);
+    camera.lookAt(lx, ly, lz);
   });
   return null;
+}
+
+/* === ONE SQUARE WORKSPACE — Arturitu doll-house room with ALL agents working === */
+function OneRoom({ onAgent }: { onAgent: (m: TeamMember) => void }) {
+  const S = 26;        // room inner size (square)
+  const H = 5.0;       // wall height
+  const half = S / 2;
+  const PINK1 = '#f4b8cf', PINK2 = '#f0a8c4', FLOOR = '#36bdb0', RUG = '#bfeef0';
+
+  // Boss (CEO) sits at the head; the other 11 fill a 4×3 grid of desks.
+  const boss = TEAM[0];
+  const staff = TEAM.slice(1);             // 11 agents
+  const COLS = 4, SPX = 5.4, SPZ = 5.0;
+  const startX = -((COLS - 1) * SPX) / 2;  // centre the grid
+  const startZ = -3.5;                      // first row just below the boss head
+
+  return (
+    <group>
+      {/* ---- floor + soft area rug ---- */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+        <planeGeometry args={[S, S]} />
+        <meshStandardMaterial color={FLOOR} roughness={0.9} metalness={0} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.0, 1.5]}>
+        <planeGeometry args={[S * 0.74, S * 0.6]} />
+        <meshStandardMaterial color={RUG} roughness={0.95} metalness={0} />
+      </mesh>
+
+      {/* ---- two visible walls (open-top doll-house: back + left) ---- */}
+      <mesh position={[0, H / 2, -half]} receiveShadow><boxGeometry args={[S, H, 0.3]} /><meshStandardMaterial color={PINK1} roughness={0.96} metalness={0} /></mesh>
+      <mesh position={[-half, H / 2, 0]} receiveShadow><boxGeometry args={[0.3, H, S]} /><meshStandardMaterial color={PINK2} roughness={0.96} metalness={0} /></mesh>
+      {/* far-side low walls so the box reads as enclosed but stays open to camera */}
+      <mesh position={[0, 0.5, half]}><boxGeometry args={[S, 1.0, 0.3]} /><meshStandardMaterial color={PINK1} roughness={0.96} /></mesh>
+      <mesh position={[half, 0.5, 0]}><boxGeometry args={[0.3, 1.0, S]} /><meshStandardMaterial color={PINK2} roughness={0.96} /></mesh>
+      {/* cove lighting strips along the two tall walls */}
+      <mesh position={[0, H - 0.16, -half + 0.2]}><boxGeometry args={[S * 0.92, 0.05, 0.05]} /><meshStandardMaterial color="#fff4f8" emissive="#ffe1ee" emissiveIntensity={0.5} /></mesh>
+      <mesh position={[-half + 0.2, H - 0.16, 0]}><boxGeometry args={[0.05, 0.05, S * 0.92]} /><meshStandardMaterial color="#fff4f8" emissive="#ffe1ee" emissiveIntensity={0.5} /></mesh>
+
+      {/* ---- big wall branding ---- */}
+      <Text font={TOON_FONT} position={[2.5, H * 0.7, -half + 0.22]} fontSize={1.5} color="#ffd21e" anchorX="center" letterSpacing={0.06} outlineWidth={0.03} outlineColor="#000">6 EMPIRES</Text>
+      <Text font={TOON_FONT} position={[2.5, H * 0.42, -half + 0.22]} fontSize={0.42} color="#fff" anchorX="center" letterSpacing={0.1} outlineWidth={0.012} outlineColor="#000">LIVING CORPORATION</Text>
+      {/* wall screens on the back wall */}
+      <WallScreen position={[-6.5, H * 0.6, -half + 0.24]} w={3.4} h={1.9} accent="#a855f7" kind="chart" />
+      <WallScreen position={[9.5, H * 0.55, -half + 0.24]} w={3.0} h={1.7} accent="#06b6d4" kind="grid" />
+      {/* wall art / decor on the left wall */}
+      <Art position={[-half + 0.24, 3.0, -5]} rotation={[0, Math.PI / 2, 0]} accent="#c79be0" />
+      <Art position={[-half + 0.24, 3.0, 5]} rotation={[0, Math.PI / 2, 0]} accent="#9fdce6" />
+
+      {/* ---- BOSS desk at the head of the room ---- */}
+      <group position={[0, 0, -half + 2.4]}>
+        <RoundedBox args={[4.6, 0.18, 1.7]} radius={0.06} position={[0, 0.82, -0.4]} castShadow receiveShadow><meshStandardMaterial color="#e9d8f0" metalness={0.1} roughness={0.5} /></RoundedBox>
+        <mesh position={[-2.1, 0.36, -0.4]}><boxGeometry args={[0.18, 0.72, 1.5]} /><meshStandardMaterial color="#d8c2e6" /></mesh>
+        <mesh position={[2.1, 0.36, -0.4]}><boxGeometry args={[0.18, 0.72, 1.5]} /><meshStandardMaterial color="#d8c2e6" /></mesh>
+        <Workstation position={[0, 0, -0.4]} color={boss.color === '#1a1a1a' ? '#8a6db0' : boss.color} kind="ui" />
+        <Chair position={[0, 0, 0.5]} rotation={[0, Math.PI, 0]} color="#b48fd0" />
+        <Inspect id={boss.id} onPick={() => onAgent(boss)}>
+          <HumanCharacter seated position={[0, 0.08, 0.42]} rotation={[0, Math.PI, 0]} suit="#8a6db0" hair="#141414" beard bowtie gesture="type" name="ROLAND" status="COMMANDING" scale={0.85} seed={9} />
+        </Inspect>
+        <Pot big position={[-3.0, 0, -0.2]} />
+      </group>
+
+      {/* ---- 11 staff workstations in a clean grid, all seated + working ---- */}
+      {staff.map((m, i) => {
+        const col = i % COLS, rowi = Math.floor(i / COLS);
+        const x = startX + col * SPX;
+        const z = startZ + rowi * SPZ + 2.0;
+        const kind = m.gesture === 'scan' ? 'grid' : m.gesture === 'type' ? 'code' : m.gesture === 'point' ? 'ui' : 'chart';
+        return (
+          <group key={m.id} position={[x, 0, z]}>
+            <Workstation position={[0, 0, 0]} color={m.color === '#1a1a1a' ? '#444' : m.color} kind={kind as any} />
+            <Inspect id={m.id} onPick={() => onAgent(m)}>
+              <HumanCharacter seated position={[0, 0.06, 0.62]} rotation={[0, Math.PI, 0]} suit={m.color === '#1a1a1a' ? '#333' : m.color} hair={m.hair} beard={m.beard} glasses={m.glasses} bowtie={m.bowtie} gesture="type" name={m.name.split(' ')[0].toUpperCase()} status={m.status} seed={m.id.charCodeAt(0)} scale={0.68} />
+            </Inspect>
+          </group>
+        );
+      })}
+
+      {/* ---- decor: plants in the corners + lounge ---- */}
+      <Pot big position={[-half + 1.4, 0, -half + 1.4]} />
+      <Pot position={[half - 1.4, 0, -half + 1.4]} />
+      <Pot position={[-half + 1.4, 0, half - 1.4]} />
+      <Lounge position={[half - 2.6, 0, half - 2.6]} rotation={[0, -Math.PI / 2 - 0.4, 0]} />
+      <TrophyShelf position={[-half + 0.4, 1.2, 6.5]} rotation={[0, Math.PI / 2, 0]} />
+
+      {/* soft fills */}
+      <pointLight position={[0, 7, 0]} color="#fff4f8" intensity={0.6} distance={40} />
+      <pointLight position={[0, 4, -half + 3]} color="#ffe1ee" intensity={0.4} distance={20} />
+    </group>
+  );
 }
 
 export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) => void }) {
   const pick = onAgent ?? (() => {});
   const [focus, setFocus] = useState<[number, number] | null>(null);
   return (
-    <Canvas dpr={[1, 1.25]} camera={{ position: [2, 40, 30], fov: 34, near: 0.1, far: 260 }}
+    <Canvas dpr={[1, 1.25]} camera={{ position: [0, 26, 23], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
       {/* Arturitu pastel theme — bright teal backdrop, soft cheerful lighting */}
       <color attach="background" args={['#1fb8d8']} />
@@ -271,17 +375,9 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
       <pointLight position={[-14, 6, -14]} color="#bfeaf0" intensity={0.45} distance={30} />
 
       <Suspense fallback={null}>
-        {/* === UNIFIED BUILDING SHELL (reference: glass-perimeter floor with warm base uplights) === */}
-        <BuildingShell />
-        {/* flat black ground — no reflection, no animation (faster load) */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-          <planeGeometry args={[70, 70]} />
-          <meshStandardMaterial color="#2aa39a" roughness={0.92} metalness={0} />
-        </mesh>
-        <Corridors />
-        {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}
-        {/* central emblem */}
-        <Text font={TOON_FONT} position={[0, 5.5, 0]} fontSize={0.85} color="#ffd21e" anchorX="center" letterSpacing={0.08} outlineWidth={0.02} outlineColor="#000">6 EMPIRES</Text>
+        {/* === ONE SQUARE WORKSPACE (Arturitu doll-house): all 12 agent
+              workstations visible at once inside a single open-top room === */}
+        <OneRoom onAgent={pick} />
       </Suspense>
       <CamRig target={focus} />
     </Canvas>

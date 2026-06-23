@@ -1,0 +1,332 @@
+{
+  "updated": "2026-06-15",
+  "providers": [
+    {
+      "name": "Groq",
+      "env_key": "FREE_GROQ_KEY",
+      "base_url": "https://api.groq.com/openai/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://console.groq.com/keys",
+      "models": [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama-4-scout-17b-16e-instruct",
+        "qwen3-32b",
+        "gpt-oss-120b"
+      ],
+      "priority": 1
+    },
+    {
+      "name": "Cerebras",
+      "env_key": "FREE_CEREBRAS_KEY",
+      "base_url": "https://api.cerebras.ai/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://cloud.cerebras.ai/",
+      "models": [
+        "gpt-oss-120b",
+        "zai-glm-4.7"
+      ],
+      "priority": 2
+    },
+    {
+      "name": "SambaNova",
+      "env_key": "FREE_SAMBANOVA_KEY",
+      "base_url": "https://api.sambanova.ai/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://cloud.sambanova.ai/apis",
+      "models": [
+        "DeepSeek-V3.1",
+        "DeepSeek-V3.2 (Preview)",
+        "Meta-Llama-3.3-70B-Instruct",
+        "gpt-oss-120b",
+        "MiniMax-M2.7",
+        "gemma-4-31B-it (Preview)"
+      ],
+      "priority": 3
+    },
+    {
+      "name": "Google Gemini",
+      "env_key": "FREE_GOOGLE_GEMINI_KEY",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "category": "provider_api",
+      "country": "US",
+      "key_page": "https://aistudio.google.com/app/apikey",
+      "models": [
+        "Gemini 3.5 Flash",
+        "Gemini 3.1 Flash-Lite",
+        "Gemini 2.5 Flash",
+        "Gemini 2.5 Pro"
+      ],
+      "priority": 4
+    },
+    {
+      "name": "Cloudflare Workers AI",
+      "env_key": "FREE_CLOUDFLARE_WORKERS_AI_KEY",
+      "base_url": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://dash.cloudflare.com/profile/api-tokens",
+      "models": [
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "@cf/meta/llama-4-scout-17b-16e-instruct",
+        "@cf/openai/gpt-oss-120b",
+        "@cf/moonshotai/kimi-k2.7-code",
+        "@cf/google/gemma-4-26b-a4b-it",
+        "@cf/zhipuai/glm-4.7-flash",
+        "@cf/mistralai/mistral-small-3.1-24b-instruct",
+        "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+        "+ 42 more models"
+      ],
+      "priority": 5
+    },
+    {
+      "name": "NVIDIA NIM",
+      "env_key": "FREE_NVIDIA_NIM_KEY",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://build.nvidia.com/explore/discover",
+      "models": [
+        "deepseek-ai/deepseek-r1",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/nemotron-3-nano-30b-a3b",
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        "meta/llama-3.1-405b-instruct",
+        "qwen/qwen2.5-72b-instruct",
+        "google/gemma-4-31b",
+        "mistralai/mistral-large-2-instruct",
+        "minimax/minimax-m2.7",
+        "+ 90 more models"
+      ],
+      "priority": 6
+    },
+    {
+      "name": "OpenRouter",
+      "env_key": "FREE_OPENROUTER_KEY",
+      "base_url": "https://openrouter.ai/api/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://openrouter.ai/keys",
+      "models": [
+        "qwen/qwen3-coder:free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "openai/gpt-oss-120b:free",
+        "openai/gpt-oss-20b:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "nousresearch/hermes-3-llama-3.1-405b:free",
+        "google/gemma-4-31b-it:free",
+        "poolside/laguna-m.1:free",
+        "qwen/qwen3-next-80b-a3b-instruct:free",
+        "+ ~12 more free models"
+      ],
+      "priority": 7
+    },
+    {
+      "name": "Mistral AI",
+      "env_key": "FREE_MISTRAL_AI_KEY",
+      "base_url": "https://api.mistral.ai/v1",
+      "category": "provider_api",
+      "country": "FR",
+      "key_page": "https://console.mistral.ai/api-keys",
+      "models": [
+        "Mistral Medium 3.5 (128B)",
+        "Mistral Small 4",
+        "Mistral Large 3",
+        "Mistral Nemo (12B)",
+        "Codestral",
+        "Pixtral Large"
+      ],
+      "priority": 8
+    },
+    {
+      "name": "GitHub Models",
+      "env_key": "FREE_GITHUB_MODELS_KEY",
+      "base_url": "https://models.github.ai/inference",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://github.com/marketplace/models",
+      "models": [
+        "gpt-5",
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4o",
+        "o4-mini",
+        "Llama-4-Scout-17B-16E",
+        "Llama-4-Maverick-17B-128E",
+        "Meta-Llama-3.3-70B",
+        "DeepSeek-R1",
+        "Mistral-Small-3.1",
+        "+ 35 more models"
+      ],
+      "priority": 9
+    },
+    {
+      "name": "SiliconFlow",
+      "env_key": "FREE_SILICONFLOW_KEY",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "category": "inference_provider",
+      "country": "CN",
+      "key_page": "https://cloud.siliconflow.cn/account/ak",
+      "models": [
+        "Qwen/Qwen3-8B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+      ],
+      "priority": 10
+    },
+    {
+      "name": "OVHcloud AI Endpoints",
+      "env_key": "FREE_OVHCLOUD_AI_ENDPOINTS_KEY",
+      "base_url": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+      "category": "inference_provider",
+      "country": "FR",
+      "key_page": "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/",
+      "models": [
+        "Qwen3.5-397B-A17B",
+        "gpt-oss-120b",
+        "gpt-oss-20b",
+        "Meta-Llama-3_3-70B-Instruct",
+        "Llama-3.1-8B-Instruct",
+        "Qwen3.6-27B",
+        "Qwen3.5-9B",
+        "Qwen3-32B",
+        "Qwen3-Coder-30B-A3B-Instruct",
+        "Qwen2.5-VL-72B-Instruct",
+        "Mistral-Small-3.2-24B-Instruct",
+        "Mistral-Nemo-Instruct-2407",
+        "Mistral-7B-Instruct-v0.3"
+      ],
+      "priority": 11
+    },
+    {
+      "name": "Hugging Face",
+      "env_key": "FREE_HUGGING_FACE_KEY",
+      "base_url": "https://router.huggingface.co/v1",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://huggingface.co/settings/tokens",
+      "models": [
+        "Meta-Llama-3.1-8B-Instruct",
+        "Mistral-7B-Instruct-v0.3",
+        "Mixtral-8x7B-Instruct-v0.1",
+        "Phi-3.5-mini-instruct",
+        "Qwen2.5-7B-Instruct",
+        "+ thousands of community models"
+      ],
+      "priority": 12
+    },
+    {
+      "name": "Aion Labs",
+      "env_key": "FREE_AION_LABS_KEY",
+      "base_url": "https://api.aionlabs.ai/v1",
+      "category": "provider_api",
+      "country": "IL",
+      "key_page": "https://www.aionlabs.ai",
+      "models": [
+        "Aion 2.5",
+        "Aion 2.0",
+        "Aion-RP 1.0 (8B)"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "Cohere",
+      "env_key": "FREE_COHERE_KEY",
+      "base_url": "https://api.cohere.com/v2",
+      "category": "provider_api",
+      "country": "CA",
+      "key_page": "https://dashboard.cohere.com/api-keys",
+      "models": [
+        "Command A+ (218B)",
+        "Command A (111B)",
+        "Command R+",
+        "Command R",
+        "Command R7B"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "Z AI (Zhipu AI)",
+      "env_key": "FREE_Z_AI_ZHIPU_AI_KEY",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "category": "provider_api",
+      "country": "CN",
+      "key_page": "https://open.bigmodel.cn/usercenter/apikeys",
+      "models": [
+        "GLM-4.7-Flash",
+        "GLM-4.6V-Flash"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "Kilo Code",
+      "env_key": "FREE_KILO_CODE_KEY",
+      "base_url": "https://api.kilo.ai/api/gateway",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://kilo.ai",
+      "models": [
+        "x-ai/grok-code-fast-1:free",
+        "minimax/minimax-m2.5:free",
+        "bytedance-seed/dola-seed-2.0-pro:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "arcee-ai/trinity-large-thinking:free",
+        "openrouter/free"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "LLM7.io",
+      "env_key": "FREE_LLM7IO_KEY",
+      "base_url": "https://api.llm7.io/v1",
+      "category": "inference_provider",
+      "country": "GB",
+      "key_page": "https://token.llm7.io",
+      "models": [
+        "deepseek-r1-0528",
+        "deepseek-v3-0324",
+        "gemini-2.5-flash-lite",
+        "gpt-4o-mini",
+        "mistral-small-3.1-24b",
+        "qwen2.5-coder-32b",
+        "+ ~24 more models"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "ModelScope",
+      "env_key": "FREE_MODELSCOPE_KEY",
+      "base_url": "https://api-inference.modelscope.cn/v1",
+      "category": "inference_provider",
+      "country": "CN",
+      "key_page": "https://modelscope.cn/my/myaccesstoken",
+      "models": [
+        "Qwen/Qwen3.5-35B-A3B",
+        "Qwen/Qwen3.5-27B",
+        "+ API-Inference-enabled models"
+      ],
+      "priority": 99
+    },
+    {
+      "name": "Ollama Cloud",
+      "env_key": "FREE_OLLAMA_CLOUD_KEY",
+      "base_url": "https://api.ollama.com",
+      "category": "inference_provider",
+      "country": "US",
+      "key_page": "https://ollama.com/settings/keys",
+      "models": [
+        "gpt-oss:120b-cloud",
+        "deepseek-v3.1:671b-cloud",
+        "qwen3-coder:480b-cloud",
+        "kimi-k2:1t-cloud",
+        "glm-4.6:cloud",
+        "deepseek-r1:cloud",
+        "+ 30 more cloud models"
+      ],
+      "priority": 99
+    }
+  ]
+}

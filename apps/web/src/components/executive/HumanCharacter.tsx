@@ -31,9 +31,10 @@ export interface HumanProps {
   name?: string;
   status?: string;
   seed?: number;
+  seated?: boolean;          // tuck legs into an L (sitting at a desk)
 }
 
-export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, suit, hair = '#1a1410', beard = false, glasses = false, bowtie = false, gesture = 'idle', name, status, seed = 0 }: HumanProps) {
+export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, suit, hair = '#1a1410', beard = false, glasses = false, bowtie = false, gesture = 'idle', name, status, seed = 0, seated = false }: HumanProps) {
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
   const lArm = useRef<THREE.Group>(null);
@@ -65,12 +66,32 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
 
   return (
     <group ref={root} position={position} rotation={rotation} scale={scale}>
-      {/* legs */}
-      <mesh position={[-0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
-      <mesh position={[0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
-      {/* shoes */}
-      <mesh position={[-0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
-      <mesh position={[0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+      {seated ? (
+        <>
+          {/* seated: thighs forward (horizontal), shins down, shoes on floor */}
+          <group position={[-0.12, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh position={[0, 0.22, 0]} castShadow><capsuleGeometry args={[0.1, 0.34, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          </group>
+          <group position={[0.12, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh position={[0, 0.22, 0]} castShadow><capsuleGeometry args={[0.1, 0.34, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          </group>
+          {/* shins drop down at the knee (front of seat) */}
+          <mesh position={[-0.12, 0.26, 0.4]} castShadow><capsuleGeometry args={[0.09, 0.32, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          <mesh position={[0.12, 0.26, 0.4]} castShadow><capsuleGeometry args={[0.09, 0.32, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          {/* shoes */}
+          <mesh position={[-0.12, 0.05, 0.5]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+          <mesh position={[0.12, 0.05, 0.5]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+        </>
+      ) : (
+        <>
+          {/* legs */}
+          <mesh position={[-0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          <mesh position={[0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+          {/* shoes */}
+          <mesh position={[-0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+          <mesh position={[0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+        </>
+      )}
 
       {/* torso — suit jacket */}
       <mesh position={[0, 0.85, 0]} castShadow><capsuleGeometry args={[0.26, 0.5, 6, 14]} /><primitive object={cloth} attach="material" /></mesh>

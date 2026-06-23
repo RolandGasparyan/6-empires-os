@@ -130,15 +130,28 @@ export default function EmpireHQPage() {
       )}
 
       {!entered && (
-        <div className="absolute inset-0 grid place-items-center backdrop-blur-sm" style={{ background: '#060708e6' }}>
-          <div className="text-center">
-            <img src={`${BP}/empire-logo.png`} width={200} height={200} alt="6 Empire" className="mx-auto" style={{ objectFit: 'contain' }} />
-            <div className="mt-1 font-serif tracking-[0.28em] text-[12px] text-white/60">CORPORATION · LIVING HQ</div>
-            <button onClick={enter} className="mt-5 px-10 py-4 rounded-xl font-serif tracking-[0.2em] text-[15px] font-semibold"
-              style={{ background: 'linear-gradient(135deg,#f4d98b,#c8941a)', color: '#0a0a0b', boxShadow: `0 0 50px -8px ${GOLD}` }}>
-              ENTER THE EMPIRE
+        <div className="absolute inset-0 grid place-items-center" style={{ background: '#1fb8d8' }}>
+          {/* Simpsons-style toon font (yellow), no gold/black, no logo */}
+          <style>{`
+            @font-face{font-family:'ToonGate';src:url('https://cdn.jsdelivr.net/fontsource/fonts/luckiest-guy@latest/latin-400-normal.woff2') format('woff2');font-display:swap;}
+            .toon{font-family:'ToonGate','Luckiest Guy',system-ui,sans-serif;}
+            .toon-stroke{ -webkit-text-stroke:3px #1a1a1a; paint-order:stroke fill; }
+            @keyframes gatePop{0%{transform:scale(.96)}50%{transform:scale(1.03)}100%{transform:scale(.96)}}
+          `}</style>
+          <div className="text-center px-6">
+            <div className="toon toon-stroke" style={{ color: '#ffd21e', fontSize: 'clamp(48px,11vw,128px)', lineHeight: 0.95, letterSpacing: '0.02em', textShadow: '0 8px 0 #e88', }}>
+              6 EMPIRES
+            </div>
+            <div className="toon mt-4" style={{ color: '#fff', WebkitTextStroke: '1.5px #1a1a1a', fontSize: 'clamp(16px,3vw,26px)', letterSpacing: '0.08em' }}>
+              LIVING CORPORATION
+            </div>
+            <button onClick={enter} className="toon toon-stroke mt-9 px-12 py-5 rounded-[22px]"
+              style={{ color: '#1a1a1a', WebkitTextStroke: '0', background: '#ffd21e', fontSize: 'clamp(22px,4vw,34px)', letterSpacing: '0.04em', border: '4px solid #1a1a1a', boxShadow: '0 8px 0 #d49b00', cursor: 'pointer' }}>
+              ENTER EMPIRE
             </button>
-            <div className="mt-3 text-[10px] tracking-[0.25em] text-white/35">12 AGENTS · CONNECTED ROOMS · LIVE 3D</div>
+            <div className="toon mt-6" style={{ color: '#fff', WebkitTextStroke: '1px #1a1a1a', fontSize: 'clamp(12px,2vw,16px)', letterSpacing: '0.12em' }}>
+              12 AGENTS · CONNECTED ROOMS · LIVE 3D
+            </div>
           </div>
         </div>
       )}

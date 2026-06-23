@@ -74,28 +74,12 @@ const server = http.createServer(async (req, res) => {
     return res.end(INDEX);
   }
 
-  // --- brand marks (served from the app dir so the logo always loads) ---
-  if (req.method === 'GET' && (url === '/empire-mark.svg' || url === '/empire-symbol.svg')) {
+  // --- brand mark (served from the app dir so the logo always loads) ---
+  if (req.method === 'GET' && url === '/empire-mark.svg') {
     try {
-      const svg = fs.readFileSync(path.join(__dirname, url.slice(1)));
+      const svg = fs.readFileSync(path.join(__dirname, 'empire-mark.svg'));
       res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' });
       return res.end(svg);
-    } catch { res.writeHead(404); return res.end(); }
-  }
-  // --- marble background ---
-  if (req.method === 'GET' && url === '/marble-bg.svg') {
-    try {
-      const svg = fs.readFileSync(path.join(__dirname, 'marble-bg.svg'));
-      res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' });
-      return res.end(svg);
-    } catch { res.writeHead(404); return res.end(); }
-  }
-  // --- real EMPIRE logo PNG ---
-  if (req.method === 'GET' && url === '/empire-logo.png') {
-    try {
-      const png = fs.readFileSync(path.join(__dirname, 'empire-logo.png'));
-      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
-      return res.end(png);
     } catch { res.writeHead(404); return res.end(); }
   }
 
