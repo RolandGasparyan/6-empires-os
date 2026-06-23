@@ -10,7 +10,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useRef, useState, useMemo } from 'react';
 import { Environment, ContactShadows, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import { HumanCharacter } from './HumanCharacter';
+import { BlobCharacter as HumanCharacter } from './BlobCharacter';
 import { Hologram, Inspect, BASE } from './roomKit';
 import { Workstation, WallScreen, Pot, Art, Chair, TrophyShelf, Lounge } from './RoomDetail';
 import { TEAM, byRoom, TeamMember } from './team';
@@ -43,7 +43,7 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
       </mesh>
       {(hover || focused) && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><planeGeometry args={[W - 0.2, D - 0.2]} /><meshBasicMaterial color={slot.accent} transparent opacity={hover ? 0.08 : 0.04} /></mesh>}
 
-      {/* two back walls — warm dark-wood panels */}
+      {/* two back walls — warm EMPIRE dark-wood panels */}
       <mesh position={[0, H / 2, -D / 2]} receiveShadow><boxGeometry args={[W, H, 0.16]} /><meshStandardMaterial color={BASE.wood} roughness={0.6} metalness={0.15} /></mesh>
       <mesh position={[-W / 2, H / 2, 0]} receiveShadow><boxGeometry args={[0.16, H, D]} /><meshStandardMaterial color={BASE.woodHi} roughness={0.65} metalness={0.12} /></mesh>
       {/* warm gold cove lighting along wall tops (the reference's signature glow) */}
@@ -114,11 +114,12 @@ function RoomCell({ slot, onAgent, onRoom, focused }: { slot: Slot; onAgent: (m:
             <Lounge position={[-3.4, 0, 2.4]} rotation={[0, 0.5, 0]} />
             {/* boss-office wall tagline (reference) */}
             <Text position={[0, H * 0.2, -D / 2 + 0.14]} fontSize={0.16} color={BASE.goldHi} anchorX="center" letterSpacing={0.18}>WE BUILD · WE SCALE · WE OWN</Text>
-            {/* team seating — 4 chairs in a slight arc facing the boss desk */}
-            {[{ x: -1.8, z: 1.5, r: -0.5 }, { x: -0.6, z: 1.2, r: -0.18 }, { x: 0.6, z: 1.2, r: 0.18 }, { x: 1.8, z: 1.5, r: 0.5 }].map((c, i) => (
+            {/* team seating — 2 chairs facing the boss desk (lighter) + 2 empty chairs */}
+            {[{ x: -1.8, z: 1.5, r: -0.5 }, { x: 1.8, z: 1.5, r: 0.5 }].map((c) => <Chair key={'e' + c.x} position={[c.x, 0, c.z]} rotation={[0, Math.PI + c.r, 0]} color="#0e0b08" />)}
+            {[{ x: -0.6, z: 1.2, r: -0.18 }, { x: 0.6, z: 1.2, r: 0.18 }].map((c, i) => (
               <group key={i}>
                 <Chair position={[c.x, 0, c.z]} rotation={[0, Math.PI + c.r, 0]} color="#0e0b08" />
-                <HumanCharacter position={[c.x, 0.16, c.z]} rotation={[0, Math.PI + c.r, 0]} suit={TEAM[(i % 4) + 1].color} hair={TEAM[(i % 4) + 1].hair} glasses={TEAM[(i % 4) + 1].glasses} gesture={i % 2 === 0 ? 'think' : 'idle'} scale={0.62} seed={20 + i} />
+                <HumanCharacter position={[c.x, 0.16, c.z]} rotation={[0, Math.PI + c.r, 0]} suit={TEAM[i + 1].color} hair={TEAM[i + 1].hair} glasses={TEAM[i + 1].glasses} gesture={i % 2 === 0 ? 'think' : 'idle'} scale={0.62} seed={20 + i} />
               </group>
             ))}
             {/* cinematic key light on the CEO */}
@@ -181,7 +182,7 @@ function Corridors() {
         return (
           <mesh key={r.id} position={[x / 2, 0.015, z / 2]} rotation={[-Math.PI / 2, 0, -ang]} receiveShadow>
             <planeGeometry args={[len, 2.4]} />
-            <meshStandardMaterial color="#1c1630" roughness={0.85} metalness={0.05} />
+            <meshStandardMaterial color="#1a1424" roughness={0.85} metalness={0.05} />
           </mesh>
         );
       })}
@@ -252,13 +253,14 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
   const pick = onAgent ?? (() => {});
   const [focus, setFocus] = useState<[number, number] | null>(null);
   return (
-    <Canvas dpr={[1, 1.5]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
+    <Canvas dpr={[1, 1.25]} camera={{ position: [22, 24, 22], fov: 34, near: 0.1, far: 260 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => setFocus(null)}>
-      <color attach="background" args={['#161020']} />
-      <fog attach="fog" args={['#161020', 48, 120]} />
-      <ambientLight intensity={0.95} color="#fff2d8" />
-      <directionalLight position={[16, 26, 12]} intensity={1.25} color="#fff0c8" />
-      <hemisphereLight args={['#ffe9c0', '#3a2a5a', 0.6]} />
+      {/* EMPIRE warm-gold office theme (your mockup) — with Arturitu blob agents */}
+      <color attach="background" args={['#16111d']} />
+      <fog attach="fog" args={['#16111d', 50, 120]} />
+      <ambientLight intensity={0.85} color="#fff0d0" />
+      <directionalLight position={[16, 28, 12]} intensity={1.15} color="#fff0c8" />
+      <hemisphereLight args={['#ffe9c0', '#2a2138', 0.55]} />
       {/* warm gold ambient fills — static (no per-frame animation) */}
       <pointLight position={[0, 10, 0]} color={BASE.gold} intensity={0.8} distance={55} />
       <pointLight position={[14, 6, 14]} color={BASE.goldHi} intensity={0.5} distance={30} />
@@ -270,7 +272,7 @@ export default function ConnectedWorld({ onAgent }: { onAgent?: (m: TeamMember) 
         {/* flat black ground — no reflection, no animation (faster load) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[70, 70]} />
-          <meshStandardMaterial color="#1c1630" roughness={0.85} metalness={0.05} />
+          <meshStandardMaterial color="#1a1424" roughness={0.85} metalness={0.05} />
         </mesh>
         <Corridors />
         {ROOMS.map((r) => <RoomCell key={r.id} slot={r} onAgent={pick} onRoom={(s) => setFocus(s.pos)} focused={focus?.[0] === r.pos[0] && focus?.[1] === r.pos[1]} />)}

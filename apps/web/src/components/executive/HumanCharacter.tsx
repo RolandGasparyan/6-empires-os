@@ -110,7 +110,7 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
       {/* neck + head */}
       <mesh position={[0, 1.18, 0]}><cylinderGeometry args={[0.07, 0.08, 0.1, 10]} /><primitive object={skinSh} attach="material" /></mesh>
       <group ref={head} position={[0, 1.34, 0]}>
-        <mesh castShadow><sphereGeometry args={[0.26, 28, 24]} /><primitive object={skin} attach="material" /></mesh>
+        <mesh castShadow><sphereGeometry args={[0.26, 18, 14]} /><primitive object={skin} attach="material" /></mesh>
         {/* hair (swept top + back) */}
         <mesh position={[0, 0.12, -0.02]} scale={[1.08, 0.8, 1.12]}><sphereGeometry args={[0.25, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.62]} /><primitive object={hairM} attach="material" /></mesh>
         <mesh position={[0.16, 0.16, 0.05]} rotation={[0, 0, -0.5]}><coneGeometry args={[0.08, 0.16, 8]} /><primitive object={hairM} attach="material" /></mesh>
