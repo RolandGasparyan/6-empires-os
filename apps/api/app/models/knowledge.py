@@ -10,6 +10,6 @@ class KnowledgeDocument(Base):
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     document_type = Column(String(50), nullable=False, index=True)
-    metadata = Column(JSON)
+    metadata_json = Column("metadata", JSON)
     indexed = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
