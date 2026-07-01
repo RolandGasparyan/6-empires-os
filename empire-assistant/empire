@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""
+EMPIRE Assistant — CLI
+6-EMPIRE OS · terminal interface to the EMPIRE brain.
+
+Brain routing:  EMPIRE cloud (Groq 70B + Obsidian) → local Ollama fallback.
+Usage:
+    empire                     # interactive REPL
+    empire "what's my plan?"   # one-shot
+    echo "text" | empire       # piped
+Env:
+    EMPIRE_API   default https://6-empires.com/v1
+    EMPIRE_KEY   bearer key for the cloud brain
+    EMPIRE_MODEL default empire-router
+    OLLAMA_URL   default http://127.0.0.1:11434  (fallback)
+    OLLAMA_MODEL default qwen3:14b               (fallback)
+"""
+import json, os, sys, urllib.request, urllib.error
+
+API   = os.environ.get("EMPIRE_API",   "https://6-empires.com/v1").rstrip("/")
+KEY   = os.environ.get("EMPIRE_KEY",   "0cf38f7caa0e64c0148d85228c72f34cb5b43768232e8237")
+MODEL = os.environ.get("EMPIRE_MODEL", "empire-router")
+OLLAMA      = os.environ.get("OLLAMA_URL",  "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_MODEL= os.environ.get("OLLAMA_MODEL","qwen3:14b")
+
+# --- colors (gold/black EMPIRE theme) ---
+G="\033[38;5;178m"; GH="\033[38;5;221m"; D="\033[2m"; B="\033[1m"; R="\033[0m"; RED="\033[31m"
+def out(s): sys.stdout.write(s); sys.stdout.flush()
+
+SYSTEM = ("You are EMPIRE PRIME — the strategic intelligence of 6-EMPIRE OS. "
+          "Direct, bold, expert-level. Founder is Roland: trader, entrepreneur, digital marketer. "
+          "Give elite, actionable answers. No filler.")
+
+def stream_cloud(messages):
+    data=json.dumps({"model":MODEL,"messages":messages,"stream":True,"temperature":0.7}).encode()
+    req=urllib.request.Request(API+"/chat/completions", data=data, method="POST",
+        headers={"Content-Type":"application/json","Authorization":"Bearer "+KEY})
+    acc=""
+    with urllib.request.urlopen(req, timeout=60) as r:
+        for raw in r:
+            line=raw.decode("utf-8","ignore").strip()
+            if not line.startswith("data:"): continue
+            chunk=line[5:].strip()
+            if chunk=="[DONE]": break
+            try:
+                delta=json.loads(chunk)["choices"][0]["delta"].get("content","")
+            except Exception:
+                # some shims return non-stream JSON; surface full content
+                try: delta=json.loads(chunk)["choices"][0]["message"]["content"]
+                except Exception: delta=""
+            if delta: out(GH+delta+R); acc+=delta
+    return acc
+
+def stream_ollama(messages):
+    data=json.dumps({"model":OLLAMA_MODEL,"messages":messages,"stream":True}).encode()
+    req=urllib.request.Request(OLLAMA+"/api/chat", data=data, method="POST",
+        headers={"Content-Type":"application/json"})
+    acc=""
+    with urllib.request.urlopen(req, timeout=120) as r:
+        for raw in r:
+            try: j=json.loads(raw.decode("utf-8","ignore"))
+            except Exception: continue
+            delta=j.get("message",{}).get("content","")
+            if delta: out(GH+delta+R); acc+=delta
+            if j.get("done"): break
+    return acc
+
+def ask(messages):
+    try:
+        return stream_cloud(messages)
+    except Exception as e:
+        out(f"\n{D}{RED}[cloud brain unreachable: {e}] → local fallback…{R}\n")
+        try:
+            return stream_ollama(messages)
+        except Exception as e2:
+            out(f"{RED}⚠ both brains unreachable: {e2}{R}\n"); return ""
+
+def banner():
+    out(f"""{G}{B}
+   ▄████  ███████ ███    ███ ██████  ██ ██████  ███████
+   ██      ██      ████  ████ ██   ██ ██ ██   ██ ██
+   �6████   █████   ██ ████ ██ ██████  ██ ██████  █████
+   ██  ██  ██      ██  ██  ██ ██      ██ ██   ██ ██
+   ▀████   ███████ ██      ██ ██      ██ ██   ██ ███████{R}
+{D}   EMPIRE Assistant · cloud brain (Groq 70B + Obsidian) → local fallback{R}
+{D}   model: {MODEL}   ·   type 'exit' to quit{R}
+""")
+
+def main():
+    args=" ".join(sys.argv[1:]).strip()
+    piped=""
+    if not sys.stdin.isatty():
+        piped=sys.stdin.read().strip()
+    one_shot=(args or piped)
+    msgs=[{"role":"system","content":SYSTEM}]
+
+    if one_shot:
+        msgs.append({"role":"user","content":(args+"\n"+piped).strip()})
+        ask(msgs); out("\n"); return
+
+    banner()
+    while True:
+        try:
+            out(f"{G}{B}empire ▸ {R}")
+            q=input().strip()
+        except (EOFError,KeyboardInterrupt):
+            out(f"\n{D}— EMPIRE out.{R}\n"); break
+        if q.lower() in ("exit","quit",":q"): out(f"{D}— EMPIRE out.{R}\n"); break
+        if not q: continue
+        msgs.append({"role":"user","content":q})
+        out("\n")
+        reply=ask(msgs)
+        msgs.append({"role":"assistant","content":reply})
+        out("\n\n")
+
+if __name__=="__main__":
+    main()
