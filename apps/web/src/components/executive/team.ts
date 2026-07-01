@@ -38,6 +38,8 @@ export const TEAM: TeamMember[] = [
   { id: 'auto',  name: 'Noah Parker',      title: 'AUTOMATION LEAD',    color: '#2f6fd0', tagline: 'Automate. Optimize. Scale.',       blurb: 'Building systems that scale.',    gesture: 'type',  status: 'AUTOMATING',   room: 'workspace', hair: '#141414', glasses: true },
   { id: 'mkt',   name: 'Mia Coleman',      title: 'MARKETING DIRECTOR', color: '#15b0c0', tagline: 'Brand. Growth. Positioning.',      blurb: 'Making an empire known.',         gesture: 'wave',  status: 'CREATING',     room: 'media',     hair: '#15a6c0' },
   { id: 'ops',   name: 'Liam Turner',      title: 'OPERATIONS MANAGER', color: '#24406a', tagline: 'Systems. Flow. Efficiency.',       blurb: 'Making everything run.',          gesture: 'idle',  status: 'RUNNING',      room: 'workspace', hair: '#141414', glasses: true },
+  { id: 'music', name: 'Leo Vance',        title: 'MUSIC AI PRODUCER',  color: '#b83fc4', tagline: 'Sound. Songs. Suno.',              blurb: 'Generating tracks with Suno AI.', gesture: 'type',  status: 'GENERATING',   room: 'media',     hair: '#1a1430' },
+  { id: 'video', name: 'Zoe Hart',         title: 'VIDEO & REELS AI',   color: '#06b6d4', tagline: 'Video. Reels. Virality.',          blurb: 'Generating video content & reels.', gesture: 'scan',  status: 'RENDERING',    room: 'media',     hair: '#15a6c0' },
 ];
 
 export const byId = (id: string) => TEAM.find((t) => t.id === id);

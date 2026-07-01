@@ -11,6 +11,7 @@
  * bot avatars, in the limits of procedural R3F.
  */
 import { useRef, useMemo, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Gesture } from './Character';
@@ -32,13 +33,17 @@ export interface HumanProps {
   status?: string;
   seed?: number;
   seated?: boolean;          // tuck legs into an L (sitting at a desk)
+  live?: boolean;            // gentle real-time working motion (head bob, typing)
+  walk?: boolean;            // swing legs + arms (used by Walker when moving)
 }
 
-export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, suit, hair = '#1a1410', beard = false, glasses = false, bowtie = false, gesture = 'idle', name, status, seed = 0, seated = false }: HumanProps) {
+export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, suit, hair = '#1a1410', beard = false, glasses = false, bowtie = false, gesture = 'idle', name, status, seed = 0, seated = false, live = false, walk = false }: HumanProps) {
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
   const lArm = useRef<THREE.Group>(null);
   const rArm = useRef<THREE.Group>(null);
+  const lLeg = useRef<THREE.Group>(null);
+  const rLeg = useRef<THREE.Group>(null);
   const lEye = useRef<THREE.Mesh>(null);
   const rEye = useRef<THREE.Mesh>(null);
   const blink = 1;
@@ -64,6 +69,43 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
     }
   }, [gesture]);
 
+  // LIVE: gentle real-time working motion — head bob/turn, typing hands, idle
+  // sway. Phase-offset per seed so the team doesn't move in sync. This animates
+  // ONLY the character rig (not the floor/camera), so the scene stays stable.
+  const baseR = useRef({ rx: -1.1, lx: -1.1 });
+  useEffect(() => { baseR.current = { rx: lArm.current?.rotation.x ?? -1.1, lx: rArm.current?.rotation.x ?? -1.1 }; }, [gesture]);
+  useFrame((state) => {
+    if (!live && !walk) return;
+    const t = state.clock.elapsedTime + seed * 1.7;
+
+    // WALKING: swing legs + arms, little body bounce (Arturitu-style stroll)
+    if (walk) {
+      const s = Math.sin(t * 8.0);
+      if (lLeg.current) lLeg.current.rotation.x = s * 0.6;
+      if (rLeg.current) rLeg.current.rotation.x = -s * 0.6;
+      if (lArm.current) lArm.current.rotation.x = -s * 0.5;
+      if (rArm.current) rArm.current.rotation.x = s * 0.5;
+      if (head.current) { head.current.position.y = 1.34 + Math.abs(Math.sin(t * 8.0)) * 0.02; head.current.rotation.y = Math.sin(t * 0.5) * 0.15; }
+      return;
+    }
+
+    if (head.current) {
+      head.current.rotation.y = Math.sin(t * 0.6) * 0.18;          // look around
+      head.current.position.y = 1.34 + Math.sin(t * 2.0) * 0.012;  // subtle bob
+      head.current.rotation.x = Math.sin(t * 1.3) * 0.05;
+    }
+    const L = lArm.current, R = rArm.current;
+    if (L && R && (gesture === 'type' || seated)) {
+      R.rotation.x = -1.1 + Math.sin(t * 7.0) * 0.10;
+      L.rotation.x = -1.1 + Math.sin(t * 7.0 + 1.6) * 0.10;
+    } else if (R && gesture === 'scan') {
+      R.rotation.x = -0.4 + Math.sin(t * 1.4) * 0.25;
+    }
+    if (root.current && !seated) {
+      root.current.rotation.z = Math.sin(t * 0.8) * 0.02;          // standing sway
+    }
+  });
+
   return (
     <group ref={root} position={position} rotation={rotation} scale={scale}>
       {seated ? (
@@ -84,12 +126,15 @@ export function HumanCharacter({ position = [0, 0, 0], rotation = [0, 0, 0], sca
         </>
       ) : (
         <>
-          {/* legs */}
-          <mesh position={[-0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
-          <mesh position={[0.12, 0.32, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
-          {/* shoes */}
-          <mesh position={[-0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
-          <mesh position={[0.12, 0.05, 0.07]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+          {/* legs (pivot at hip so they can swing while walking) */}
+          <group ref={lLeg} position={[-0.12, 0.57, 0]}>
+            <mesh position={[0, -0.25, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+            <mesh position={[0, -0.52, 0.06]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+          </group>
+          <group ref={rLeg} position={[0.12, 0.57, 0]}>
+            <mesh position={[0, -0.25, 0]} castShadow><capsuleGeometry args={[0.1, 0.5, 4, 10]} /><primitive object={cloth} attach="material" /></mesh>
+            <mesh position={[0, -0.52, 0.06]}><boxGeometry args={[0.14, 0.08, 0.24]} /><meshStandardMaterial color="#0a0806" roughness={0.4} /></mesh>
+          </group>
         </>
       )}
 

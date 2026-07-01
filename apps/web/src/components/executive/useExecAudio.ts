@@ -95,5 +95,19 @@ export function createExecAudio() {
   function setVolume(v: number) { if (master && ctx) master.gain.linearRampToValueAtTime(v, ctx.currentTime + 0.3); }
   function stop() { timers.forEach(clearTimeout); try { ctx?.close(); } catch {} started = false; }
 
-  return { start, setVolume, stop, get on() { return started; } };
+  // interactive UI "ping" — call on agent click / open (gamified feedback)
+  function click() {
+    if (!ctx || !master) return;
+    const t = ctx.currentTime;
+    [880, 1320].forEach((f, i) => {
+      const o = ctx!.createOscillator(); const g = ctx!.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.value = 0; o.connect(g); g.connect(master!);
+      g.gain.linearRampToValueAtTime(0.08, t + 0.005 + i * 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22 + i * 0.04);
+      o.start(t + i * 0.04); o.stop(t + 0.3 + i * 0.04);
+    });
+  }
+
+  return { start, setVolume, stop, click, get on() { return started; } };
 }

@@ -1,10 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppShell } from '@/components/shell/AppShell';
 
 export const metadata: Metadata = {
   title: '6-EMPIRE OS — Executive Command Center',
   description: 'Cinematic 3D operating system for an AI-native corporation.',
+};
+
+// universal/responsive scaling on every device (phones, tablets, desktops)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
