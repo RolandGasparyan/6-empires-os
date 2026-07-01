@@ -22,9 +22,10 @@ try {
 const TOKEN = process.env.GITHUB_TOKEN || '';
 const OWNER = process.env.GITHUB_OWNER || 'RolandGasparyan';
 const PORT = process.env.SYNC_PORT || 8120;
-// Scope trimmed 2026-07-01 audit: default list is now only confirmed-real repos.
-// (SYNC_REPOS in .env, if set, overrides this — update it on the VPS too.)
-const REPOS = (process.env.SYNC_REPOS || '6-empires-os,founders-kit')
+// CORRECTION (2026-07-01): restored full set after confirming (via the real
+// GITHUB_TOKEN) that these are legitimate PRIVATE repos, not missing ones —
+// an earlier unauthenticated check wrongly read their 404s as "doesn't exist."
+const REPOS = (process.env.SYNC_REPOS || '6-empires-os,trading-guru-empire,strategy-lab-mac,dzayn-app,reincarnation-smm,REINCARNATION-Social-media-Gods,vortex,BOOKING-AI-AGENT,founders-kit')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 const STATE_FILE = path.join(__dirname, 'state.json');

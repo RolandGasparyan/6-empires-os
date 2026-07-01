@@ -107,12 +107,19 @@ export default function EmpireHQPage() {
   }, []);
 
   // map a repo to the agent who owns it — id-based (matches TEAM ids + agents.js
-  // ASSIGN). Scope trimmed 2026-07-01 audit: only confirmed-real, public GitHub
-  // repos get an owner and are clickable-to-work. Re-add here once Roland confirms
-  // where the other tracked project names (trading-guru-empire, vortex, etc.) live.
+  // ASSIGN). CORRECTION (2026-07-01): a prior pass trimmed this to 2 repos,
+  // wrongly believing the rest didn't exist. They're real, PRIVATE repos
+  // (confirmed via the authenticated GITHUB_TOKEN) — full set restored.
   const REPO_OWNER: Record<string, string> = {
-    '6-empires-os': 'cto',   // Daniel Carter — the real OS repo
-    'founders-kit': 'auto',  // Noah Parker — shared CI/CD tooling
+    '6-empires-os': 'cto',
+    'trading-guru-empire': 'analyst',
+    'strategy-lab-mac': 'strat',
+    'dzayn-app': 'mkt',
+    'reincarnation-smm': 'mkt',
+    'REINCARNATION-Social-media-Gods': 'video',
+    'vortex': 'ai',
+    'BOOKING-AI-AGENT': 'ops',
+    'founders-kit': 'auto',
   };
   const ownerOf = (repoName: string) => TEAM.find((t) => t.id === REPO_OWNER[repoName]);
   useEffect(() => () => audio.current.stop(), []);
