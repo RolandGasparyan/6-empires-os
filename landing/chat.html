@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>EMPIRE AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{background:#050608;margin:0;padding:0;height:100%;}
+html,body{background:#050608!important;margin:0;padding:0;height:100%;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:#050608;}
+  ::-webkit-scrollbar{width:3px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(253,199,44,.2);border-radius:2px;}
+  #chatInput::placeholder{color:rgba(253,199,44,.35);}
+  ::selection{background:#FDC72C;color:#050608;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes spinSlowRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes goldenShine{0%,100%{box-shadow:0 0 24px rgba(253,199,44,.08) inset}50%{box-shadow:0 0 48px rgba(253,199,44,.32) inset,0 0 20px rgba(253,199,44,.18)}}
+  @keyframes statusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,222,128,0)}}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  @keyframes ping{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.4);opacity:0}}
+  @keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+  @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+  input::placeholder{color:rgba(232,234,237,.3);font-family:'Sora',sans-serif;}
+  input:focus{outline:none;}
+  button{cursor:pointer;border:none;background:none;}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    header{padding:0 16px!important;}
+    #chatMessages{padding:24px 0 16px!important;}
+    #chatMessages>div{padding:0 16px!important;}
+    .input-wrap{padding:10px 16px 14px!important;}
+    #projectsPanel{width:100vw!important;}
+    /* scale down welcome logo */
+    #chatMessages .banner-logo{width:80px!important;height:80px!important;}
+  }
+  @media(max-width:480px){
+    header{height:52px!important;padding:0 12px!important;}
+    /* hide model label on very small screens */
+    #activeModelLabel{display:none!important;}
+    #chatMessages>div{padding:0 10px!important;}
+  }
+
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;height:100vh;background:#050608;color:#E8EAED;font-family:'Sora',sans-serif;">
+
+  <!-- ── HEADER ── -->
+  <header style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(12px,4vw,48px);height:64px;border-bottom:1px solid rgba(253,199,44,.12);">
+    <!-- logo + model dropdown trigger -->
+    <div style="position:relative;">
+      <div onclick="toggleModelMenu()" style="display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;">
+        <!-- header logo: clean, no bg, golden shimmer border -->
+        <div style="position:relative;width:36px;height:36px;flex-shrink:0;">
+          <!-- slow spinning arc border — no fill -->
+          <div style="position:absolute;inset:-5px;border-radius:50%;border:1px solid transparent;background:conic-gradient(from 0deg,transparent 0%,transparent 65%,rgba(253,199,44,.7) 75%,rgba(253,199,44,.9) 78%,rgba(253,199,44,.7) 82%,transparent 92%) border-box;animation:spinSlow 10s linear infinite;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;"></div>
+          <!-- pulse glow only -->
+          <div style="position:absolute;inset:-3px;border-radius:50%;box-shadow:0 0 10px rgba(253,199,44,.2);animation:goldenShine 5s ease-in-out infinite;pointer-events:none;"></div>
+          <img src="empire-emblem.png" alt="6-EMPIRES" style="position:relative;width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(253,199,44,.55)) ;">
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;border:1.5px solid #050608;animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+        <!-- one-line: EMPIRE + model label -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.28em;color:#FDC72C;line-height:1;">EMPIRE</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="activeModelLabel" style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.16em;color:rgba(253,199,44,.5);">PRIME</span>
+            <svg viewBox="0 0 8 5" width="7" height="5" fill="none" stroke="rgba(253,199,44,.35)" stroke-width="1.4"><path d="M1 1l3 3 3-3"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- dropdown menu -->
+      <div id="modelMenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(6,8,14,.98);border:1px solid rgba(253,199,44,.25);width:220px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.7);">
+        <!-- section: model -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODEL</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button onclick="setModel(this)" data-model="PRIME" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">
+            <div style="width:6px;height:6px;background:#FDC72C;border-radius:50%;flex-shrink:0;"></div>PRIME
+          </button>
+          <button onclick="setModel(this)" data-model="MEDIA" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>MEDIA
+          </button>
+          <button onclick="setModel(this)" data-model="NEXUS" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>NEXUS
+          </button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: mode -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODE</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button id="modeCore" onclick="setMode(this)" data-mode="EMPIRE CORE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">CORE</button>
+          <button onclick="setMode(this)" data-mode="RAPID FIRE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RAPID</button>
+          <button onclick="setMode(this)" data-mode="DEEP RESEARCH" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RESEARCH</button>
+          <button onclick="setMode(this)" data-mode="CREATIVE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">CREATIVE</button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: actions -->
+        <div style="padding:8px;display:flex;gap:4px;">
+          <button onclick="toggleProjects()" style="flex:1;padding:8px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.25);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#FDC72C;cursor:pointer;">PROJECTS</button>
+          <button onclick="toggleProjects()" style="flex:1;padding:8px;background:none;border:1px solid rgba(253,199,44,.15);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.45);cursor:pointer;">+ NEW</button>
+        </div>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ── MESSAGES ── -->
+  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:0;display:flex;flex-direction:column;justify-content:center;">
+    <div style="max-width:min(760px,100%);margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:0;width:100%;">
+
+      <!-- INIT banner -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0 24px;animation:fadeUp .5s both;">
+        <!-- logo with layered golden contour rings -->
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+          <!-- outer contour: slow clockwise shine -->
+          <div style="position:absolute;inset:-50px;border-radius:50%;border:1px solid rgba(253,199,44,.18);animation:spinSlow 32s linear infinite;"></div>
+          <div style="position:absolute;inset:-30px;border-radius:50%;border:1px solid rgba(253,199,44,.28);animation:spinSlowRev 22s linear infinite;"></div>
+          <div style="position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(253,199,44,.42);animation:goldenShine 7s ease-in-out infinite;"></div>
+          <!-- logo spinning -->
+          <img src="empire-emblem.png" alt="6-EMPIRES" class="banner-logo" style="width:330px;height:330px;object-fit:contain;filter:drop-shadow(0 0 56px rgba(253,199,44,.8)) ;animation:spinSlow 28s linear infinite;">
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div id="bannerStatusDot" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid rgba(5,6,8,.9);animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- typing indicator (hidden by default) -->
+      <div id="typingIndicator" style="display:none;margin-bottom:32px;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));">
+          <div style="display:flex;align-items:center;gap:5px;padding:14px 0 6px;">
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .2s infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .4s infinite;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── INPUT ── -->
+  <div class="input-wrap" style="flex-shrink:0;padding:8px clamp(12px,4vw,32px) 0;border-top:1px solid rgba(253,199,44,.12);margin-top:auto;">
+    <div style="max-width:min(760px,100%);margin:0 auto;">
+      <!-- input bar -->
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 4px 20px;background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.35);">
+        <!-- upload -->
+        <label style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;cursor:pointer;" title="Attach file">
+          <input type="file" style="display:none;" onchange="handleUpload(this)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 11v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3"/><polyline points="12,6 9,3 6,6"/><line x1="9" y1="3" x2="9" y2="12"/></svg>
+        </label>
+        <div style="width:1px;height:20px;background:rgba(253,199,44,.18);flex-shrink:0;"></div>
+        <!-- mic -->
+        <button style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="8" height="10" rx="4"/><path d="M2 9s0 6 7 6 7-6 7-6M9 15v2"/></svg>
+        </button>
+        <!-- text -->
+        <input id="chatInput" type="text" placeholder="Message Empire AI…" style="flex:1;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-size:14px;letter-spacing:.07em;color:#FDC72C;padding:12px 0;" onkeydown="handleKey(event)">
+        <!-- send -->
+        <button onclick="sendMessage()" style="flex-shrink:0;width:38px;height:38px;background:#FDC72C;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;margin:4px;box-shadow:0 0 16px rgba(253,199,44,.35);">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="#050608" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="9" x2="15" y2="9"/><path d="M10 4l5 5-5 5"/></svg>
+        </button>
+      </div>
+      <div style="text-align:center;padding:5px 0 6px;">
+        <a href="https://www.6-empires.com" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:400;font-size:8px;letter-spacing:.22em;color:rgba(253,199,44,.4);text-decoration:none;cursor:pointer;display:block;padding:6px 0 16px;text-align:center;">POWERED BY 6-EMPIRES · END-TO-END ENCRYPTED</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── PROJECTS PANEL (right drawer) ── -->
+<div id="projectsPanel" style="position:fixed;top:0;right:0;width:340px;height:100vh;background:rgba(4,6,10,.98);border-left:1px solid rgba(253,199,44,.15);display:none;flex-direction:column;z-index:200;transform:translateX(0);transition:transform .25s ease;">
+  <!-- panel header -->
+  <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:64px;border-bottom:1px solid rgba(253,199,44,.1);">
+    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:.22em;color:#FDC72C;">CONNECTED PROJECTS</div>
+    <button onclick="toggleProjects()" style="background:none;border:none;cursor:pointer;padding:6px;color:rgba(232,234,237,.4);">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.5)" stroke-width="1.5"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>
+    </button>
+  </div>
+  <!-- agents status bar -->
+  <div style="flex-shrink:0;padding:12px 24px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px;">
+    <div style="width:6px;height:6px;background:#4ade80;border-radius:50%;"></div>
+    <span style="font-family:'Chakra Petch',sans-serif;font-size:8px;font-weight:600;letter-spacing:.18em;color:rgba(253,199,44,.55);">4 AGENTS ACTIVE · 6 PROJECTS LIVE</span>
+  </div>
+  <!-- project list -->
+  <div style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:10px;">
+
+    <!-- project card: active -->
+    <div style="padding:16px;background:rgba(253,199,44,.05);border:1px solid rgba(253,199,44,.2);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:#FDC72C;letter-spacing:.06em;">6-EMPIRES SITE</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.45);margin-bottom:8px;letter-spacing:.1em;">AGENT: DESIGN SOVEREIGN</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.5);line-height:1.5;margin-bottom:12px;">Scrollytelling site — cinematic, HUD aesthetic, 3D.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.1);border:1px solid rgba(253,199,44,.25);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:#FDC72C;cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">EMPIRE CHAT</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: ROLAND PRIME</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">AI chat interface — premium HUD design.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">AGENT COMMAND</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#FDC72C;border-radius:50%;animation:pulse 1.5s infinite;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.8);">BUILDING</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: NEXUS ARCHITECT</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Central console — agent management &amp; control.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">SOVEREIGN PROTOCOL</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#60a5fa;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#60a5fa;">REVIEW</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: STRATEGIST-7</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Growth strategy &amp; ecosystem architecture.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- add project -->
+    <div style="padding:14px 16px;border:1px dashed rgba(253,199,44,.15);display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.4)" stroke-width="1.5"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+      <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:rgba(253,199,44,.35);">CONNECT PROJECT</span>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const BASE=(location.pathname.replace(/\/[^/]*$/,'')+'/').replace(/\/+$/,'/');
+const api=(p)=>BASE.replace(/\/$/,'')+p;
+let MODEL='empire-prime', MODE='empire', speakOn=false, history=[];
+const MODELMAP={PRIME:'empire-prime',MEDIA:'empire-media',NEXUS:'empire-research'};
+const MODEMAP={'EMPIRE CORE':'empire','RAPID FIRE':'empire','DEEP RESEARCH':'academic','CREATIVE':'builder'};
+
+function toggleModelMenu(){const m=document.getElementById('modelMenu');if(!m)return;
+  m.style.display=m.style.display==='block'?'none':'block';
+  if(m.style.display==='block'){setTimeout(()=>{const c=(e)=>{if(!m.contains(e.target)){m.style.display='none';document.removeEventListener('click',c);}};document.addEventListener('click',c);},50);}}
+function setModel(btn){const k=btn.getAttribute('data-model');MODEL=MODELMAP[k]||'empire-prime';
+  const l=document.getElementById('activeModelLabel');if(l)l.textContent=k;
+  document.querySelectorAll('#modelMenu [data-model]').forEach(b=>{const a=b.getAttribute('data-model')===k;b.style.color=a?'#FDC72C':'rgba(253,199,44,.45)';const d=b.querySelector('div');if(d)d.style.background=a?'#FDC72C':'rgba(253,199,44,.3)';});
+  document.getElementById('modelMenu').style.display='none';}
+function setMode(btn){const k=btn.getAttribute('data-mode');MODE=MODEMAP[k]||'empire';
+  document.querySelectorAll('[data-mode]').forEach(b=>{const a=b.getAttribute('data-mode')===k;b.style.background=a?'rgba(253,199,44,.08)':'none';b.style.color=a?'#FDC72C':'rgba(253,199,44,.45)';});
+  const m=document.getElementById('modelMenu');if(m)m.style.display='none';}
+function toggleProjects(){const p=document.getElementById('projectsPanel');if(!p)return;p.style.display=p.style.display==='flex'?'none':'flex';}
+function handleUpload(inp){const f=inp.files&&inp.files[0];if(!f)return;const i=document.getElementById('chatInput');if(i){i.value='[Attached: '+f.name+'] ';i.focus();}}
+function handleKey(e){if(e.key==='Enter'){e.preventDefault();sendMessage();}}
+
+function ts(){return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});}
+function inner(){return document.getElementById('chatMessages').querySelector('div');}
+function rmBanner(){const b=document.querySelector('#chatMessages .banner-logo');if(b){const w=b.closest('[style*="padding:16px 0 24px"]')||b.parentElement;if(w)w.remove();}}
+
+function addUser(text){
+  const el=document.createElement('div');el.style.cssText='margin-bottom:32px;animation:fadeUp .4s both;';
+  el.innerHTML='<div style="display:flex;justify-content:flex-end;"><div style="max-width:78%;"><div style="padding:14px 20px;background:rgba(253,199,44,.1);border:1px solid rgba(253,199,44,.35);font-family:\'Chakra Petch\',sans-serif;font-size:14px;letter-spacing:.04em;line-height:1.7;color:#FDC72C;"></div><div style="text-align:right;margin-top:5px;font-family:\'Space Mono\',monospace;font-size:8px;letter-spacing:.12em;color:rgba(253,199,44,.35);">Roland G. · '+ts()+'</div></div></div>';
+  el.querySelector('div>div>div').textContent=text;
+  const t=document.getElementById('typingIndicator');inner().insertBefore(el,t);
+}
+function addAI(){
+  const el=document.createElement('div');el.style.cssText='margin-bottom:32px;animation:fadeUp .4s both;';
+  el.innerHTML='<div style="display:flex;align-items:flex-start;gap:14px;"><img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-family:\'Chakra Petch\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;color:#FDC72C;">EMPIRE AI</span><span style="font-family:\'Space Mono\',monospace;font-size:9px;color:rgba(253,199,44,.3);">'+ts()+'</span></div><div class="ai-body" style="font-family:\'Sora\',sans-serif;font-size:15px;line-height:1.8;color:#FDC72C;white-space:pre-wrap;"></div></div></div>';
+  const t=document.getElementById('typingIndicator');inner().insertBefore(el,t);
+  return el.querySelector('.ai-body');
+}
+async function sendMessage(){
+  const i=document.getElementById('chatInput');if(!i||!i.value.trim())return;
+  const text=i.value.trim();i.value='';rmBanner();
+  addUser(text);history.push({role:'user',content:text});
+  const msgs=document.getElementById('chatMessages');const typing=document.getElementById('typingIndicator');
+  typing.style.display='block';msgs.scrollTop=msgs.scrollHeight;
+  const out=addAI();let acc='';
+  try{
+    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:MODEL,mode:MODE,messages:history})});
+    typing.style.display='none';
+    const rd=res.body.getReader(),dec=new TextDecoder();
+    while(true){const{done,value}=await rd.read();if(done)break;acc+=dec.decode(value,{stream:true});out.textContent=acc;msgs.scrollTop=msgs.scrollHeight;}
+    out.textContent=acc||'(no response)';history.push({role:'assistant',content:acc});
+    if(speakOn&&acc)speak(acc);
+  }catch(e){typing.style.display='none';out.textContent='⚠️ '+e.message;}
+}
+
+/* voice */
+function speak(t){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[*#`>_]/g,''));u.rate=1.02;u.pitch=.95;const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Daniel|Google UK English Male|Alex/i.test(x.name))||vs.find(x=>/en[-_]/i.test(x.lang));if(v)u.voice=v;speechSynthesis.speak(u);}
+(function(){
+  const i=document.getElementById('chatInput');if(i)i.focus();
+  // wire mic + speaker (the design's mic button is the 2nd <button> with the rect mic svg)
+  const micBtn=[...document.querySelectorAll('button')].find(b=>b.querySelector('rect[x="5"]'));
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(micBtn&&SR){
+    let rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;let fin='';let live=false;
+    rec.onstart=()=>{live=true;micBtn.style.color='#e23b3b';fin='';};
+    rec.onresult=(e)=>{let it='';for(let k=e.resultIndex;k<e.results.length;k++){const x=e.results[k][0].transcript;if(e.results[k].isFinal)fin+=x;else it+=x;}const inp=document.getElementById('chatInput');inp.value=(fin+it).trim();};
+    rec.onerror=()=>{live=false;micBtn.style.color='rgba(253,199,44,.45)';};
+    rec.onend=()=>{live=false;micBtn.style.color='rgba(253,199,44,.45)';if(document.getElementById('chatInput').value.trim()){speakOn=true;sendMessage();}};
+    micBtn.onclick=()=>{if(live){rec.stop();return;}try{speechSynthesis.cancel();rec.start();}catch(_){}};
+  }
+})();
+</script>
+</body>
+</html>

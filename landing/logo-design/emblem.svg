@@ -1,0 +1,63 @@
+<svg width="1000" height="1000" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldBevel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#FFF3C4"/>
+      <stop offset="20%" stop-color="#F6D46B"/>
+      <stop offset="45%" stop-color="#E7B23A"/>
+      <stop offset="72%" stop-color="#B4801E"/>
+      <stop offset="100%" stop-color="#6E4E12"/>
+    </linearGradient>
+    <linearGradient id="goldEdge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF9E0"/>
+      <stop offset="100%" stop-color="#9A6E18"/>
+    </linearGradient>
+    <radialGradient id="starGrad" cx="50%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#FFF9E0"/>
+      <stop offset="55%" stop-color="#F3C64A"/>
+      <stop offset="100%" stop-color="#A9781B"/>
+    </radialGradient>
+    <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E7B23A" stop-opacity="0"/>
+      <stop offset="86%" stop-color="#E7B23A" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#E7B23A" stop-opacity=".55"/>
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(500,500)">
+    <!-- faint medallion orbit rings -->
+    <circle r="392" fill="none" stroke="#C99A2E" stroke-width="2.5" opacity=".28"/>
+    <circle r="360" fill="none" stroke="#C99A2E" stroke-width="1.2" opacity=".18"/>
+
+    <!-- ARM: a bold, tight '6' — full loop mid-radius + crescent tail to the rim -->
+    <g id="arm">
+      <!-- 6 loop: a near-closed thick ring, opening toward upper-right -->
+      <path d="M 66 -150
+               C 66 -212, 14 -246, -44 -232
+               C -104 -218, -132 -150, -108 -96
+               C -86 -46, -22 -30, 26 -56
+               C 60 -74, 70 -116, 44 -140"
+            fill="none" stroke="url(#goldBevel)" stroke-width="52"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- crescent tail: from loop top, sweeping up-left to the outer rim -->
+      <path d="M 58 -186
+               C 96 -244, 96 -306, 40 -344
+               C 6 -366, -34 -362, -66 -338"
+            fill="none" stroke="url(#goldBevel)" stroke-width="46"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- highlight ribs -->
+      <path d="M 66 -150 C 66 -212, 14 -246, -44 -232 C -104 -218, -132 -150, -108 -96"
+            fill="none" stroke="url(#goldEdge)" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+      <path d="M 58 -186 C 96 -244, 96 -306, 40 -344 C 6 -366, -34 -362, -66 -338"
+            fill="none" stroke="url(#goldEdge)" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+    </g>
+    <use href="#arm" transform="rotate(90)"/>
+    <use href="#arm" transform="rotate(180)"/>
+    <use href="#arm" transform="rotate(270)"/>
+
+    <!-- central four-point star: the still, sovereign point -->
+    <path d="M 0 -92 L 24 -24 L 92 0 L 24 24 L 0 92 L -24 24 L -92 0 L -24 -24 Z"
+          fill="url(#starGrad)" stroke="#7A5714" stroke-width="2.5"/>
+    <path d="M 0 -46 L 12 -12 L 46 0 L 12 12 L 0 46 L -12 12 L -46 0 L -12 -12 Z"
+          fill="#FFF6CE" opacity=".9"/>
+  </g>
+</svg>

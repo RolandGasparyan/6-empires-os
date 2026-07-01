@@ -1,0 +1,67 @@
+<svg width="1000" height="1400" viewBox="0 0 1000 1400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldBevel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF3C4"/><stop offset="20%" stop-color="#F6D46B"/>
+      <stop offset="45%" stop-color="#E7B23A"/><stop offset="72%" stop-color="#B4801E"/>
+      <stop offset="100%" stop-color="#6E4E12"/>
+    </linearGradient>
+    <linearGradient id="goldEdge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF9E0"/><stop offset="100%" stop-color="#9A6E18"/>
+    </linearGradient>
+    <radialGradient id="starGrad" cx="50%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#FFF9E0"/><stop offset="55%" stop-color="#F3C64A"/><stop offset="100%" stop-color="#A9781B"/>
+    </radialGradient>
+    <radialGradient id="vign" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#12100B"/><stop offset="60%" stop-color="#0a0806"/><stop offset="100%" stop-color="#050403"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1000" height="1400" fill="url(#vign)"/>
+
+  <!-- registration corner ticks -->
+  <g stroke="#C99A2E" stroke-width="1.4" opacity=".5">
+    <path d="M60 60 h34 M60 60 v34" fill="none"/>
+    <path d="M940 60 h-34 M940 60 v34" fill="none"/>
+    <path d="M60 1340 h34 M60 1340 v-34" fill="none"/>
+    <path d="M940 1340 h-34 M940 1340 v-34" fill="none"/>
+  </g>
+
+  <!-- top clinical label -->
+  <text x="500" y="118" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="15"
+        letter-spacing="9" fill="#C99A2E" opacity=".85">SOVEREIGN  INSIGNIA</text>
+  <text x="500" y="150" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="11"
+        letter-spacing="6" fill="#8A6A22" opacity=".7">SERIES  VI  ·  STRUCK  IN  GOLD</text>
+  <line x1="430" y1="176" x2="570" y2="176" stroke="#C99A2E" stroke-width="1" opacity=".45"/>
+
+  <!-- the mark -->
+  <g transform="translate(500,640) scale(1.18)">
+    <circle r="392" fill="none" stroke="#C99A2E" stroke-width="2.5" opacity=".22"/>
+    <circle r="360" fill="none" stroke="#C99A2E" stroke-width="1.2" opacity=".14"/>
+    <circle r="424" fill="none" stroke="#C99A2E" stroke-width="0.8" opacity=".10"/>
+    <g id="arm">
+      <path d="M 66 -150 C 66 -212, 14 -246, -44 -232 C -104 -218, -132 -150, -108 -96 C -86 -46, -22 -30, 26 -56 C 60 -74, 70 -116, 44 -140"
+            fill="none" stroke="url(#goldBevel)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 58 -186 C 96 -244, 96 -306, 40 -344 C 6 -366, -34 -362, -66 -338"
+            fill="none" stroke="url(#goldBevel)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 66 -150 C 66 -212, 14 -246, -44 -232 C -104 -218, -132 -150, -108 -96"
+            fill="none" stroke="url(#goldEdge)" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+      <path d="M 58 -186 C 96 -244, 96 -306, 40 -344 C 6 -366, -34 -362, -66 -338"
+            fill="none" stroke="url(#goldEdge)" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+    </g>
+    <use href="#arm" transform="rotate(90)"/>
+    <use href="#arm" transform="rotate(180)"/>
+    <use href="#arm" transform="rotate(270)"/>
+    <path d="M 0 -92 L 24 -24 L 92 0 L 24 24 L 0 92 L -24 24 L -92 0 L -24 -24 Z" fill="url(#starGrad)" stroke="#7A5714" stroke-width="2.5"/>
+    <path d="M 0 -46 L 12 -12 L 46 0 L 12 12 L 0 46 L -12 12 L -46 0 L -12 -12 Z" fill="#FFF6CE" opacity=".9"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="500" y="1210" text-anchor="middle" font-family="DejaVu Serif" font-size="60"
+        letter-spacing="26" fill="#EBC24C">EMPIRE</text>
+  <text x="500" y="1250" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="12"
+        letter-spacing="10" fill="#8A6A22" opacity=".8">S I X   ·   S O V E R E I G N</text>
+
+  <!-- baseline coordinates -->
+  <text x="60" y="1330" font-family="DejaVu Sans Mono" font-size="11" letter-spacing="3" fill="#7A5714" opacity=".7">LAT 06.660 · LON −06.066</text>
+  <text x="940" y="1330" text-anchor="end" font-family="DejaVu Sans Mono" font-size="11" letter-spacing="3" fill="#7A5714" opacity=".7">AU · 79 · FOURFOLD</text>
+</svg>

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<script src="./obsidian-sync.js"></script>
+<script src="./ai_client.js"></script>
+<script src="./voice-integration.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:hidden;}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:#050608;overflow:hidden;}
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:rgba(253,199,44,.02);}
+  ::-webkit-scrollbar-thumb{background:rgba(253,199,44,.25);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(253,199,44,.4);}
+  #chatInput::placeholder{color:rgba(253,199,44,.35);}
+  ::selection{background:#FDC72C;color:#050608;}
+
+  /* ── Animations ── */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes fadeInScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes bounceIn{0%{opacity:0;transform:scale(.85)}60%{opacity:1;transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes spinSlowRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes goldenShine{0%,100%{box-shadow:0 0 24px rgba(253,199,44,.08) inset}50%{box-shadow:0 0 48px rgba(253,199,44,.32) inset,0 0 20px rgba(253,199,44,.18)}}
+  @keyframes statusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,222,128,0)}}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  @keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+  @keyframes inputFocus{0%{border-color:rgba(253,199,44,.35)}100%{border-color:rgba(253,199,44,.75);box-shadow:0 0 16px rgba(253,199,44,.15)}}
+  @keyframes streamIn{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+  @keyframes buttonHover{from{box-shadow:0 0 16px rgba(253,199,44,.35)}to{box-shadow:0 0 24px rgba(253,199,44,.55)}}
+
+  input::placeholder{color:rgba(232,234,237,.3);font-family:'Sora',sans-serif;}
+  input:focus{outline:none;}
+  button{cursor:pointer;border:none;background:none;}
+
+  /* ── Message Styling ── */
+  .message-bubble{border-radius:8px;padding:14px 18px;line-height:1.6;word-wrap:break-word;max-width:100%;}
+  .user-message{background:linear-gradient(135deg,rgba(253,199,44,.12),rgba(253,199,44,.06));border:1px solid rgba(253,199,44,.3);}
+  .ai-message{background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.15);}
+  .code-block{background:rgba(0,0,0,.4);border:1px solid rgba(253,199,44,.2);border-radius:6px;padding:12px;font-family:'Space Mono',monospace;font-size:12px;overflow-x:auto;margin:8px 0;}
+
+  /* ── Loading States ── */
+  .streaming::after{content:'';display:inline-block;width:2px;height:16px;background:#FDC72C;margin-left:4px;animation:pulse 1s infinite;}
+
+  /* ── Voice States ── */
+  #voiceMicBtn.voice-listening{color:#4ade80;animation:statusPulse 1.5s ease-in-out infinite;}
+  #voiceMicBtn.voice-error{color:#ef4444;}
+  #voiceSpeakerBtn.voice-speaking{color:#fbbf24;animation:statusPulse 1.5s ease-in-out infinite;}
+  #voiceDisplay{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(4,6,10,.95);border:1px solid rgba(253,199,44,.3);border-radius:8px;padding:12px 20px;color:#FDC72C;font-family:'Sora',sans-serif;font-size:13px;max-width:300px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5);animation:slideUp .3s ease;}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    header{padding:0 16px!important;}
+    #chatMessages{padding:24px 0 16px!important;}
+    #chatMessages>div{padding:0 16px!important;}
+    .input-wrap{padding:10px 16px 14px!important;}
+    #projectsPanel{width:100vw!important;}
+    #chatMessages .banner-logo{width:80px!important;height:80px!important;}
+    .message-bubble{font-size:13px!important;}
+  }
+  @media(max-width:480px){
+    header{height:52px!important;padding:0 12px!important;}
+    #activeModelLabel{display:none!important;}
+    #chatMessages>div{padding:0 10px!important;}
+    .message-bubble{padding:10px 14px!important;}
+  }
+</style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;height:100vh;background:#050608;color:#E8EAED;font-family:'Sora',sans-serif;">
+
+  <!-- ── HEADER ── -->
+  <header style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(12px,4vw,48px);height:64px;border-bottom:1px solid rgba(253,199,44,.12);">
+    <!-- logo + model dropdown trigger -->
+    <div style="position:relative;">
+      <div onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;">
+        <!-- header logo: clean, no bg, golden shimmer border -->
+        <div style="position:relative;width:36px;height:36px;flex-shrink:0;">
+          <!-- slow spinning arc border — no fill -->
+          <div style="position:absolute;inset:-5px;border-radius:50%;border:1px solid transparent;background:conic-gradient(from 0deg,transparent 0%,transparent 65%,rgba(253,199,44,.7) 75%,rgba(253,199,44,.9) 78%,rgba(253,199,44,.7) 82%,transparent 92%) border-box;animation:spinSlow 10s linear infinite;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;"></div>
+          <!-- pulse glow only -->
+          <div style="position:absolute;inset:-3px;border-radius:50%;box-shadow:0 0 10px rgba(253,199,44,.2);animation:goldenShine 5s ease-in-out infinite;pointer-events:none;"></div>
+          <img src="6-empires-logo.png" alt="6-EMPIRES" style="position:relative;width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(253,199,44,.55)) brightness(1.1);">
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;border:1.5px solid #050608;animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+        <!-- one-line: EMPIRE + model label -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.28em;color:#FDC72C;line-height:1;">EMPIRE</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="activeModelLabel" style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.16em;color:rgba(253,199,44,.5);">PRIME</span>
+            <svg viewBox="0 0 8 5" width="7" height="5" fill="none" stroke="rgba(253,199,44,.35)" stroke-width="1.4"><path d="M1 1l3 3 3-3"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- dropdown menu -->
+      <div id="modelMenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(6,8,14,.98);border:1px solid rgba(253,199,44,.25);width:220px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.7);">
+        <!-- section: model -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODEL</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button onClick="{{ setModel }}" data-model="PRIME" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">
+            <div style="width:6px;height:6px;background:#FDC72C;border-radius:50%;flex-shrink:0;"></div>PRIME
+          </button>
+          <button onClick="{{ setModel }}" data-model="MEDIA" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>MEDIA
+          </button>
+          <button onClick="{{ setModel }}" data-model="NEXUS" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>NEXUS
+          </button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: mode -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODE</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button id="modeCore" onClick="{{ setMode }}" data-mode="EMPIRE CORE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">CORE</button>
+          <button onClick="{{ setMode }}" data-mode="RAPID FIRE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RAPID</button>
+          <button onClick="{{ setMode }}" data-mode="DEEP RESEARCH" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RESEARCH</button>
+          <button onClick="{{ setMode }}" data-mode="CREATIVE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">CREATIVE</button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: actions -->
+        <div style="padding:8px;display:flex;gap:4px;">
+          <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.25);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#FDC72C;cursor:pointer;">PROJECTS</button>
+          <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:none;border:1px solid rgba(253,199,44,.15);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.45);cursor:pointer;">+ NEW</button>
+        </div>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ── MESSAGES ── -->
+  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:0;display:flex;flex-direction:column;justify-content:center;">
+    <div style="max-width:min(760px,100%);margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:0;width:100%;">
+
+      <!-- INIT banner -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0 24px;animation:fadeUp .5s both;">
+        <!-- logo with layered golden contour rings -->
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+          <!-- outer contour: slow clockwise shine -->
+          <div style="position:absolute;inset:-50px;border-radius:50%;border:1px solid rgba(253,199,44,.18);animation:spinSlow 32s linear infinite;"></div>
+          <div style="position:absolute;inset:-30px;border-radius:50%;border:1px solid rgba(253,199,44,.28);animation:spinSlowRev 22s linear infinite;"></div>
+          <div style="position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(253,199,44,.42);animation:goldenShine 7s ease-in-out infinite;"></div>
+          <!-- logo spinning - 6-EMPIRES Coin Design -->
+          <svg class="banner-logo" viewBox="0 0 330 330" style="width:330px;height:330px;filter:drop-shadow(0 0 56px rgba(253,199,44,.8)) brightness(1.3);animation:spinSlow 28s linear infinite;" xmlns="http://www.w3.org/2000/svg">
+            <!-- Outer circular border with golden gradient -->
+            <defs>
+              <radialGradient id="goldGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:#FDC72C;stop-opacity:0.9" />
+                <stop offset="100%" style="stop-color:#D4A62A;stop-opacity:0.4" />
+              </radialGradient>
+              <filter id="goldGlow">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Outer ring -->
+            <circle cx="165" cy="165" r="160" fill="none" stroke="url(#goldGradient)" stroke-width="3" filter="url(#goldGlow)"/>
+            <circle cx="165" cy="165" r="155" fill="none" stroke="rgba(253,199,44,.25)" stroke-width="1"/>
+
+            <!-- Inner ring -->
+            <circle cx="165" cy="165" r="140" fill="none" stroke="rgba(253,199,44,.3)" stroke-width="1"/>
+
+            <!-- 6-Pointed Star with Spirals - Golden -->
+            <!-- Points 1-6 with spiral curves -->
+            <!-- Point 1 (top) -->
+            <path d="M 165 45 Q 155 80 165 115 Q 175 80 165 45" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 165 45 Q 155 80 165 115 Q 175 80 165 45" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Point 2 (top-right) -->
+            <path d="M 250 65 Q 225 90 210 125 Q 235 110 250 65" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 250 65 Q 225 90 210 125 Q 235 110 250 65" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Point 3 (bottom-right) -->
+            <path d="M 250 265 Q 235 240 210 205 Q 225 240 250 265" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 250 265 Q 235 240 210 205 Q 225 240 250 265" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Point 4 (bottom) -->
+            <path d="M 165 285 Q 175 250 165 215 Q 155 250 165 285" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 165 285 Q 175 250 165 215 Q 155 250 165 285" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Point 5 (bottom-left) -->
+            <path d="M 80 265 Q 95 240 120 205 Q 105 240 80 265" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 80 265 Q 95 240 120 205 Q 105 240 80 265" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Point 6 (top-left) -->
+            <path d="M 80 65 Q 105 90 120 125 Q 95 110 80 65" fill="#FDC72C" opacity="0.95"/>
+            <path d="M 80 65 Q 105 90 120 125 Q 95 110 80 65" fill="none" stroke="#D4A62A" stroke-width="1" opacity="0.6"/>
+
+            <!-- Center circle with small green dot -->
+            <circle cx="165" cy="165" r="22" fill="rgba(253,199,44,.15)" stroke="rgba(253,199,44,.4)" stroke-width="1.5"/>
+            <circle cx="165" cy="165" r="8" fill="#4ade80" opacity="0.8"/>
+            <circle cx="165" cy="165" r="6" fill="#22c55e" opacity="0.9"/>
+
+            <!-- Decorative inner elements -->
+            <circle cx="165" cy="165" r="35" fill="none" stroke="rgba(253,199,44,.15)" stroke-width="0.5"/>
+            <circle cx="165" cy="165" r="50" fill="none" stroke="rgba(253,199,44,.1)" stroke-width="0.5"/>
+          </svg>
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div id="bannerStatusDot" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid rgba(5,6,8,.9);animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- typing indicator (hidden by default) -->
+      <div id="typingIndicator" style="display:none;margin-bottom:32px;animation:slideUp .3s ease-out;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <img src="6-empires-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));animation:bounceIn .5s ease-out;">
+          <div style="display:flex;align-items:center;gap:5px;padding:14px 0 6px;">
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .2s infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .4s infinite;"></div>
+          </div>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.4);margin-top:4px;">THINKING...</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── COMMAND PALETTE (hidden by default) ── -->
+  <div id="commandPalette" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding-top:60px;z-index:400;backdrop-filter:blur(4px);animation:fadeInScale .25s ease-out;">
+    <div style="width:90%;max-width:520px;background:rgba(5,6,8,.99);border:1px solid rgba(253,199,44,.2);box-shadow:0 20px 64px rgba(0,0,0,.8);border-radius:12px;overflow:hidden;">
+      <div style="padding:16px;border-bottom:1px solid rgba(253,199,44,.1);display:flex;align-items:center;gap:10px;">
+        <span style="color:rgba(253,199,44,.5);font-size:14px;">⌘</span>
+        <input id="cmdSearch" type="text" placeholder="Search commands..." style="flex:1;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-size:15px;letter-spacing:.04em;color:#FDC72C;outline:none;">
+      </div>
+      <div id="cmdResults" style="max-height:360px;overflow-y:auto;padding:8px;">
+        <div style="padding:12px 16px;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.3);">COMMANDS</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="{{ cmdEnter }}" onClick="{{ cmdExecute }}" data-cmd="search">🔍 Search Web</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="{{ cmdEnter }}" onClick="{{ cmdExecute }}" data-cmd="analyze">📊 Analyze Code</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="{{ cmdEnter }}" onClick="{{ cmdExecute }}" data-cmd="generate">✨ Generate Content</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="{{ cmdEnter }}" onClick="{{ cmdExecute }}" data-cmd="debug">🔧 Debug Assistant</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MESSAGE CONTEXT MENU (hidden by default) ── -->
+  <div id="messageMenu" style="position:fixed;background:rgba(5,6,8,.98);border:1px solid rgba(253,199,44,.2);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.7);display:none;z-index:300;overflow:hidden;min-width:160px;">
+    <button onClick="{{ copyMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">📋 Copy</button>
+    <button onClick="{{ regenerateMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">🔄 Regenerate</button>
+    <button onClick="{{ editMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">✏️ Edit</button>
+    <button onClick="{{ deleteMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:#ff6b6b;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;">🗑️ Delete</button>
+  </div>
+
+  <!-- ── VOICE DISPLAY ── -->
+  <div id="voiceDisplay" style="display:none;"></div>
+
+  <!-- ── INPUT ── -->
+  <div class="input-wrap" style="flex-shrink:0;padding:8px clamp(12px,4vw,32px) 0;border-top:1px solid rgba(253,199,44,.12);margin-top:auto;">
+    <div style="max-width:min(760px,100%);margin:0 auto;">
+      <!-- quick suggestions -->
+      <div id="suggestions" style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:8px;opacity:0;transition:opacity .3s ease;">
+        <button onClick="{{ applySuggestion }}" data-suggest="Analyze this code snippet" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">📊 Analyze Code</button>
+        <button onClick="{{ applySuggestion }}" data-suggest="Generate creative content" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">✨ Creative</button>
+        <button onClick="{{ applySuggestion }}" data-suggest="Help with debugging" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">🔧 Debug</button>
+      </div>
+
+      <!-- input bar -->
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 4px 20px;background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.35);border-radius:6px;transition:all .25s ease;">
+        <!-- upload -->
+        <label style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;cursor:pointer;transition:color .2s;" title="Attach file">
+          <input type="file" style="display:none;" onChange="{{ handleUpload }}">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 11v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3"/><polyline points="12,6 9,3 6,6"/><line x1="9" y1="3" x2="9" y2="12"/></svg>
+        </label>
+        <div style="width:1px;height:20px;background:rgba(253,199,44,.18);flex-shrink:0;"></div>
+        <!-- command palette trigger -->
+        <button onClick="{{ toggleCmdPalette }}" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:color .2s;" title="Command palette (⌘K)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="8"/><line x1="9" y1="5" x2="9" y2="13"/><line x1="5" y1="9" x2="13" y2="9"/></svg>
+        </button>
+        <!-- voice input (microphone) -->
+        <button id="voiceMicBtn" onClick="{{ toggleVoiceInput }}" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:all .2s;" title="Voice input (speak)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2v8m0 0a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M6 13a3 3 0 00-3 3v1h12v-1a3 3 0 00-3-3H6z"/></svg>
+        </button>
+        <!-- voice output (speaker) -->
+        <button id="voiceSpeakerBtn" onClick="{{ toggleVoiceOutput }}" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:all .2s;" title="Read response aloud">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4 10 8 6 8 14 4 10"/><path d="M11 6c1.5 1.5 1.5 4.5 0 6m2.5-7.5c2.5 2.5 2.5 7.5 0 10"/></svg>
+        </button>
+        <!-- text -->
+        <input id="chatInput" type="text" placeholder="Message Empire AI…" style="flex:1;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-size:14px;letter-spacing:.07em;color:#FDC72C;padding:12px 0;" onKeyDown="{{ handleKey }}" onFocus="{{ showSuggestions }}">
+        <!-- send -->
+        <button onClick="{{ sendMessage }}" style="flex-shrink:0;width:38px;height:38px;background:#FDC72C;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;margin:4px;box-shadow:0 0 16px rgba(253,199,44,.35);border-radius:4px;transition:all .2s;hover:box-shadow:0 0 24px rgba(253,199,44,.55);">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="#050608" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="9" x2="15" y2="9"/><path d="M10 4l5 5-5 5"/></svg>
+        </button>
+      </div>
+      <div style="text-align:center;padding:5px 0 6px;">
+        <a href="https://www.6-empires.com" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:400;font-size:8px;letter-spacing:.22em;color:rgba(253,199,44,.4);text-decoration:none;cursor:pointer;display:block;padding:6px 0 16px;text-align:center;">POWERED BY 6-EMPIRES · END-TO-END ENCRYPTED</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── PROJECTS PANEL (right drawer) ── -->
+<div id="projectsPanel" style="position:fixed;top:0;right:0;width:340px;height:100vh;background:rgba(4,6,10,.98);border-left:1px solid rgba(253,199,44,.15);display:none;flex-direction:column;z-index:200;transform:translateX(0);transition:transform .25s ease;">
+  <!-- panel header -->
+  <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:64px;border-bottom:1px solid rgba(253,199,44,.1);">
+    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:.22em;color:#FDC72C;">CONNECTED PROJECTS</div>
+    <button onClick="{{ toggleProjects }}" style="background:none;border:none;cursor:pointer;padding:6px;color:rgba(232,234,237,.4);">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.5)" stroke-width="1.5"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>
+    </button>
+  </div>
+  <!-- agents status bar -->
+  <div style="flex-shrink:0;padding:12px 24px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px;">
+    <div style="width:6px;height:6px;background:#4ade80;border-radius:50%;"></div>
+    <span style="font-family:'Chakra Petch',sans-serif;font-size:8px;font-weight:600;letter-spacing:.18em;color:rgba(253,199,44,.55);">4 AGENTS ACTIVE · 6 PROJECTS LIVE</span>
+  </div>
+  <!-- project list -->
+  <div style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:10px;">
+
+    <!-- project card: active -->
+    <div style="padding:16px;background:rgba(253,199,44,.05);border:1px solid rgba(253,199,44,.2);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:#FDC72C;letter-spacing:.06em;">6-EMPIRES SITE</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.45);margin-bottom:8px;letter-spacing:.1em;">AGENT: DESIGN SOVEREIGN</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.5);line-height:1.5;margin-bottom:12px;">Scrollytelling site — cinematic, HUD aesthetic, 3D.</div>
+      <div style="display:flex;gap:6px;">
+        <button onClick="{{ projectOpen }}" style="padding:5px 12px;background:rgba(253,199,44,.1);border:1px solid rgba(253,199,44,.25);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:#FDC72C;cursor:pointer;">OPEN</button>
+        <button onClick="{{ projectEdit }}" style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">EMPIRE CHAT</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: ROLAND PRIME</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">AI chat interface — premium HUD design.</div>
+      <div style="display:flex;gap:6px;">
+        <button onClick="{{ projectOpen }}" style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button onClick="{{ projectEdit }}" style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">AGENT COMMAND</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#FDC72C;border-radius:50%;animation:pulse 1.5s infinite;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.8);">BUILDING</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: NEXUS ARCHITECT</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Central console — agent management &amp; control.</div>
+      <div style="display:flex;gap:6px;">
+        <button onClick="{{ projectOpen }}" style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">SOVEREIGN PROTOCOL</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#60a5fa;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#60a5fa;">REVIEW</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: STRATEGIST-7</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Growth strategy &amp; ecosystem architecture.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- add project -->
+    <div style="padding:14px 16px;border:1px dashed rgba(253,199,44,.15);display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.4)" stroke-width="1.5"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+      <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:rgba(253,199,44,.35);">CONNECT PROJECT</span>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:800}}">
+class Component extends DCLogic {
+  state = { activeMode: 'EMPIRE CORE', cmdPaletteOpen: false, messages: [] };
+  lastContextMenu = null;
+
+  componentDidMount() {
+    const input = document.getElementById('chatInput');
+    if (input) input.focus();
+    this._updateModeBtns('EMPIRE CORE');
+    this._scrollToBottom();
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        this.toggleCmdPalette();
+      }
+      if (e.key === 'Escape') {
+        this.toggleCmdPalette();
+        this._hideContextMenu();
+      }
+    });
+
+    // Close context menu on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-msg-id]')) {
+        this._hideContextMenu();
+      }
+    });
+  }
+
+  componentDidUpdate() {
+    if (!this._didInitialScroll) this._scrollToBottom();
+  }
+
+  _scrollToBottom() {
+    const msgs = document.getElementById('chatMessages');
+    if (!msgs) return;
+    const doScroll = () => { msgs.scrollTop = msgs.scrollHeight; };
+    doScroll();
+    setTimeout(doScroll, 150);
+    setTimeout(() => { doScroll(); this._didInitialScroll = true; }, 400);
+  }
+
+  _updateModeBtns(active) {
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+      const isActive = btn.getAttribute('data-mode') === active;
+      btn.style.background = isActive ? 'rgba(253,199,44,.08)' : 'none';
+      btn.style.color = isActive ? '#FDC72C' : 'rgba(253,199,44,.45)';
+    });
+  }
+
+  _hideContextMenu() {
+    const menu = document.getElementById('messageMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  _showContextMenu(x, y) {
+    const menu = document.getElementById('messageMenu');
+    if (!menu) return;
+    menu.style.display = 'block';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+  }
+
+  setMode(e) {
+    const mode = e.currentTarget?.getAttribute('data-mode');
+    if (!mode) return;
+    this.setState({ activeMode: mode });
+    this._updateModeBtns(mode);
+    const menu = document.getElementById('modelMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      this.sendMessage();
+    }
+  }
+
+  showSuggestions() {
+    const sugg = document.getElementById('suggestions');
+    if (sugg) sugg.style.opacity = '1';
+  }
+
+  hideSuggestions() {
+    const sugg = document.getElementById('suggestions');
+    if (sugg) sugg.style.opacity = '0';
+  }
+
+  applySuggestion(e) {
+    const text = e.currentTarget?.getAttribute('data-suggest');
+    if (!text) return;
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = text; input.focus(); }
+  }
+
+  toggleCmdPalette() {
+    const palette = document.getElementById('commandPalette');
+    if (!palette) return;
+    const isOpen = palette.style.display === 'flex';
+    palette.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) {
+      setTimeout(() => {
+        const search = document.getElementById('cmdSearch');
+        if (search) search.focus();
+      }, 100);
+    }
+  }
+
+  cmdExecute(e) {
+    const cmd = e.currentTarget?.textContent?.trim();
+    if (!cmd) return;
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = cmd + ': '; input.focus(); }
+    this.toggleCmdPalette();
+  }
+
+  cmdEnter(e) {
+    e.currentTarget.style.background = 'rgba(253,199,44,.08)';
+    e.currentTarget.style.color = '#FDC72C';
+  }
+
+  copyMessage(e) {
+    const msgEl = this.lastContextMenu;
+    if (!msgEl) return;
+    const text = msgEl.innerText || msgEl.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      this._hideContextMenu();
+    });
+  }
+
+  regenerateMessage(e) {
+    const msgEl = this.lastContextMenu;
+    if (!msgEl) return;
+    // Trigger new response based on context
+    this.sendMessage();
+    this._hideContextMenu();
+  }
+
+  editMessage(e) {
+    const msgEl = this.lastContextMenu;
+    if (!msgEl) return;
+    const text = msgEl.innerText || msgEl.textContent;
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = text; input.focus(); }
+    msgEl.remove();
+    this._hideContextMenu();
+  }
+
+  deleteMessage(e) {
+    const msgEl = this.lastContextMenu;
+    if (!msgEl) return;
+    msgEl.style.animation = 'fadeUp .3s ease-out reverse';
+    setTimeout(() => msgEl.remove(), 300);
+    this._hideContextMenu();
+  }
+
+  sendMessage() {
+    const input = document.getElementById('chatInput');
+    if (!input || !input.value.trim()) return;
+    const text = input.value.trim();
+    input.value = '';
+    this.hideSuggestions();
+
+    const msgs = document.getElementById('chatMessages');
+    const inner = msgs?.querySelector('div');
+    if (!inner) return;
+
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    const msgId = 'msg-' + Date.now();
+    const typing = document.getElementById('typingIndicator');
+
+    // User message
+    const userEl = document.createElement('div');
+    userEl.setAttribute('data-msg-id', msgId);
+    userEl.style.cssText = 'margin-bottom:32px;animation:fadeUp .4s both;cursor:context-menu;';
+    userEl.innerHTML = `<div style="display:flex;justify-content:flex-end;"><div style="max-width:78%;position:relative;"><div class="message-bubble user-message" style="font-family:'Chakra Petch',sans-serif;font-size:14px;letter-spacing:.04em;color:#FDC72C;">${text}</div><div style="text-align:right;margin-top:8px;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.12em;color:rgba(253,199,44,.35);">You · ${ts}</div></div></div>`;
+    userEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.lastContextMenu = userEl.querySelector('.message-bubble');
+      this._showContextMenu(e.clientX, e.clientY);
+    });
+    inner.insertBefore(userEl, typing);
+
+    typing.style.display = 'block';
+    msgs.scrollTop = msgs.scrollHeight;
+
+    setTimeout(() => {
+      typing.style.display = 'none';
+      const ts2 = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      const pool = [
+        'Understood. The sovereign intelligence layer is processing your directive.',
+        'Acknowledged — cross-referencing against the full 6-EMPIRES knowledge architecture.',
+        'Sovereign core engaged. Calibrating response to your query now.',
+        'Empire AI is synthesizing a response. One moment.',
+        'Processing through multi-dimensional knowledge graphs...',
+        'Activating cognitive synthesis protocols.',
+      ];
+      const reply = pool[Math.floor(Math.random() * pool.length)];
+      const aiMsgId = 'msg-ai-' + Date.now();
+      const aiEl = document.createElement('div');
+      aiEl.setAttribute('data-msg-id', aiMsgId);
+      aiEl.style.cssText = 'margin-bottom:32px;animation:slideIn .35s ease-out;cursor:context-menu;';
+      aiEl.innerHTML = `<div style="display:flex;align-items:flex-start;gap:14px;"><img src="6-empires-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;color:#FDC72C;">EMPIRE AI</span><span style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.3);">${ts2}</span></div><div class="message-bubble ai-message" style="font-family:'Sora',sans-serif;font-size:15px;line-height:1.8;color:#FDC72C;">${reply}</div></div></div>`;
+      aiEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.lastContextMenu = aiEl.querySelector('.message-bubble');
+        this._showContextMenu(e.clientX, e.clientY);
+      });
+      inner.insertBefore(aiEl, typing);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 1400 + Math.random() * 600);
+  }
+
+  toggleModelMenu() {
+    const menu = document.getElementById('modelMenu');
+    if (!menu) return;
+    const isOpen = menu.style.display === 'block' || menu.style.display === '';
+    menu.style.display = isOpen ? 'none' : 'block';
+
+    // Remove any existing click handlers
+    document.removeEventListener('click', this._modelMenuCloseHandler);
+
+    if (menu.style.display === 'block') {
+      setTimeout(() => {
+        this._modelMenuCloseHandler = (ev) => {
+          if (!menu.contains(ev.target) && !ev.target.closest('header') && !ev.target.closest('[onClick*="toggleModelMenu"]')) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', this._modelMenuCloseHandler);
+          }
+        };
+        document.addEventListener('click', this._modelMenuCloseHandler);
+      }, 50);
+    }
+  }
+
+  setModel(e) {
+    const model = e.currentTarget?.getAttribute('data-model');
+    if (!model) return;
+    const label = document.getElementById('activeModelLabel');
+    if (label) label.textContent = model;
+    document.querySelectorAll('#modelMenu [data-model]').forEach(btn => {
+      const isActive = btn.getAttribute('data-model') === model;
+      btn.style.color = isActive ? '#FDC72C' : 'rgba(253,199,44,.45)';
+      const dot = btn.querySelector('div');
+      if (dot) dot.style.background = isActive ? '#FDC72C' : 'rgba(253,199,44,.3)';
+    });
+    const menu = document.getElementById('modelMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  toggleProjects() {
+    const panel = document.getElementById('projectsPanel');
+    if (!panel) return;
+    const isOpen = panel.style.display === 'flex';
+    panel.style.display = isOpen ? 'none' : 'flex';
+  }
+
+  handleUpload(e) {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = `[Attached: ${file.name}] `; input.focus(); }
+  }
+
+  toggleVoiceInput() {
+    if (!window.empireVoice) {
+      alert('Voice not available');
+      return;
+    }
+
+    if (window.empireVoice.isListening) {
+      window.empireVoice.stopListening();
+    } else {
+      window.empireVoice.startListening((transcript) => {
+        const input = document.getElementById('chatInput');
+        input.value = transcript;
+        window.empireVoice.clearVoiceDisplay();
+        this.sendMessage();
+      });
+    }
+  }
+
+  toggleVoiceOutput() {
+    if (!window.empireVoice) {
+      alert('Voice not available');
+      return;
+    }
+
+    if (window.empireVoice.synthesis.speaking) {
+      window.empireVoice.stopSpeaking();
+    } else {
+      const lastMessage = document.querySelector('.ai-message:last-child');
+      if (lastMessage) {
+        const text = lastMessage.textContent.trim();
+        if (text) {
+          window.empireVoice.speak(text);
+        }
+      } else {
+        alert('No AI response to read');
+      }
+    }
+  }
+
+  copyMessage(e) {
+    const messageEl = e.currentTarget?.closest('.message-bubble');
+    if (messageEl) {
+      const text = messageEl.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Message copied!');
+      });
+    }
+    this.hideMessageMenu();
+  }
+
+  regenerateMessage(e) {
+    const messageEl = e.currentTarget?.closest('.ai-message');
+    if (messageEl) {
+      messageEl.textContent = '🔄 Regenerating...';
+      setTimeout(() => {
+        this.sendMessage(true);
+      }, 500);
+    }
+    this.hideMessageMenu();
+  }
+
+  editMessage(e) {
+    const messageEl = e.currentTarget?.closest('.user-message');
+    if (messageEl) {
+      const text = messageEl.textContent.trim();
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
+    }
+    this.hideMessageMenu();
+  }
+
+  deleteMessage(e) {
+    const msgContainer = e.currentTarget?.closest('.message-bubble')?.closest('div');
+    if (msgContainer) {
+      msgContainer.style.opacity = '0.5';
+      msgContainer.style.pointerEvents = 'none';
+    }
+    this.hideMessageMenu();
+  }
+
+  hideMessageMenu() {
+    const menu = document.getElementById('messageMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  setMode(e) {
+    const mode = e.currentTarget?.getAttribute('data-mode');
+    if (mode) {
+      console.log('Mode changed to:', mode);
+      document.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.style.opacity = btn.getAttribute('data-mode') === mode ? '1' : '0.5';
+      });
+    }
+  }
+
+  applySuggestion(e) {
+    const suggestion = e.currentTarget?.getAttribute('data-suggest');
+    if (suggestion) {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = suggestion;
+        input.focus();
+        this.sendMessage();
+      }
+    }
+  }
+
+  projectOpen(e) {
+    const projectCard = e.currentTarget?.closest('div[style*="padding:16px"]');
+    if (!projectCard) return;
+    const projectName = projectCard.querySelector('div[style*="font-weight:600"]')?.textContent.trim();
+    if (projectName) {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = `Open project: ${projectName}`;
+        input.focus();
+        setTimeout(() => this.sendMessage(), 100);
+      }
+    }
+  }
+
+  projectEdit(e) {
+    const projectCard = e.currentTarget?.closest('div[style*="padding:16px"]');
+    if (!projectCard) return;
+    const projectName = projectCard.querySelector('div[style*="font-weight:600"]')?.textContent.trim();
+    if (projectName) {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = `Edit project: ${projectName}`;
+        input.focus();
+        setTimeout(() => this.sendMessage(), 100);
+      }
+    }
+  }
+
+  renderVals() {
+    return {
+      sendMessage: () => this.sendMessage(),
+      handleKey: (e) => this.handleKey(e),
+      setMode: (e) => this.setMode(e),
+      toggleProjects: () => this.toggleProjects(),
+      handleUpload: (e) => this.handleUpload(e),
+      setModel: (e) => this.setModel(e),
+      toggleModelMenu: () => this.toggleModelMenu(),
+      toggleCmdPalette: () => this.toggleCmdPalette(),
+      cmdExecute: (e) => this.cmdExecute(e),
+      cmdEnter: (e) => this.cmdEnter(e),
+      applySuggestion: (e) => this.applySuggestion(e),
+      showSuggestions: () => this.showSuggestions(),
+      copyMessage: (e) => this.copyMessage(e),
+      regenerateMessage: (e) => this.regenerateMessage(e),
+      editMessage: (e) => this.editMessage(e),
+      deleteMessage: (e) => this.deleteMessage(e),
+      toggleVoiceInput: () => this.toggleVoiceInput(),
+      toggleVoiceOutput: () => this.toggleVoiceOutput(),
+      projectOpen: (e) => this.projectOpen(e),
+      projectEdit: (e) => this.projectEdit(e),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
