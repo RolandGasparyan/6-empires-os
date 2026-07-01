@@ -1,0 +1,38 @@
+{
+  "source": "EMPIRE-Vault (Obsidian)",
+  "noteCount": 8,
+  "notes": [
+    {
+      "title": "EMPIRE AI Chat",
+      "text": "# EMPIRE AI Chat (localhost:8097)\n\nPart of [[EMPIRE OS]]. Your private gold-themed chat page (`empire-ai-chat/`, Node zero-dep server).\n\n## What changed\nThe model dropdown now lists all 8 [[Models|EMPIRE models]] (empire-prime, ceo, trading, coder, strategist, research, media, fast) plus any local Ollama models.\n\n- **empire-*** models → routed to the VPS router `http://64.227.6.197:8000/v1` (key `sk-empire-local`)\n- local models → stay on local Ollama\n- Mode dropdown (EMPIRE CORE / GOD MODE / Academic / Trading / Builder) injects [[GOD MODE Prompts]] server-side\n\n## Files\n`empire-ai-chat/server.js` (backend, edited), `index.html` (UI), `prompts.js` (GOD MODE library).\n\n## To apply\nRestart the local server: `PORT=8097 node ~/6-empires-os/empire-ai-chat/server.js` (or however it's launched). Verified: router answers empire-prime correctly.\n\nRelated: [[Models]] · [[Free LLM APIs]] · [[Infrastructure]]"
+    },
+    {
+      "title": "EMPIRE OS",
+      "text": "# 👑 6-EMPIRE OS — Command Center\n\n> [!success] Status: Operational\n> Web UI **http://64.227.6.197:9090** · Router :8000 · TTFB ~0.3s\n\n## Map of Content\n- [[Infrastructure]]\n- [[Models]]\n- [[GOD MODE Prompts]]\n- [[Free LLM APIs]]\n- [[OpenHuman]]\n- [[Pending Actions]]\n\n## Quick facts\n- Server: `empire-cpu` @ `64.227.6.197` (nyc1, 4 vCPU AMD / 16GB)\n- Login: roland.gasparyan@gmail.com / EMPIRE_PRIME_2025\n- 8 branded models, all with logo + tuned params + [[GOD MODE Prompts|GOD MODE]]\n- 19 [[Free LLM APIs]] wired (auto-activate on key)\n\n> [!info] This vault is a snapshot saved 2026-06-19. Live source of truth is the VPS + the `empire-ops/` folder in GitHub."
+    },
+    {
+      "title": "Free LLM APIs",
+      "text": "# Free LLM APIs — 19 Providers Wired\n\nPart of [[EMPIRE OS]]. Pulled from `awesome-free-llm-apis`. All OpenAI-compatible; auto-activate when a key is set.\n\n## Fastest free picks\n1. **Groq** ⚡ — console.groq.com/keys — `FREE_GROQ_KEY`\n2. **Cerebras** ⚡ — cloud.cerebras.ai — `FREE_CEREBRAS_KEY`\n3. **SambaNova** ⚡ — cloud.sambanova.ai — `FREE_SAMBANOVA_KEY`\n4. **Google Gemini** — aistudio.google.com/app/apikey — `FREE_GOOGLE_GEMINI_KEY`\n5. **OpenRouter** — openrouter.ai/keys — `FREE_OPENROUTER_KEY`\n\n## How to activate (one line)\n```\necho 'FREE_GROQ_KEY=gsk_...' >> /root/6-empires-os-full/.env\ncd /root/6-empires-os-full && docker compose restart api\n```\nThen EMPIRE answers at full cloud speed. See [[Pending Actions]].\n\n## MCP server\n`empire-free-llm` exposes `list_free_providers`, `list_active_providers`, `free_chat`. Built per mcp-builder, py_compile verified.\n\nRelated: [[Models]] · [[Infrastructure]]"
+    },
+    {
+      "title": "GOD MODE Prompts",
+      "text": "# GOD MODE Prompts (Academic Level)\n\nPart of [[EMPIRE OS]]. Doctoral-level system prompts installed on all 8 [[Models]]. Method: decompose → reason step-by-step with assumptions → cite frameworks → decisive recommendation; honest about uncertainty.\n\n## Reusable templates\n\n> [!quote] Academic Deep Analysis\n> Act at doctoral level. Analyze [TOPIC] from first principles: define problem + assumptions → theory/prior art → step-by-step reasoning (quantify) → 2–3 options w/ trade-offs → decisive recommendation + next actions. Separate fact / inference / speculation.\n\n> [!quote] Red Team\n> Steelman then stress-test [PLAN]. Strongest objections, hidden assumptions, failure modes, what would change your mind. Robustness 1–10.\n\n> [!quote] Research Synthesis\n> Academic synthesis on [QUESTION]: scope → key findings (with confidence) → conflicting evidence → implications → what to investigate next.\n\n> [!quote] Socratic Tutor\n> Teach [CONCEPT] to mastery: fundamentals → build up → check understanding each step → correct misconceptions → expert summary.\n\n> [!quote] Strategy War-Game\n> War-game [DECISION]: actors + incentives (game theory), base/bull/bear w/ probabilities + EV, dominant strategy + invalidation.\n\nRelated: [[Models]] · [[Free LLM APIs]]"
+    },
+    {
+      "title": "Infrastructure",
+      "text": "# Infrastructure\n\nPart of [[EMPIRE OS]].\n\n## Server\n- `empire-cpu` @ **64.227.6.197** — DigitalOcean nyc1, 4 vCPU AMD / 16GB RAM\n- Old box `137.184.54.161` **destroyed** 2026-06-19 (stopped ~$48/mo double-billing)\n\n## Services (Docker)\n- Router/shim `:8000` `/v1` (key `sk-empire-local`) — streaming TTFB ~0.3s\n- Open WebUI `:9090` — the [[Models|EMPIRE PRIME]] web interface\n- Postgres, Redis, Qdrant, Neo4j\n- Ollama `:11434` — `OLLAMA_KEEP_ALIVE=-1`\n- nginx + certbot installed → HTTPS ready (see [[Pending Actions]])\n\n## Base models\n`llama3.2:1b` (chat default), `llama3.2`, `mistral`, `nous-hermes2`, `nomic-embed-text`\n\n## Knowledge base\n`EMPIRE_KNOWLEDGE_V2` — 576 vectors in ChromaDB. Detached from models for CPU speed; re-enable on GPU. See [[Models]]."
+    },
+    {
+      "title": "Models",
+      "text": "# Models — 8 Branded EMPIRE Agents\n\nPart of [[EMPIRE OS]]. All carry: gold logo + role-tuned params + [[GOD MODE Prompts]].\n\n| Model | Role | Temp |\n|---|---|---|\n| EMPIRE PRIME | Polymath flagship | 0.6 |\n| EMPIRE CEO | Capital allocation, strategy | 0.5 |\n| EMPIRE TRADING | Quant markets, risk-first | 0.4 |\n| EMPIRE CODER | Principal engineer | 0.2 |\n| EMPIRE STRATEGIST | Game theory, dynamics | 0.6 |\n| EMPIRE RESEARCH | Academic-rigor research | 0.5 |\n| EMPIRE MEDIA | Creative, persuasion | 0.85 |\n| EMPIRE FAST | Rapid precision | 0.5 |\n\nAll route through the [[Infrastructure|router]] (`empire-router` → Ollama). Verified replying in-persona.\n\n> [!tip] Use EMPIRE PRIME or EMPIRE STRATEGIST for deepest reasoning; EMPIRE FAST for speed.\n\nRelated: [[GOD MODE Prompts]] · [[Free LLM APIs]]"
+    },
+    {
+      "title": "OpenHuman",
+      "text": "# OpenHuman (desktop app)\n\nPart of [[EMPIRE OS]].\n\n## Configured & saved\n- LLM provider **EMPIRE GPU** → `http://64.227.6.197:8000/v1` (key `sk-empire-local`)\n- Routing: Use Your Own Models → empire-router (saved)\n- Voice: STT + TTS = **OpenHuman (Managed)** (saved)\n\n## Known limitation\n> [!warning] Beta bug — not infra\n> OpenHuman v0.57.44 receives a valid **200 OK** from the router in ~1s but its UI hangs on \"Thinking\", and its own commands hit \"not allowed by ACL\". Confirmed across two separate servers — a client-side bug in the app, not your setup. Use the [[Models|EMPIRE PRIME web UI]] (:9090) as the reliable interface; revisit OpenHuman when they ship a fix.\n\nRelated: [[Infrastructure]] · [[Models]]"
+    },
+    {
+      "title": "Pending Actions",
+      "text": "# Pending Actions (your login required)\n\nPart of [[EMPIRE OS]]. These three need your accounts — they can't be done for you.\n\n> [!todo] 1 · Add a free LLM key\n> Get a free Groq key at console.groq.com/keys, then add to the VPS `.env` and restart the api container. Unlocks instant speed. See [[Free LLM APIs]].\n\n> [!todo] 2 · Point the domain + HTTPS\n> In Hostinger, set the `6-empires.com` A-record to **64.227.6.197**. Then the cert auto-issues for https://6-empires.com. See [[Infrastructure]].\n\n> [!todo] 3 · Revoke the DigitalOcean API token\n> cloud.digitalocean.com/account/api/tokens — the migration token is no longer needed.\n\n---\nAlso: [[OpenHuman]] beta chat bug is on the app vendor (not actionable by us)."
+    }
+  ]
+}
