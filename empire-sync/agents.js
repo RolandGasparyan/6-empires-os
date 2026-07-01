@@ -21,14 +21,14 @@ const KEY = process.env.EMPIRE_KEY || 'sk-empire-local';
 const STATE = path.join(__dirname, 'agents-state.json');
 
 // repo → owning agent + EMPIRE model
+// Scope trimmed 2026-07-01 audit: only these 2 repos are confirmed real, public
+// GitHub repos under RolandGasparyan. The previous list (trading-guru-empire,
+// strategy-lab-mac, dzayn-app, reincarnation-smm, REINCARNATION-Social-media-Gods,
+// vortex) returned 404/"no access" for every run — they don't exist at this
+// owner. Re-add here once Roland confirms where each one actually lives.
 const ASSIGN = {
-  '6-empires-os':            { agent: 'Daniel Carter (CTO)',        model: 'empire-coder' },
-  'trading-guru-empire':     { agent: 'Emma Sullivan (Analyst)',    model: 'empire-trading' },
-  'strategy-lab-mac':        { agent: 'Marcus Hayes (Strategist)',  model: 'empire-strategist' },
-  'dzayn-app':               { agent: 'Mia Coleman (Marketing)',    model: 'empire-media' },
-  'reincarnation-smm':       { agent: 'Mia Coleman (Marketing)',    model: 'empire-media' },
-  'REINCARNATION-Social-media-Gods': { agent: 'Zoe Hart (Video AI)', model: 'empire-media' },
-  'vortex':                  { agent: 'Ethan Brooks (AI Engineer)', model: 'empire-coder' },
+  '6-empires-os': { agent: 'Daniel Carter (CTO)',       model: 'empire-coder' },
+  'founders-kit': { agent: 'Noah Parker (Automation Lead)', model: 'empire-coder' },
 };
 
 function ghGet(p, token) {

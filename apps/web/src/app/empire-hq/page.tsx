@@ -106,32 +106,36 @@ export default function EmpireHQPage() {
     pull(); const id = setInterval(pull, 60000); return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // map a repo to the agent who owns it (real assignment)
+  // map a repo to the agent who owns it — id-based (matches TEAM ids + agents.js
+  // ASSIGN). Scope trimmed 2026-07-01 audit: only confirmed-real, public GitHub
+  // repos get an owner and are clickable-to-work. Re-add here once Roland confirms
+  // where the other tracked project names (trading-guru-empire, vortex, etc.) live.
   const REPO_OWNER: Record<string, string> = {
-    '6-empires-os': 'Daniel Carter (CTO)', 'trading-guru-empire': 'Emma Sullivan (Analyst)',
-    'strategy-lab-mac': 'Marcus Hayes (Strategist)', 'dzayn-app': 'Mia Coleman (Marketing)',
-    'reincarnation-smm': 'Mia Coleman (Marketing)', 'REINCARNATION-Social-media-Gods': 'Zoe Hart (Video AI)',
-    'vortex': 'Ethan Brooks (AI Engineer)',
+    '6-empires-os': 'cto',   // Daniel Carter — the real OS repo
+    'founders-kit': 'auto',  // Noah Parker — shared CI/CD tooling
   };
+  const ownerOf = (repoName: string) => TEAM.find((t) => t.id === REPO_OWNER[repoName]);
   useEffect(() => () => audio.current.stop(), []);
   function enter() { audio.current.start(); setEntered(true); }
 
   // reset the conversation when switching agents
   useEffect(() => { setReply(''); setAsk(''); }, [sel?.id]);
 
-  async function askAgent() {
-    if (!sel || !ask.trim() || busy) return;
-    const q = ask.trim(); setAsk(''); setBusy(true); setReply('');
-    const model = modelFor(sel.id);
-    const skills = AGENT_SKILLS[sel.id] || 'elite, academic-level expertise in your domain.';
+  // core call — takes an explicit agent + question so it can be fired immediately
+  // (e.g. from a project-card click) without waiting on a setSel() re-render.
+  async function askAgentAs(agent: TeamMember, q: string) {
+    if (!agent || !q.trim() || busy) return;
+    setBusy(true); setReply('');
+    const model = modelFor(agent.id);
+    const skills = AGENT_SKILLS[agent.id] || 'elite, academic-level expertise in your domain.';
     // inject the live GitHub project context so agents reason on REAL state
-    const ownedName = Object.keys(REPO_OWNER).find((k) => REPO_OWNER[k].toLowerCase().includes(sel.name.split(' ')[0].toLowerCase()));
+    const ownedName = Object.keys(REPO_OWNER).find((k) => REPO_OWNER[k] === agent.id);
     const mine = projects.find((p: any) => p.name === ownedName);
     const projCtx = projects.length
       ? `\nLIVE PROJECTS (real GitHub): ${projects.map((p: any) => `${p.name}=${p.stage}(${p.lastPushDays === 0 ? 'today' : p.lastPushDays + 'd'})`).join(', ')}.` +
         (mine ? ` You personally own ${mine.name} (${mine.stage}); last commit: "${mine.lastCommit?.msg || 'n/a'}".` : '')
       : '';
-    const sys = `You are ${sel.name}, the ${sel.title} of 6 EMPIRES — Roland Gasparyan's AI-native corporation. Expertise: ${skills} ${sel.blurb}${projCtx} Answer in character, sharp, expert-level and actionable. Use the real project data above.`;
+    const sys = `You are ${agent.name}, the ${agent.title} of 6 EMPIRES — Roland Gasparyan's AI-native corporation. Expertise: ${skills} ${agent.blurb}${projCtx} Answer in character, sharp, expert-level and actionable. Use the real project data above.`;
     try {
       const res = await fetch('/chat/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model, mode: 'empire', messages: [{ role: 'system', content: sys }, { role: 'user', content: q }] }) });
@@ -139,6 +143,24 @@ export default function EmpireHQPage() {
       while (true) { const { done, value } = await reader.read(); if (done) break; acc += dec.decode(value, { stream: true }); setReply(acc); }
     } catch (e: any) { setReply('⚠️ ' + (e?.message || 'error')); }
     setBusy(false);
+  }
+
+  // the manual "ask this agent" input box in the profile card
+  function askAgent() {
+    if (!sel || !ask.trim() || busy) return;
+    const q = ask.trim(); setAsk('');
+    askAgentAs(sel, q);
+  }
+
+  // click a LIVE PROJECT card → switch the profile card + model to its owning
+  // agent, and immediately kick off a real task on that project via the chat model.
+  function startProjectTask(p: any) {
+    const agent = ownerOf(p.name);
+    if (!agent || busy) return;
+    audio.current.click();
+    setSel(agent);
+    const q = `Start working on ${p.name}. Give me the current status, then propose the ONE next concrete task you'll work on — be specific about the file/area and the change.`;
+    askAgentAs(agent, q);
   }
 
   // client-only gate: SSR and first client paint render an identical static shell,
@@ -238,25 +260,33 @@ export default function EmpireHQPage() {
                   {projects.length === 0 && <div className="text-[11px] text-white/35">syncing GitHub…</div>}
                   {projects.map((p: any) => {
                     const work = agentWork.find((a: any) => a.repo === p.name);
+                    const owner = ownerOf(p.name);
                     const c = p.stage === 'LIVE' ? '#34f5a0' : p.stage === 'BETA' ? '#6fb3ff' : p.stage === 'BUILDING' ? '#ffd21e' : p.stage === 'PAUSED' ? '#ff9bbf' : '#9fdce6';
                     return (
-                      <a key={p.name} href={p.url} target="_blank" rel="noreferrer"
-                        className="block rounded-lg p-2 transition hover:translate-x-0.5"
-                        style={{ background: '#ffffff06', border: '1px solid #ffffff10' }}>
+                      <div key={p.name} role="button" tabIndex={0}
+                        onClick={() => startProjectTask(p)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') startProjectTask(p); }}
+                        className="block rounded-lg p-2 transition hover:translate-x-0.5 cursor-pointer"
+                        style={{ background: '#ffffff06', border: `1px solid ${owner ? sel?.id === owner.id ? owner.color : '#ffffff10' : '#ffffff10'}` }}>
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] text-white/90 font-medium truncate">{p.name}</span>
-                          <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded" style={{ color: c, border: `1px solid ${c}55` }}>{p.stage}</span>
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded" style={{ color: c, border: `1px solid ${c}55` }}>{p.stage}</span>
+                            <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+                              className="text-[10px] text-white/35 hover:text-white/70" title="open on GitHub">↗</a>
+                          </span>
                         </div>
                         <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ background: '#ffffff10' }}>
                           <div className="h-full rounded-full" style={{ width: `${Math.round((p.prog || 0) * 100)}%`, background: c }} />
                         </div>
                         <div className="mt-1 flex items-center justify-between text-[8.5px] text-white/40">
-                          <span className="truncate">{REPO_OWNER[p.name] || 'Unassigned'}</span>
+                          <span className="truncate">{owner ? `${owner.name} (${owner.title})` : 'Unassigned'}</span>
                           <span>{p.language || '—'} · {p.lastPushDays === 0 ? 'today' : p.lastPushDays + 'd'}</span>
                         </div>
                         {p.lastCommit?.msg && <div className="mt-0.5 text-[8.5px] text-white/30 truncate">↳ {p.lastCommit.msg}</div>}
                         {work?.title && <div className="mt-0.5 text-[8.5px] truncate" style={{ color: GOLD }}>🤖 {work.prUrl ? 'PR' : 'proposal'}: {work.title}</div>}
-                      </a>
+                        {owner && <div className="mt-1 text-[8.5px]" style={{ color: `${GOLD}bb` }}>▶ click to switch to {owner.name.split(' ')[0]} &amp; start a task</div>}
+                      </div>
                     );
                   })}
                 </div>

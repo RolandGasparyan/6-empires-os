@@ -22,7 +22,9 @@ try {
 const TOKEN = process.env.GITHUB_TOKEN || '';
 const OWNER = process.env.GITHUB_OWNER || 'RolandGasparyan';
 const PORT = process.env.SYNC_PORT || 8120;
-const REPOS = (process.env.SYNC_REPOS || '6-empires-os,trading-guru-empire,strategy-lab-mac,dzayn-app')
+// Scope trimmed 2026-07-01 audit: default list is now only confirmed-real repos.
+// (SYNC_REPOS in .env, if set, overrides this — update it on the VPS too.)
+const REPOS = (process.env.SYNC_REPOS || '6-empires-os,founders-kit')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 const STATE_FILE = path.join(__dirname, 'state.json');
