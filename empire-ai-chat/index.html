@@ -12,14 +12,15 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-  /* gold-marble background across the whole chat */
+  /* clean solid black background across the whole chat */
+  /* clean dark background (no gold shimmer) — transparent logo sits on it */
   body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;
-    background:#070503 url('marble-bg.svg') center/cover no-repeat fixed;}
+    background:radial-gradient(120% 90% at 50% 38%, #0d0a06 0%, #080603 55%, #030201 100%);}
   .serif{font-family:Georgia,"Times New Roman",serif;}
 
   /* header */
   header{display:flex;align-items:center;gap:14px;padding:16px 20px;
-    border-bottom:1px solid #caa44a33;background:linear-gradient(180deg,rgba(8,5,3,0.72),rgba(8,5,3,0.35));backdrop-filter:blur(3px);}
+    border-bottom:1px solid #caa44a33;background:linear-gradient(180deg,rgba(5,4,2,0.82),rgba(5,4,2,0.4));backdrop-filter:blur(3px);}
   .logo{width:54px;height:54px;flex:0 0 auto;display:grid;place-items:center;}
   .logo svg,.logo img{width:50px;height:50px}
   .brand{line-height:1.05;flex:1}
@@ -43,15 +44,15 @@
   .msg.user .av{background:#181511;border:1px solid #ffffff12;color:var(--muted)}
   .msg.ai .av{background:#181307;border:1px solid var(--gold-deep);color:var(--gold)}
   .bubble{padding:12px 15px;border-radius:14px;font-size:15.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
-  .msg.user .bubble{background:rgba(24,21,17,0.82);border:1px solid #ffffff10;color:#efe9da}
-  .msg.ai .bubble{background:rgba(20,16,8,0.82);border:1px solid #caa44a40;color:#f3ecd9}
+  .msg.user .bubble{background:#101010;border:1px solid #ffffff10;color:#efe9da}
+  .msg.ai .bubble{background:#0a0a0a;border:1px solid #caa44a40;color:#f3ecd9}
   .bubble .cursor{display:inline-block;width:7px;height:16px;background:var(--gold);margin-left:2px;animation:blink 1s steps(2) infinite;vertical-align:middle}
   @keyframes blink{50%{opacity:0}}
 
   /* composer */
-  footer{padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #caa44a33;background:linear-gradient(0deg,rgba(8,5,3,0.72),rgba(8,5,3,0.3));backdrop-filter:blur(3px)}
+  footer{padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #caa44a33;background:linear-gradient(0deg,rgba(5,4,2,0.82),rgba(5,4,2,0.35));backdrop-filter:blur(3px)}
   .composer{display:flex;align-items:flex-end;gap:10px;max-width:880px;margin:0 auto;
-    background:rgba(16,14,10,0.9);border:1px solid #caa44a30;border-radius:20px;padding:10px 10px 10px 18px;}
+    background:#0c0c0c;border:1px solid #caa44a30;border-radius:20px;padding:10px 10px 10px 18px;}
   .composer textarea{flex:1;background:transparent;border:0;outline:0;color:var(--ink);
     font-size:17px;resize:none;max-height:140px;line-height:1.4;padding:8px 0;font-family:inherit}
   .composer textarea::placeholder{color:#6f6857}
@@ -61,13 +62,20 @@
   .send:hover{opacity:.9}
   .send:disabled{opacity:.5;cursor:default;transform:none}
   .send svg{width:24px;height:24px}
+  .mic,.speaker{width:42px;height:42px;flex:0 0 auto;border:0;border-radius:12px;cursor:pointer;
+    background:#161310;color:var(--gold);display:grid;place-items:center;transition:all .15s ease}
+  .mic svg,.speaker svg{width:21px;height:21px}
+  .mic:hover,.speaker:hover{background:#211c12;color:var(--gold-hi)}
+  .mic.live{background:linear-gradient(135deg,#e23b3b,#9a1f1f);color:#fff;animation:pulse 1s ease-in-out infinite}
+  .speaker.on{background:linear-gradient(135deg,var(--gold-hi),var(--gold-deep));color:#0a0a0b}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(226,59,59,.25)}}
   .modelbar{max-width:880px;margin:0 auto 8px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
   .modelbar select{background:#0e0d0a;color:var(--gold);border:1px solid var(--gold-deep);border-radius:8px;padding:4px 8px;font-size:12px}
 </style>
 </head>
 <body>
   <header>
-    <div class="logo"><img src="empire-logo.png" alt="6 Empire" width="46" height="46" style="object-fit:contain" /></div>
+    <div class="logo"><img src="empire-logo.png?v=4" alt="6 Empire" width="46" height="46" style="object-fit:contain" /></div>
     <div class="brand">
       <div class="t serif">EMPIRE</div>
       <div class="s">6 · EMPIRE AI</div>
@@ -77,7 +85,7 @@
 
   <main id="main">
     <div class="hero" id="hero">
-      <div class="mark"><img src="empire-logo.png" alt="6 Empire" width="150" height="150" style="object-fit:contain" /></div>
+      <div class="mark"><img src="empire-logo.png?v=4" alt="6 Empire" width="150" height="150" style="object-fit:contain" /></div>
       <h1 class="serif">EMPIRE AI</h1>
       <p>Your intelligent assistant. Ask anything to begin.</p>
     </div>
@@ -96,7 +104,13 @@
       </select>
     </div>
     <div class="composer">
+      <button class="mic" id="mic" title="Speak (voice)">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
       <textarea id="input" rows="1" placeholder="Message Empire AI…"></textarea>
+      <button class="speaker" id="speaker" title="Speak replies aloud (toggle)">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M11 5 6 9H3v6h3l5 4V5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
       <button class="send" id="send" title="Send">
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h14M12 5l7 7-7 7" stroke="#0a0a0b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -157,6 +171,62 @@ async function submit(){
     out.textContent=acc||'(no response)'; history.push({role:'assistant',content:acc});
   }catch(e){ out.textContent='⚠️ '+e.message; }
   send.disabled=false; input.focus();
+  if(speakOn && acc) speak(acc);
+}
+
+/* ===== EMPIRE VOICE (browser-native, free, offline-capable STT/TTS) ===== */
+const micBtn=document.getElementById('mic'), speakerBtn=document.getElementById('speaker');
+let speakOn=false, recog=null, listening=false;
+
+// --- TTS (Speech Synthesis) ---
+function pickVoice(){
+  const vs=speechSynthesis.getVoices();
+  // prefer a deep/clear English voice for the EMPIRE persona
+  return vs.find(v=>/Daniel|Google UK English Male|Microsoft Guy|Alex/i.test(v.name))
+      || vs.find(v=>/en[-_]/i.test(v.lang)) || vs[0];
+}
+function speak(text){
+  if(!('speechSynthesis' in window))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text.replace(/[*#`>_]/g,''));
+  const v=pickVoice(); if(v)u.voice=v;
+  u.rate=1.02; u.pitch=0.95; u.volume=1;
+  speechSynthesis.speak(u);
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; }
+speakerBtn.addEventListener('click',()=>{
+  speakOn=!speakOn; speakerBtn.classList.toggle('on',speakOn);
+  if(!speakOn) speechSynthesis.cancel();
+  speakerBtn.title = speakOn ? 'Voice replies ON — tap to mute' : 'Speak replies aloud (toggle)';
+});
+
+// --- STT (Speech Recognition) ---
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false;
+  let finalTx='';
+  recog.onstart=()=>{listening=true;micBtn.classList.add('live');finalTx='';};
+  recog.onresult=(e)=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)finalTx+=t; else interim+=t;
+    }
+    input.value=(finalTx+interim).trim();
+    input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';
+  };
+  recog.onerror=()=>{listening=false;micBtn.classList.remove('live');};
+  recog.onend=()=>{
+    listening=false;micBtn.classList.remove('live');
+    if(input.value.trim()){ speakOn=true; speakerBtn.classList.add('on'); submit(); } // voice in → voice out
+  };
+  micBtn.addEventListener('click',()=>{
+    if(listening){recog.stop();return;}
+    try{ speechSynthesis.cancel(); recog.start(); }catch(_){}
+  });
+}else{
+  micBtn.title='Voice input not supported in this browser — use Chrome/Edge';
+  micBtn.style.opacity='.4';
 }
 </script>
 </body>

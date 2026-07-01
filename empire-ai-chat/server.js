@@ -15,6 +15,20 @@ const path = require('path');
 
 const { systemFor } = require('./prompts');
 
+// --- Obsidian second-brain: a compact digest of the EMPIRE-Vault injected into
+//     every agent's context so answers are grounded in the founder's notes. ---
+const BRAIN_PATH = process.env.EMPIRE_BRAIN || '/opt/empire-sync/brain.json';
+let BRAIN_CONTEXT = '';
+function loadBrain() {
+  try {
+    const b = JSON.parse(fs.readFileSync(BRAIN_PATH, 'utf8'));
+    const digest = (b.notes || []).map((n) => `## ${n.title}\n${n.text}`).join('\n\n').slice(0, 6000);
+    BRAIN_CONTEXT = digest ? `\n\n=== EMPIRE SECOND-BRAIN (Obsidian vault — authoritative founder knowledge) ===\n${digest}\n=== END SECOND-BRAIN ===\n` : '';
+  } catch { BRAIN_CONTEXT = ''; }
+}
+loadBrain();
+setInterval(loadBrain, 5 * 60 * 1000);   // re-read every 5 min (picks up vault resyncs)
+
 const PORT = process.env.PORT || 8090;
 const OLLAMA = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';
@@ -28,6 +42,41 @@ const EMPIRE_MODELS = [
   'empire-strategist', 'empire-research', 'empire-media', 'empire-fast',
 ];
 const isEmpire = (m) => typeof m === 'string' && m.startsWith('empire-');
+
+// --- Groq frontier routing: when a Groq key is present, EMPIRE models run on a
+//     real 70B model (instant + far smarter than the local CPU box) ---
+const GROQ_KEY = process.env.FREE_GROQ_KEY || '';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+// stream Groq tokens straight to the browser; returns true if it handled the request
+function groqStream(messages, res) {
+  return new Promise((resolve) => {
+    const https = require('https');
+    const data = JSON.stringify({ model: GROQ_MODEL, messages, stream: true, temperature: 0.7 });
+    const r = https.request(
+      { hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY, 'Content-Length': Buffer.byteLength(data) } },
+      (up) => {
+        if (up.statusCode !== 200) { let e = ''; up.on('data', (c) => (e += c)); up.on('end', () => resolve(false)); return; }
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+        let buf = '';
+        up.on('data', (chunk) => {
+          buf += chunk.toString();
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx).trim(); buf = buf.slice(idx + 1);
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') { res.end(); resolve(true); return; }
+            try { const j = JSON.parse(payload); const t = j.choices?.[0]?.delta?.content; if (t) res.write(t); } catch {}
+          }
+        });
+        up.on('end', () => { res.end(); resolve(true); });
+      }
+    );
+    r.on('error', () => resolve(false));
+    r.write(data); r.end();
+  });
+}
 
 // Call the EMPIRE router (OpenAI-compatible, non-stream) and return the text.
 function empireChat(model, messages) {
@@ -138,12 +187,25 @@ const server = http.createServer(async (req, res) => {
       const model = payload.model || DEFAULT_MODEL;
       const mode = payload.mode || 'god';
       const incoming = payload.messages || [];
-      // GOD MODE: prepend the academic-level system prompt (replace any client system msg)
-      const sys = { role: 'system', content: systemFor(mode) };
+      // Compose the system prompt: mode (GOD MODE/academic/etc.) + the Obsidian
+      // second-brain + the agent's OWN persona/skills system message (kept!).
+      const clientSys = incoming.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n');
+      const sysContent = systemFor(mode) + BRAIN_CONTEXT + (clientSys ? `\n\n=== AGENT PERSONA ===\n${clientSys}` : '');
+      const sys = { role: 'system', content: sysContent };
       const messages = [sys, ...incoming.filter((m) => m.role !== 'system')];
 
-      // EMPIRE models → route to the VPS router (OpenAI-compatible).
+      // EMPIRE models → prefer Groq frontier (70B, instant) when a key is set;
+      // fall back to the local VPS router if Groq is unavailable.
       if (isEmpire(model)) {
+        if (GROQ_KEY) {
+          groqStream(messages, res).then((ok) => {
+            if (ok) return;
+            // Groq failed → fall back to local router (non-stream)
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+            empireChat(model, messages).then((t) => res.end(t)).catch((e) => res.end('⚠️ router unreachable: ' + e.message));
+          });
+          return;
+        }
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
         empireChat(model, messages)
           .then((text) => res.end(text))
