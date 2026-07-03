@@ -115,6 +115,7 @@ const server = http.createServer(async (req, res) => {
   // Normalize the URL so the app works whether mounted at "/" or behind "/chat".
   // nginx proxies /chat → here without stripping, so strip a leading /chat ourselves.
   let url = req.url.replace(/^\/chat(?=\/|$)/, '') || '/';
+  url = url.split('?')[0];
   if (url === '') url = '/';
 
   // --- UI ---
@@ -140,10 +141,17 @@ const server = http.createServer(async (req, res) => {
     } catch { res.writeHead(404); return res.end(); }
   }
   // --- real EMPIRE logo PNG ---
+  if (req.method === 'GET' && url === '/empire-emblem.png') {
+    try {
+      const png = fs.readFileSync(path.join(__dirname, 'empire-emblem.png'));
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+      return res.end(png);
+    } catch { res.writeHead(404); return res.end(); }
+  }
   if (req.method === 'GET' && url === '/empire-logo.png') {
     try {
       const png = fs.readFileSync(path.join(__dirname, 'empire-logo.png'));
-      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache, no-store, must-revalidate' });
       return res.end(png);
     } catch { res.writeHead(404); return res.end(); }
   }
@@ -232,6 +240,134 @@ const server = http.createServer(async (req, res) => {
       upstream.on('error', (e) => { res.writeHead(502, { 'Content-Type': 'text/plain' }); res.end('⚠️ Model backend unreachable: ' + e.message); });
       upstream.write(data);
       upstream.end();
+    });
+    return;
+  }
+
+  // --- speech-to-text (Groq Whisper) — browser records mic audio, we transcribe ---
+  if (req.method === 'POST' && url === '/api/stt') {
+    const _chunks = [];
+    req.on('data', (c) => _chunks.push(c));
+    req.on('end', async () => {
+      try {
+        if (!GROQ_KEY) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ text: '', error: 'no STT key' })); }
+        const buf = Buffer.concat(_chunks);
+        const ctype = req.headers['content-type'] || 'audio/webm';
+        const ext = ctype.indexOf('ogg') >= 0 ? 'ogg' : (ctype.indexOf('mp4') >= 0 ? 'mp4' : 'webm');
+        const fd = new FormData();
+        fd.append('file', new Blob([buf], { type: ctype }), 'audio.' + ext);
+        fd.append('model', 'whisper-large-v3-turbo');
+        fd.append('response_format', 'json');
+        fd.append('temperature', '0');
+        const gr = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': 'Bearer ' + GROQ_KEY }, body: fd });
+        const j = await gr.json().catch(() => ({}));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ text: (j.text || '').trim(), err: gr.ok ? undefined : (j.error && j.error.message) }));
+      } catch (e) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ text: '', error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // --- text-to-speech: local Piper neural (hy_AM-gor-medium, self-hosted, no account needed)
+  // -> Azure Neural (hy-AM) if AZURE_SPEECH_KEY/REGION configured -> eSpeak-NG as last resort ---
+  if (req.method === 'POST' && url === '/api/tts') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', async () => {
+      let p = {}; try { p = JSON.parse(raw); } catch {}
+      let text = (p.text || '').toString().replace(/[*#`>_~|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 900);
+      const langMap = { hy: 'hy', hyw: 'hyw', ru: 'ru', en: 'en' };
+      const voice = langMap[p.lang] || 'hy';
+      if (!text) { res.writeHead(400); return res.end(); }
+
+      const PIPER_BIN = process.env.PIPER_BIN || '/opt/piper-hy/piper/piper';
+      const PIPER_MODEL = process.env.PIPER_MODEL || '/opt/piper-hy/hy_AM-gor-medium.onnx';
+      const PIPER_CONFIG = process.env.PIPER_CONFIG || '/opt/piper-hy/hy_AM-gor-medium.onnx.json';
+      const fs = require('fs');
+      const piperAvailable = (voice === 'hy' || voice === 'hyw') && fs.existsSync(PIPER_BIN) && fs.existsSync(PIPER_MODEL);
+
+      const AZ_KEY = process.env.AZURE_SPEECH_KEY;
+      const AZ_REGION = process.env.AZURE_SPEECH_REGION;
+      const azureVoiceMap = { hy: 'hy-AM-AnahitNeural', hyw: 'hy-AM-AnahitNeural', ru: 'ru-RU-SvetlanaNeural', en: 'en-US-JennyNeural' };
+
+      function piperTTS(t) {
+        return new Promise((resolve, reject) => {
+          const { spawn } = require('child_process');
+          const outPath = `/tmp/piper-out-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`;
+          const ch = spawn(PIPER_BIN, ['-m', PIPER_MODEL, '-c', PIPER_CONFIG, '--output_file', outPath]);
+          let errBuf = '';
+          ch.stderr.on('data', (d) => (errBuf += d));
+          ch.on('error', reject);
+          ch.on('close', (code) => {
+            try {
+              const buf = fs.readFileSync(outPath);
+              fs.unlink(outPath, () => {});
+              if (code !== 0 || !buf.length) return reject(new Error('piper exited ' + code + ': ' + errBuf));
+              resolve(buf);
+            } catch (e) { reject(e); }
+          });
+          ch.stdin.write(t); ch.stdin.end();
+        });
+      }
+
+      async function azureTTS(t, lang) {
+        const voiceName = azureVoiceMap[lang] || azureVoiceMap.hy;
+        const tokRes = await fetch(`https://${AZ_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+          method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': AZ_KEY }
+        });
+        if (!tokRes.ok) throw new Error('azure token failed: ' + tokRes.status);
+        const token = await tokRes.text();
+        const esc = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const ssml = `<speak version='1.0' xml:lang='hy-AM'><voice name='${voiceName}'>${esc}</voice></speak>`;
+        const ttsRes = await fetch(`https://${AZ_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/ssml+xml',
+            'X-Microsoft-OutputFormat': 'riff-24khz-16bit-mono-pcm',
+            'User-Agent': 'empire-ai-chat'
+          },
+          body: ssml
+        });
+        if (!ttsRes.ok) throw new Error('azure tts failed: ' + ttsRes.status);
+        return Buffer.from(await ttsRes.arrayBuffer());
+      }
+
+      function espeakTTS(t, v) {
+        return new Promise((resolve, reject) => {
+          const { spawn } = require('child_process');
+          const ch = spawn('espeak-ng', ['-v', v, '-s', '155', '-p', '42', '--stdout']);
+          const bufs = [];
+          ch.stdout.on('data', (d) => bufs.push(d));
+          ch.on('error', reject);
+          ch.on('close', () => resolve(Buffer.concat(bufs)));
+          ch.stdin.write(t); ch.stdin.end();
+        });
+      }
+
+      try {
+        let wav;
+        if (piperAvailable) {
+          try { wav = await piperTTS(text); }
+          catch (e) {
+            console.error('[tts] piper failed, falling back:', e.message);
+            if (AZ_KEY && AZ_REGION) { try { wav = await azureTTS(text, p.lang); } catch (e2) { wav = await espeakTTS(text, voice); } }
+            else { wav = await espeakTTS(text, voice); }
+          }
+        } else if (AZ_KEY && AZ_REGION) {
+          try { wav = await azureTTS(text, p.lang); }
+          catch (e) { console.error('[tts] azure failed, falling back to espeak-ng:', e.message); wav = await espeakTTS(text, voice); }
+        } else {
+          wav = await espeakTTS(text, voice);
+        }
+        res.writeHead(200, { 'Content-Type': 'audio/wav', 'Content-Length': wav.length, 'Cache-Control': 'no-store' });
+        res.end(wav);
+      } catch (e) {
+        res.writeHead(500); res.end();
+      }
     });
     return;
   }

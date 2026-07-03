@@ -4,230 +4,444 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>EMPIRE AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --gold:#d4af37; --gold-hi:#f4d98b; --gold-deep:#9a7b2e;
-    --bg:#000; --panel:#0c0b09; --ink:#f3ecd9; --muted:#8a8270;
+html,body{background:#050608;margin:0;padding:0;height:100%;overflow:hidden;}
+html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:hidden;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:#050608;overflow:hidden;}
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:rgba(253,199,44,.02);}
+  ::-webkit-scrollbar-thumb{background:rgba(253,199,44,.25);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(253,199,44,.4);}
+  #chatInput::placeholder{color:rgba(253,199,44,.35);}
+  ::selection{background:#FDC72C;color:#050608;}
+
+  /* ── Animations ── */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes fadeInScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes bounceIn{0%{opacity:0;transform:scale(.85)}60%{opacity:1;transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes spinSlowRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes goldenShine{0%,100%{box-shadow:0 0 24px rgba(253,199,44,.08) inset}50%{box-shadow:0 0 48px rgba(253,199,44,.32) inset,0 0 20px rgba(253,199,44,.18)}}
+  @keyframes statusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,222,128,0)}}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  @keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+  @keyframes inputFocus{0%{border-color:rgba(253,199,44,.35)}100%{border-color:rgba(253,199,44,.75);box-shadow:0 0 16px rgba(253,199,44,.15)}}
+  @keyframes streamIn{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+  @keyframes buttonHover{from{box-shadow:0 0 16px rgba(253,199,44,.35)}to{box-shadow:0 0 24px rgba(253,199,44,.55)}}
+
+  input::placeholder{color:rgba(232,234,237,.3);font-family:'Sora',sans-serif;}
+  input:focus{outline:none;}
+  button{cursor:pointer;border:none;background:none;}
+
+  /* ── Message Styling ── */
+  .message-bubble{border-radius:8px;padding:14px 18px;line-height:1.6;word-wrap:break-word;max-width:100%;}
+  .user-message{background:linear-gradient(135deg,rgba(253,199,44,.12),rgba(253,199,44,.06));border:1px solid rgba(253,199,44,.3);}
+  .ai-message{background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.15);}
+  .code-block{background:rgba(0,0,0,.4);border:1px solid rgba(253,199,44,.2);border-radius:6px;padding:12px;font-family:'Space Mono',monospace;font-size:12px;overflow-x:auto;margin:8px 0;}
+
+  /* ── Loading States ── */
+  .streaming::after{content:'';display:inline-block;width:2px;height:16px;background:#FDC72C;margin-left:4px;animation:pulse 1s infinite;}
+
+  /* ── Voice States ── */
+  #voiceMicBtn.voice-listening{color:#4ade80;animation:statusPulse 1.5s ease-in-out infinite;}
+  #voiceMicBtn.voice-error{color:#ef4444;}
+  #voiceSpeakerBtn.voice-speaking{color:#fbbf24;animation:statusPulse 1.5s ease-in-out infinite;}
+  #voiceDisplay{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(4,6,10,.95);border:1px solid rgba(253,199,44,.3);border-radius:8px;padding:12px 20px;color:#FDC72C;font-family:'Sora',sans-serif;font-size:13px;max-width:300px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5);animation:slideUp .3s ease;}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    header{padding:0 16px!important;}
+    #chatMessages{padding:24px 0 16px!important;}
+    #chatMessages>div{padding:0 16px!important;}
+    .input-wrap{padding:10px 16px 14px!important;}
+    #projectsPanel{width:100vw!important;}
+    #chatMessages .banner-logo{width:80px!important;height:80px!important;}
+    .message-bubble{font-size:13px!important;}
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-  /* clean solid black background across the whole chat */
-  /* clean dark background (no gold shimmer) — transparent logo sits on it */
-  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;
-    background:radial-gradient(120% 90% at 50% 38%, #0d0a06 0%, #080603 55%, #030201 100%);}
-  .serif{font-family:Georgia,"Times New Roman",serif;}
+  @media(max-width:480px){
+    header{height:52px!important;padding:0 12px!important;}
+    #activeModelLabel{display:none!important;}
+    #chatMessages>div{padding:0 10px!important;}
+    .message-bubble{padding:10px 14px!important;}
+  }
 
-  /* header */
-  header{display:flex;align-items:center;gap:14px;padding:16px 20px;
-    border-bottom:1px solid #caa44a33;background:linear-gradient(180deg,rgba(5,4,2,0.82),rgba(5,4,2,0.4));backdrop-filter:blur(3px);}
-  .logo{width:54px;height:54px;flex:0 0 auto;display:grid;place-items:center;}
-  .logo svg,.logo img{width:50px;height:50px}
-  .brand{line-height:1.05;flex:1}
-  .brand .t{font-size:22px;letter-spacing:.32em;color:var(--gold);font-weight:600}
-  .brand .s{font-size:10px;letter-spacing:.34em;color:var(--gold-deep);margin-top:3px}
-  .status{display:flex;align-items:center;gap:8px;font-size:15px;color:#cfcab8}
-  .dot{width:11px;height:11px;border-radius:50%;background:#1fd17a;box-shadow:0 0 10px #1fd17a}
-
-  /* chat scroll area */
-  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
-  .hero{margin:auto;text-align:center;max-width:560px;padding:30px 16px}
-  .hero .mark{width:180px;height:180px;margin:0 auto 6px;display:grid;place-items:center;}
-  .hero .mark svg,.hero .mark img{width:170px;height:170px;object-fit:contain}
-  .hero h1{font-size:46px;letter-spacing:.22em;margin:18px 0 10px;
-    background:linear-gradient(180deg,var(--gold-hi),var(--gold-deep));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .hero p{color:var(--muted);font-size:19px;margin:0}
-
-  .msg{display:flex;gap:12px;max-width:860px;width:100%;margin:0 auto}
-  .msg .av{width:34px;height:34px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;font-size:12px;font-weight:700}
-  .msg.user .av{background:#181511;border:1px solid #ffffff12;color:var(--muted)}
-  .msg.ai .av{background:#181307;border:1px solid var(--gold-deep);color:var(--gold)}
-  .bubble{padding:12px 15px;border-radius:14px;font-size:15.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
-  .msg.user .bubble{background:#101010;border:1px solid #ffffff10;color:#efe9da}
-  .msg.ai .bubble{background:#0a0a0a;border:1px solid #caa44a40;color:#f3ecd9}
-  .bubble .cursor{display:inline-block;width:7px;height:16px;background:var(--gold);margin-left:2px;animation:blink 1s steps(2) infinite;vertical-align:middle}
-  @keyframes blink{50%{opacity:0}}
-
-  /* composer */
-  footer{padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #caa44a33;background:linear-gradient(0deg,rgba(5,4,2,0.82),rgba(5,4,2,0.35));backdrop-filter:blur(3px)}
-  .composer{display:flex;align-items:flex-end;gap:10px;max-width:880px;margin:0 auto;
-    background:#0c0c0c;border:1px solid #caa44a30;border-radius:20px;padding:10px 10px 10px 18px;}
-  .composer textarea{flex:1;background:transparent;border:0;outline:0;color:var(--ink);
-    font-size:17px;resize:none;max-height:140px;line-height:1.4;padding:8px 0;font-family:inherit}
-  .composer textarea::placeholder{color:#6f6857}
-  .send{width:54px;height:50px;border:0;border-radius:14px;flex:0 0 auto;cursor:pointer;
-    background:linear-gradient(135deg,var(--gold-hi),var(--gold-deep));
-    display:grid;place-items:center;transition:opacity .15s ease}
-  .send:hover{opacity:.9}
-  .send:disabled{opacity:.5;cursor:default;transform:none}
-  .send svg{width:24px;height:24px}
-  .mic,.speaker{width:42px;height:42px;flex:0 0 auto;border:0;border-radius:12px;cursor:pointer;
-    background:#161310;color:var(--gold);display:grid;place-items:center;transition:all .15s ease}
-  .mic svg,.speaker svg{width:21px;height:21px}
-  .mic:hover,.speaker:hover{background:#211c12;color:var(--gold-hi)}
-  .mic.live{background:linear-gradient(135deg,#e23b3b,#9a1f1f);color:#fff;animation:pulse 1s ease-in-out infinite}
-  .speaker.on{background:linear-gradient(135deg,var(--gold-hi),var(--gold-deep));color:#0a0a0b}
-  @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(226,59,59,.25)}}
-  .modelbar{max-width:880px;margin:0 auto 8px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-  .modelbar select{background:#0e0d0a;color:var(--gold);border:1px solid var(--gold-deep);border-radius:8px;padding:4px 8px;font-size:12px}
 </style>
 </head>
 <body>
-  <header>
-    <div class="logo"><img src="empire-logo.png?v=4" alt="6 Empire" width="46" height="46" style="object-fit:contain" /></div>
-    <div class="brand">
-      <div class="t serif">EMPIRE</div>
-      <div class="s">6 · EMPIRE AI</div>
+<div style="display:flex;flex-direction:column;height:100vh;background:#050608;color:#E8EAED;font-family:'Sora',sans-serif;">
+
+  <!-- ── HEADER ── -->
+  <header style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(12px,4vw,48px);height:64px;border-bottom:1px solid rgba(253,199,44,.12);">
+    <!-- logo + model dropdown trigger -->
+    <div style="position:relative;">
+      <div onclick="toggleModelMenu(this,event)" style="display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;">
+        <!-- header logo: clean, no bg, golden shimmer border -->
+        <div style="position:relative;width:36px;height:36px;flex-shrink:0;">
+          <!-- slow spinning arc border — no fill -->
+          <div style="position:absolute;inset:-5px;border-radius:50%;border:1px solid transparent;background:conic-gradient(from 0deg,transparent 0%,transparent 65%,rgba(253,199,44,.7) 75%,rgba(253,199,44,.9) 78%,rgba(253,199,44,.7) 82%,transparent 92%) border-box;animation:spinSlow 10s linear infinite;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;"></div>
+          <!-- pulse glow only -->
+          <div style="position:absolute;inset:-3px;border-radius:50%;box-shadow:0 0 10px rgba(253,199,44,.2);animation:goldenShine 5s ease-in-out infinite;pointer-events:none;"></div>
+          <img src="empire-emblem.png" alt="6-EMPIRES" style="position:relative;width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(253,199,44,.55)) ;">
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;border:1.5px solid #050608;animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+        <!-- one-line: EMPIRE + model label -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.28em;color:#FDC72C;line-height:1;">EMPIRE</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="activeModelLabel" style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.16em;color:rgba(253,199,44,.5);">PRIME</span>
+            <svg viewBox="0 0 8 5" width="7" height="5" fill="none" stroke="rgba(253,199,44,.35)" stroke-width="1.4"><path d="M1 1l3 3 3-3"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- dropdown menu -->
+      <div id="modelMenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(6,8,14,.98);border:1px solid rgba(253,199,44,.25);width:220px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.7);">
+        <!-- section: model -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODEL</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button onclick="setModel(this,event)" data-model="PRIME" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">
+            <div style="width:6px;height:6px;background:#FDC72C;border-radius:50%;flex-shrink:0;"></div>PRIME
+          </button>
+          <button onclick="setModel(this,event)" data-model="MEDIA" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>MEDIA
+          </button>
+          <button onclick="setModel(this,event)" data-model="NEXUS" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
+            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>NEXUS
+          </button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: mode -->
+        <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODE</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+          <button id="modeCore" onclick="setMode(this,event)" data-mode="EMPIRE CORE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">CORE</button>
+          <button onclick="setMode(this,event)" data-mode="RAPID FIRE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RAPID</button>
+          <button onclick="setMode(this,event)" data-mode="DEEP RESEARCH" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RESEARCH</button>
+          <button onclick="setMode(this,event)" data-mode="CREATIVE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">CREATIVE</button>
+        </div>
+        <!-- divider -->
+        <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
+        <!-- section: actions -->
+        <div style="padding:8px;display:flex;gap:4px;">
+          <button onclick="toggleProjects(this,event)" style="flex:1;padding:8px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.25);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#FDC72C;cursor:pointer;">PROJECTS</button>
+          <button onclick="toggleProjects(this,event)" style="flex:1;padding:8px;background:none;border:1px solid rgba(253,199,44,.15);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.45);cursor:pointer;">+ NEW</button>
+        </div>
+      </div>
     </div>
-    <div class="status"><span class="dot" id="dot"></span><span id="statusText">Online</span></div>
+
   </header>
 
-  <main id="main">
-    <div class="hero" id="hero">
-      <div class="mark"><img src="empire-logo.png?v=4" alt="6 Empire" width="150" height="150" style="object-fit:contain" /></div>
-      <h1 class="serif">EMPIRE AI</h1>
-      <p>Your intelligent assistant. Ask anything to begin.</p>
-    </div>
-  </main>
+  <!-- ── MESSAGES ── -->
+  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:0;display:flex;flex-direction:column;justify-content:center;">
+    <div style="max-width:min(760px,100%);margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:0;width:100%;">
 
-  <footer>
-    <div class="modelbar"><span>Model:</span>
-      <select id="model"><option>loading…</option></select>
-      <span style="margin-left:10px">Mode:</span>
-      <select id="mode" title="EMPIRE prompt mode">
-        <option value="empire">👑 EMPIRE CORE</option>
-        <option value="god">⚡ GOD MODE</option>
-        <option value="academic">🎓 Academic / Research</option>
-        <option value="trading">📈 Markets / Trading</option>
-        <option value="builder">🛠️ Systems / Engineering</option>
-      </select>
+      <!-- INIT banner -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0 24px;animation:fadeUp .5s both;">
+        <!-- logo with layered golden contour rings -->
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+          <!-- outer contour: slow clockwise shine -->
+          <div style="position:absolute;inset:-50px;border-radius:50%;border:1px solid rgba(253,199,44,.18);animation:spinSlow 32s linear infinite;"></div>
+          <div style="position:absolute;inset:-30px;border-radius:50%;border:1px solid rgba(253,199,44,.28);animation:spinSlowRev 22s linear infinite;"></div>
+          <div style="position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(253,199,44,.42);animation:goldenShine 7s ease-in-out infinite;"></div>
+          <!-- logo spinning - 6-EMPIRES Coin Design -->
+          <img class="banner-logo" src="empire-emblem.png" alt="6-EMPIRE" style="width:300px;height:300px;object-fit:contain;filter:drop-shadow(0 0 46px rgba(253,199,44,.6));animation:spinSlow 48s linear infinite;" />
+          <!-- status dot -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div id="bannerStatusDot" style="width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid rgba(5,6,8,.9);animation:statusPulse 3s ease-in-out infinite;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- typing indicator (hidden by default) -->
+      <div id="typingIndicator" style="display:none;margin-bottom:32px;animation:slideUp .3s ease-out;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));animation:bounceIn .5s ease-out;">
+          <div style="display:flex;align-items:center;gap:5px;padding:14px 0 6px;">
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .2s infinite;"></div>
+            <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .4s infinite;"></div>
+          </div>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.4);margin-top:4px;">THINKING...</span>
+        </div>
+      </div>
+
     </div>
-    <div class="composer">
-      <button class="mic" id="mic" title="Speak (voice)">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <textarea id="input" rows="1" placeholder="Message Empire AI…"></textarea>
-      <button class="speaker" id="speaker" title="Speak replies aloud (toggle)">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M11 5 6 9H3v6h3l5 4V5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <button class="send" id="send" title="Send">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h14M12 5l7 7-7 7" stroke="#0a0a0b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+  </div>
+
+  <!-- ── COMMAND PALETTE (hidden by default) ── -->
+  <div id="commandPalette" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding-top:60px;z-index:400;backdrop-filter:blur(4px);animation:fadeInScale .25s ease-out;">
+    <div style="width:90%;max-width:520px;background:rgba(5,6,8,.99);border:1px solid rgba(253,199,44,.2);box-shadow:0 20px 64px rgba(0,0,0,.8);border-radius:12px;overflow:hidden;">
+      <div style="padding:16px;border-bottom:1px solid rgba(253,199,44,.1);display:flex;align-items:center;gap:10px;">
+        <span style="color:rgba(253,199,44,.5);font-size:14px;">⌘</span>
+        <input id="cmdSearch" type="text" placeholder="Search commands..." style="flex:1;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-size:15px;letter-spacing:.04em;color:#FDC72C;outline:none;">
+      </div>
+      <div id="cmdResults" style="max-height:360px;overflow-y:auto;padding:8px;">
+        <div style="padding:12px 16px;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.3);">COMMANDS</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="" onclick="cmdExecute(this,event)" data-cmd="search">🔍 Search Web</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="" onclick="cmdExecute(this,event)" data-cmd="analyze">📊 Analyze Code</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="" onclick="cmdExecute(this,event)" data-cmd="generate">✨ Generate Content</div>
+        <div style="padding:12px;cursor:pointer;border-radius:6px;color:rgba(232,234,237,.8);transition:all .2s;" onMouseEnter="" onclick="cmdExecute(this,event)" data-cmd="debug">🔧 Debug Assistant</div>
+      </div>
     </div>
-  </footer>
+  </div>
+
+  <!-- ── MESSAGE CONTEXT MENU (hidden by default) ── -->
+  <div id="messageMenu" style="position:fixed;background:rgba(5,6,8,.98);border:1px solid rgba(253,199,44,.2);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.7);display:none;z-index:300;overflow:hidden;min-width:160px;">
+    <button onclick="copyMessage(this,event)" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">📋 Copy</button>
+    <button onclick="regenerateMessage(this,event)" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">🔄 Regenerate</button>
+    <button onclick="editMessage(this,event)" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">✏️ Edit</button>
+    <button onclick="deleteMessage(this,event)" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:#ff6b6b;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;">🗑️ Delete</button>
+  </div>
+
+  <!-- ── VOICE DISPLAY ── -->
+  <div id="voiceDisplay" style="display:none;"></div>
+
+  <!-- ── INPUT ── -->
+  <div class="input-wrap" style="flex-shrink:0;padding:8px clamp(12px,4vw,32px) 0;border-top:1px solid rgba(253,199,44,.12);margin-top:auto;">
+    <div style="max-width:min(760px,100%);margin:0 auto;">
+      <!-- quick suggestions -->
+      <div id="suggestions" style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:8px;opacity:0;transition:opacity .3s ease;">
+        <button onclick="applySuggestion(this,event)" data-suggest="Analyze this code snippet" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">📊 Analyze Code</button>
+        <button onclick="applySuggestion(this,event)" data-suggest="Generate creative content" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">✨ Creative</button>
+        <button onclick="applySuggestion(this,event)" data-suggest="Help with debugging" style="padding:8px 14px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:4px;font-family:'Sora',sans-serif;font-size:12px;color:rgba(253,199,44,.8);white-space:nowrap;transition:all .2s;cursor:pointer;">🔧 Debug</button>
+      </div>
+
+      <!-- input bar -->
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 4px 20px;background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.35);border-radius:6px;transition:all .25s ease;">
+        <!-- upload -->
+        <label style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;cursor:pointer;transition:color .2s;" title="Attach file">
+          <input type="file" style="display:none;" onchange="handleUpload(this,event)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 11v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3"/><polyline points="12,6 9,3 6,6"/><line x1="9" y1="3" x2="9" y2="12"/></svg>
+        </label>
+        <div style="width:1px;height:20px;background:rgba(253,199,44,.18);flex-shrink:0;"></div>
+        <!-- command palette trigger -->
+        <button onclick="toggleCmdPalette(this,event)" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:color .2s;" title="Command palette (⌘K)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="8"/><line x1="9" y1="5" x2="9" y2="13"/><line x1="5" y1="9" x2="13" y2="9"/></svg>
+        </button>
+        <!-- voice input (microphone) -->
+        <button id="voiceMicBtn" onclick="toggleVoiceInput(this,event)" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:all .2s;" title="Voice input (speak)">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2v8m0 0a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M6 13a3 3 0 00-3 3v1h12v-1a3 3 0 00-3-3H6z"/></svg>
+        </button>
+        <!-- voice output (speaker) -->
+        <button id="voiceSpeakerBtn" onclick="toggleVoiceOutput(this,event)" style="flex-shrink:0;padding:10px;color:rgba(253,199,44,.45);display:flex;align-items:center;background:none;border:none;cursor:pointer;transition:all .2s;" title="Read response aloud">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4 10 8 6 8 14 4 10"/><path d="M11 6c1.5 1.5 1.5 4.5 0 6m2.5-7.5c2.5 2.5 2.5 7.5 0 10"/></svg>
+        </button>
+        <!-- text -->
+        <input id="chatInput" type="text" placeholder="Message Empire AI…" style="flex:1;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-size:14px;letter-spacing:.07em;color:#FDC72C;padding:12px 0;" onkeydown="handleKey(this,event)" onfocus="showSuggestions(this,event)">
+        <!-- send -->
+        <button onclick="sendMessage(this,event)" style="flex-shrink:0;width:38px;height:38px;background:#FDC72C;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;margin:4px;box-shadow:0 0 16px rgba(253,199,44,.35);border-radius:4px;transition:all .2s;hover:box-shadow:0 0 24px rgba(253,199,44,.55);">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="#050608" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="9" x2="15" y2="9"/><path d="M10 4l5 5-5 5"/></svg>
+        </button>
+      </div>
+      <div style="text-align:center;padding:5px 0 6px;">
+        <a href="https://www.6-empires.com" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:400;font-size:8px;letter-spacing:.22em;color:rgba(253,199,44,.4);text-decoration:none;cursor:pointer;display:block;padding:6px 0 16px;text-align:center;">POWERED BY 6-EMPIRES · END-TO-END ENCRYPTED</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── PROJECTS PANEL (right drawer) ── -->
+<div id="projectsPanel" style="position:fixed;top:0;right:0;width:340px;height:100vh;background:rgba(4,6,10,.98);border-left:1px solid rgba(253,199,44,.15);display:none;flex-direction:column;z-index:200;transform:translateX(0);transition:transform .25s ease;">
+  <!-- panel header -->
+  <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:64px;border-bottom:1px solid rgba(253,199,44,.1);">
+    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:.22em;color:#FDC72C;">CONNECTED PROJECTS</div>
+    <button onclick="toggleProjects(this,event)" style="background:none;border:none;cursor:pointer;padding:6px;color:rgba(232,234,237,.4);">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.5)" stroke-width="1.5"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>
+    </button>
+  </div>
+  <!-- agents status bar -->
+  <div style="flex-shrink:0;padding:12px 24px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px;">
+    <div style="width:6px;height:6px;background:#4ade80;border-radius:50%;"></div>
+    <span style="font-family:'Chakra Petch',sans-serif;font-size:8px;font-weight:600;letter-spacing:.18em;color:rgba(253,199,44,.55);">4 AGENTS ACTIVE · 6 PROJECTS LIVE</span>
+  </div>
+  <!-- project list -->
+  <div style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:10px;">
+
+    <!-- project card: active -->
+    <div style="padding:16px;background:rgba(253,199,44,.05);border:1px solid rgba(253,199,44,.2);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:#FDC72C;letter-spacing:.06em;">6-EMPIRES SITE</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.45);margin-bottom:8px;letter-spacing:.1em;">AGENT: DESIGN SOVEREIGN</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.5);line-height:1.5;margin-bottom:12px;">Scrollytelling site — cinematic, HUD aesthetic, 3D.</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="projectOpen(this,event)" style="padding:5px 12px;background:rgba(253,199,44,.1);border:1px solid rgba(253,199,44,.25);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:#FDC72C;cursor:pointer;">OPEN</button>
+        <button onclick="projectEdit(this,event)" style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">EMPIRE CHAT</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#4ade80;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;">LIVE</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: ROLAND PRIME</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">AI chat interface — premium HUD design.</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="projectOpen(this,event)" style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button onclick="projectEdit(this,event)" style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">AGENT COMMAND</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#FDC72C;border-radius:50%;animation:pulse 1.5s infinite;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.8);">BUILDING</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: NEXUS ARCHITECT</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Central console — agent management &amp; control.</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="projectOpen(this,event)" style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- project card -->
+    <div style="padding:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;color:rgba(232,234,237,.7);letter-spacing:.06em;">SOVEREIGN PROTOCOL</div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:5px;height:5px;background:#60a5fa;border-radius:50%;"></div><span style="font-family:'Space Mono',monospace;font-size:8px;color:#60a5fa;">REVIEW</span></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.35);margin-bottom:8px;letter-spacing:.1em;">AGENT: STRATEGIST-7</div>
+      <div style="font-family:'Sora',sans-serif;font-size:12px;color:rgba(232,234,237,.4);line-height:1.5;margin-bottom:12px;">Growth strategy &amp; ecosystem architecture.</div>
+      <div style="display:flex;gap:6px;">
+        <button style="padding:5px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.18);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(253,199,44,.7);cursor:pointer;">OPEN</button>
+        <button style="padding:5px 12px;background:none;border:1px solid rgba(255,255,255,.08);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(232,234,237,.35);cursor:pointer;">EDIT</button>
+      </div>
+    </div>
+
+    <!-- add project -->
+    <div style="padding:14px 16px;border:1px dashed rgba(253,199,44,.15);display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
+      <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="rgba(253,199,44,.4)" stroke-width="1.5"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+      <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:rgba(253,199,44,.35);">CONNECT PROJECT</span>
+    </div>
+  </div>
+</div>
+
 
 <script>
-// API base = current directory, so it works at "/" or "/chat" (with or without trailing slash)
 const BASE=(location.pathname.replace(/\/[^/]*$/,'')+'/').replace(/\/+$/,'/');
 const api=(p)=>BASE.replace(/\/$/,'')+p;
+let MODEL='empire-prime', MODE='empire', speakOut=false, history=[];
+const MODELMAP={PRIME:'empire-prime',MEDIA:'empire-media',NEXUS:'empire-research'};
+const MODEMAP={'EMPIRE CORE':'empire','RAPID FIRE':'empire','DEEP RESEARCH':'academic','CREATIVE':'builder'};
+const $=(id)=>document.getElementById(id);
 
-const main=document.getElementById('main'), hero=document.getElementById('hero');
-const input=document.getElementById('input'), send=document.getElementById('send');
-const modelSel=document.getElementById('model'), modeSel=document.getElementById('mode'), dot=document.getElementById('dot'), statusText=document.getElementById('statusText');
-const history=[];
+/* ---- model / mode ---- */
+function toggleModelMenu(){const m=$('modelMenu');if(!m)return;m.style.display=m.style.display==='block'?'none':'block';
+  if(m.style.display==='block'){setTimeout(()=>{const c=(e)=>{if(!m.contains(e.target)){m.style.display='none';document.removeEventListener('click',c);}};document.addEventListener('click',c);},50);}}
+function setModel(btn){const k=btn.getAttribute('data-model');MODEL=MODELMAP[k]||'empire-prime';
+  const l=$('activeModelLabel');if(l)l.textContent=k;
+  document.querySelectorAll('#modelMenu [data-model]').forEach(b=>{const a=b.getAttribute('data-model')===k;b.style.color=a?'#FDC72C':'rgba(253,199,44,.45)';const d=b.querySelector('div');if(d)d.style.background=a?'#FDC72C':'rgba(253,199,44,.3)';});
+  const m=$('modelMenu');if(m)m.style.display='none';}
+function setMode(btn){const k=btn.getAttribute('data-mode');MODE=MODEMAP[k]||'empire';
+  document.querySelectorAll('[data-mode]').forEach(b=>{const a=b.getAttribute('data-mode')===k;b.style.background=a?'rgba(253,199,44,.08)':'none';b.style.color=a?'#FDC72C':'rgba(253,199,44,.45)';});
+  const m=$('modelMenu');if(m)m.style.display='none';}
 
-// auto-grow textarea
-input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';});
-input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
-send.addEventListener('click',submit);
+/* ---- projects ---- */
+function toggleProjects(){const p=$('projectsPanel');if(!p)return;p.style.display=p.style.display==='flex'?'none':'flex';}
+function projectOpen(){window.open('https://6-empires.com/world/empire-hq','_blank');}
+function projectEdit(){toggleProjects();}
 
-async function loadModels(){
+/* ---- upload ---- */
+function handleUpload(inp){const f=inp.files&&inp.files[0];if(!f)return;const i=$('chatInput');if(i){i.value='[Attached: '+f.name+'] '+i.value;i.focus();}}
+
+/* ---- command palette (Cmd/Ctrl+K) ---- */
+function toggleCmdPalette(){const p=$('commandPalette');if(!p)return;const open=p.style.display==='flex';p.style.display=open?'none':'flex';if(!open){setTimeout(()=>{const s=$('cmdSearch');if(s)s.focus();},60);}}
+function cmdExecute(el){const cmd=(el.getAttribute('data-cmd')||el.textContent||'').trim();const i=$('chatInput');if(i){i.value=cmd.charAt(0).toUpperCase()+cmd.slice(1)+': ';i.focus();}const p=$('commandPalette');if(p)p.style.display='none';}
+function cmdEnter(el,e){if(e&&e.key==='Enter'){const first=document.querySelector('#cmdResults [data-cmd]');if(first)cmdExecute(first);}if(e&&e.key==='Escape'){const p=$('commandPalette');if(p)p.style.display='none';}}
+
+/* ---- suggestions ---- */
+function showSuggestions(){const s=$('suggestions');if(s)s.style.opacity='1';}
+function applySuggestion(el){const t=el.getAttribute('data-suggest');const i=$('chatInput');if(i&&t){i.value=t;i.focus();}}
+
+/* ---- message context actions ---- */
+function copyMessage(el){const m=el.closest('[data-msg-id]');const b=m&&m.querySelector('.msg-body');if(b)navigator.clipboard&&navigator.clipboard.writeText(b.textContent);hideMsgMenu();}
+function regenerateMessage(){const last=[...history].reverse().find(x=>x.role==='user');if(last){$('chatInput').value=last.content;sendMessage();}hideMsgMenu();}
+function editMessage(el){const m=el.closest('[data-msg-id]');const b=m&&m.querySelector('.msg-body');if(b){$('chatInput').value=b.textContent;$('chatInput').focus();}hideMsgMenu();}
+function deleteMessage(el){const m=el.closest('[data-msg-id]');if(m)m.remove();hideMsgMenu();}
+function hideMsgMenu(){const mm=$('messageMenu');if(mm)mm.style.display='none';}
+
+/* ---- voice ---- */
+let _mrec=null,_mstream=null,_mchunks=[],_listening=false;
+function vDisp(t){const d=$('voiceDisplay');if(!d)return;if(t){d.textContent=t;d.style.display='block';}else{d.style.display='none';}}
+async function _pickMic(){try{const ds=await navigator.mediaDevices.enumerateDevices();const ins=ds.filter(d=>d.kind==='audioinput');const g=ins.find(d=>/pixy/i.test(d.label)&&!/virtual/i.test(d.label))||ins.find(d=>d.label&&!/virtual/i.test(d.label))||ins[0];return g?g.deviceId:null;}catch(_){return null;}}
+async function toggleVoiceInput(){const b=$('voiceMicBtn');
+  if(_listening){try{_mrec&&_mrec.state!=='inactive'&&_mrec.stop();}catch(_){}return;}
+  try{const s0=await navigator.mediaDevices.getUserMedia({audio:true});s0.getTracks().forEach(t=>t.stop());}catch(e){vDisp('Mic blocked — allow microphone access');return;}
+  const dev=await _pickMic();
+  try{_mstream=await navigator.mediaDevices.getUserMedia({audio:dev?{deviceId:{exact:dev},echoCancellation:true,noiseSuppression:true}:{echoCancellation:true,noiseSuppression:true}});}catch(e){vDisp('Mic error: '+e.name);return;}
+  _mchunks=[];
+  const mm=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':((window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm'))?'audio/webm':'');
+  try{_mrec=mm?new MediaRecorder(_mstream,{mimeType:mm}):new MediaRecorder(_mstream);}catch(e){vDisp('Recorder unsupported');return;}
+  _mrec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)_mchunks.push(e.data);};
+  _mrec.onstart=()=>{_listening=true;b&&b.classList.add('voice-listening');vDisp('🎙 Listening… tap mic to stop');try{speechSynthesis.cancel();}catch(_){}};
+  _mrec.onstop=async()=>{_listening=false;b&&b.classList.remove('voice-listening');try{_mstream.getTracks().forEach(t=>t.stop());}catch(_){}
+    const blob=new Blob(_mchunks,{type:(_mrec&&_mrec.mimeType)||'audio/webm'});
+    if(!blob||!blob.size){vDisp('');return;}
+    vDisp('⏳ Transcribing…');
+    try{const r=await fetch(api('/api/stt'),{method:'POST',headers:{'Content-Type':blob.type||'audio/webm'},body:blob});const j=await r.json();const txt=(j.text||'').trim();
+      if(txt){$('chatInput').value=txt;vDisp('');speakOut=true;setSpeaker(true);sendMessage();}
+      else{vDisp('Didn’t catch that — try again');setTimeout(()=>vDisp(''),1800);}
+    }catch(e){b&&b.classList.add('voice-error');vDisp('STT error');setTimeout(()=>{b&&b.classList.remove('voice-error');vDisp('');},1800);}};
+  try{_mrec.start();setTimeout(()=>{try{_mrec&&_mrec.state==='recording'&&_mrec.stop();}catch(_){}},15000);}catch(e){vDisp('Recorder error');}}
+function setSpeaker(on){const b=$('voiceSpeakerBtn');if(b){b.style.color=on?'#FDC72C':'rgba(253,199,44,.45)';b.classList.toggle('voice-speaking',false);}}
+function toggleVoiceOutput(){speakOut=!speakOut;setSpeaker(speakOut);if(!speakOut)speechSynthesis.cancel();}
+function _armScript(t){return /[Ա-֏ﬓ-ﬗ]/.test(t);}
+function speak(t){if(!t)return;const clean=t.replace(/[*#`>_]/g,'');const b=$('voiceSpeakerBtn');
+  if(_armScript(t)){try{speechSynthesis.cancel();}catch(_){}b&&b.classList.add('voice-speaking');
+    fetch(api('/api/tts'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean,lang:'hy'})})
+      .then(r=>r.ok?r.arrayBuffer():Promise.reject())
+      .then(buf=>{const a=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));a.onended=()=>b&&b.classList.remove('voice-speaking');a.onerror=()=>b&&b.classList.remove('voice-speaking');a.play().catch(()=>b&&b.classList.remove('voice-speaking'));})
+      .catch(()=>b&&b.classList.remove('voice-speaking'));
+    return;}
+  if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.rate=1.02;u.pitch=.95;const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Daniel|Google UK English Male|Alex/i.test(x.name))||vs.find(x=>/en[-_]/i.test(x.lang));if(v)u.voice=v;b&&b.classList.add('voice-speaking');u.onend=()=>b&&b.classList.remove('voice-speaking');speechSynthesis.speak(u);}
+
+/* ---- send / stream from the live brain ---- */
+function handleKey(el,e){if(e&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function rmBanner(){const b=document.querySelector('#chatMessages .banner-logo');if(b){const w=b.closest('div[style*="padding:16px 0 24px"]')||b.parentElement;if(w)w.remove();}}
+let _mid=0;
+function bubbleUser(text){
+  const inner=$('chatMessages').querySelector('div');const t=$('typingIndicator');
+  const el=document.createElement('div');el.setAttribute('data-msg-id',++_mid);el.style.cssText='margin-bottom:32px;animation:fadeUp .4s both;';
+  el.innerHTML='<div style="display:flex;justify-content:flex-end;"><div style="max-width:78%;"><div class="msg-body" style="padding:14px 20px;background:rgba(253,199,44,.1);border:1px solid rgba(253,199,44,.35);font-family:\'Chakra Petch\',sans-serif;font-size:14px;letter-spacing:.04em;line-height:1.7;color:#FDC72C;"></div><div style="text-align:right;margin-top:5px;font-family:\'Space Mono\',monospace;font-size:8px;letter-spacing:.12em;color:rgba(253,199,44,.35);">Roland G. · '+ts()+'</div></div></div>';
+  el.querySelector('.msg-body').textContent=text;inner.insertBefore(el,t);
+}
+function bubbleAI(){
+  const inner=$('chatMessages').querySelector('div');const t=$('typingIndicator');
+  const el=document.createElement('div');el.setAttribute('data-msg-id',++_mid);el.style.cssText='margin-bottom:32px;animation:fadeUp .4s both;';
+  el.innerHTML='<div style="display:flex;align-items:flex-start;gap:14px;"><img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-family:\'Chakra Petch\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;color:#FDC72C;">EMPIRE AI</span><span style="font-family:\'Space Mono\',monospace;font-size:9px;color:rgba(253,199,44,.3);">'+ts()+'</span></div><div class="msg-body" style="font-family:\'Sora\',sans-serif;font-size:15px;line-height:1.8;color:#FDC72C;white-space:pre-wrap;"></div></div></div>';
+  inner.insertBefore(el,t);return el.querySelector('.msg-body');
+}
+function ts(){return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});}
+async function sendMessage(){
+  const i=$('chatInput');if(!i||!i.value.trim())return;const text=i.value.trim();i.value='';rmBanner();
+  const s=$('suggestions');if(s)s.style.opacity='0';
+  bubbleUser(text);history.push({role:'user',content:text});
+  const msgs=$('chatMessages'),typing=$('typingIndicator');typing.style.display='block';msgs.scrollTop=msgs.scrollHeight;
+  const out=bubbleAI();let acc='';
   try{
-    const r=await fetch(api('/api/health')); const j=await r.json();
-    if(j.ok&&j.models.length){
-      modelSel.innerHTML=j.models.map(m=>`<option>${m}</option>`).join('');
-      dot.style.background='#1fd17a';statusText.textContent='Online';
-    }else{
-      modelSel.innerHTML='<option>no models</option>';
-      dot.style.background='#e0a92e';statusText.textContent='No model';
-    }
-  }catch{ dot.style.background='#e04e4e';statusText.textContent='Offline'; modelSel.innerHTML='<option>offline</option>'; }
+    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,mode:MODE,messages:history})});
+    typing.style.display='none';const rd=res.body.getReader(),dec=new TextDecoder();
+    while(true){const{done,value}=await rd.read();if(done)break;acc+=dec.decode(value,{stream:true});out.textContent=acc;msgs.scrollTop=msgs.scrollHeight;}
+    out.textContent=acc||'(no response)';history.push({role:'assistant',content:acc});if(speakOut&&acc)speak(acc);
+  }catch(e){typing.style.display='none';out.textContent='⚠️ '+e.message;}
 }
-loadModels();
-
-function bubble(role,text){
-  if(hero) {hero.remove();}
-  const wrap=document.createElement('div');wrap.className='msg '+role;
-  wrap.innerHTML=`<div class="av">${role==='user'?'You':'AI'}</div><div class="bubble"></div>`;
-  wrap.querySelector('.bubble').textContent=text;
-  main.appendChild(wrap);main.scrollTop=main.scrollHeight;
-  return wrap.querySelector('.bubble');
-}
-
-async function submit(){
-  const text=input.value.trim(); if(!text) return;
-  input.value='';input.style.height='auto';send.disabled=true;
-  bubble('user',text); history.push({role:'user',content:text});
-  const out=bubble('ai',''); out.innerHTML='<span class="cursor"></span>';
-  let acc='';
-  try{
-    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:modelSel.value,mode:modeSel.value,messages:history})});
-    const reader=res.body.getReader(); const dec=new TextDecoder();
-    while(true){const{done,value}=await reader.read();if(done)break;
-      acc+=dec.decode(value,{stream:true}); out.textContent=acc; out.innerHTML=out.textContent+'<span class="cursor"></span>';
-      main.scrollTop=main.scrollHeight;}
-    out.textContent=acc||'(no response)'; history.push({role:'assistant',content:acc});
-  }catch(e){ out.textContent='⚠️ '+e.message; }
-  send.disabled=false; input.focus();
-  if(speakOn && acc) speak(acc);
-}
-
-/* ===== EMPIRE VOICE (browser-native, free, offline-capable STT/TTS) ===== */
-const micBtn=document.getElementById('mic'), speakerBtn=document.getElementById('speaker');
-let speakOn=false, recog=null, listening=false;
-
-// --- TTS (Speech Synthesis) ---
-function pickVoice(){
-  const vs=speechSynthesis.getVoices();
-  // prefer a deep/clear English voice for the EMPIRE persona
-  return vs.find(v=>/Daniel|Google UK English Male|Microsoft Guy|Alex/i.test(v.name))
-      || vs.find(v=>/en[-_]/i.test(v.lang)) || vs[0];
-}
-function speak(text){
-  if(!('speechSynthesis' in window))return;
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text.replace(/[*#`>_]/g,''));
-  const v=pickVoice(); if(v)u.voice=v;
-  u.rate=1.02; u.pitch=0.95; u.volume=1;
-  speechSynthesis.speak(u);
-}
-if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; }
-speakerBtn.addEventListener('click',()=>{
-  speakOn=!speakOn; speakerBtn.classList.toggle('on',speakOn);
-  if(!speakOn) speechSynthesis.cancel();
-  speakerBtn.title = speakOn ? 'Voice replies ON — tap to mute' : 'Speak replies aloud (toggle)';
-});
-
-// --- STT (Speech Recognition) ---
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SR){
-  recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false;
-  let finalTx='';
-  recog.onstart=()=>{listening=true;micBtn.classList.add('live');finalTx='';};
-  recog.onresult=(e)=>{
-    let interim='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal)finalTx+=t; else interim+=t;
-    }
-    input.value=(finalTx+interim).trim();
-    input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';
-  };
-  recog.onerror=()=>{listening=false;micBtn.classList.remove('live');};
-  recog.onend=()=>{
-    listening=false;micBtn.classList.remove('live');
-    if(input.value.trim()){ speakOn=true; speakerBtn.classList.add('on'); submit(); } // voice in → voice out
-  };
-  micBtn.addEventListener('click',()=>{
-    if(listening){recog.stop();return;}
-    try{ speechSynthesis.cancel(); recog.start(); }catch(_){}
-  });
-}else{
-  micBtn.title='Voice input not supported in this browser — use Chrome/Edge';
-  micBtn.style.opacity='.4';
-}
+/* global shortcuts + focus */
+document.addEventListener('keydown',(e)=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleCmdPalette();}if(e.key==='Escape'){const p=$('commandPalette');if(p)p.style.display='none';hideMsgMenu();}});
+window.addEventListener('DOMContentLoaded',()=>{const i=$('chatInput');if(i)i.focus();});
 </script>
 </body>
 </html>
