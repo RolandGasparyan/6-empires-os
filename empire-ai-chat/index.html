@@ -137,6 +137,9 @@ html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:h
       </div>
     </div>
 
+    <!-- privacy routing toggle: click to cycle LOCAL / HYBRID / CLOUD -->
+    <button id="routeBtn" onclick="cycleRoute()" title="" style="padding:7px 12px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.28);border-radius:6px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;color:#FDC72C;cursor:pointer;white-space:nowrap;">⚡ HYBRID</button>
+
   </header>
 
   <!-- ── MESSAGES ── -->
@@ -335,9 +338,18 @@ html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:h
 const BASE=(location.pathname.replace(/\/[^/]*$/,'')+'/').replace(/\/+$/,'/');
 const api=(p)=>BASE.replace(/\/$/,'')+p;
 let MODEL='empire-prime', MODE='empire', speakOut=false, history=[];
+let ROUTE=(localStorage.getItem('empireRoute')||'hybrid');
 const MODELMAP={PRIME:'empire-prime',MEDIA:'empire-media',NEXUS:'empire-research'};
 const MODEMAP={'EMPIRE CORE':'empire','RAPID FIRE':'empire','DEEP RESEARCH':'academic','CREATIVE':'builder'};
 const $=(id)=>document.getElementById(id);
+
+/* ---- privacy routing: LOCAL (private) -> HYBRID -> CLOUD (Groq 70B) ---- */
+const ROUTE_ORDER=['local','hybrid','cloud'];
+const ROUTE_LABEL={local:'🔒 LOCAL',hybrid:'⚡ HYBRID',cloud:'🚀 CLOUD'};
+const ROUTE_TIP={local:'100% on your server · private · slower',hybrid:'greetings local · questions on Groq 70B',cloud:'everything on Groq 70B · fastest · best'};
+function renderRoute(){const b=$('routeBtn');if(!b)return;b.textContent=ROUTE_LABEL[ROUTE]||ROUTE_LABEL.hybrid;b.title=ROUTE_TIP[ROUTE]||'';}
+function cycleRoute(){const i=ROUTE_ORDER.indexOf(ROUTE);ROUTE=ROUTE_ORDER[(i+1)%ROUTE_ORDER.length];localStorage.setItem('empireRoute',ROUTE);renderRoute();}
+try{renderRoute();}catch(e){}
 
 /* ---- model / mode ---- */
 function toggleModelMenu(){const m=$('modelMenu');if(!m)return;m.style.display=m.style.display==='block'?'none':'block';
@@ -375,7 +387,7 @@ function deleteMessage(el){const m=el.closest('[data-msg-id]');if(m)m.remove();h
 function hideMsgMenu(){const mm=$('messageMenu');if(mm)mm.style.display='none';}
 
 /* ---- voice ---- */
-let _mrec=null,_mstream=null,_mchunks=[],_listening=false;
+let _mrec=null,_mstream=null,_mchunks=[],_listening=false,_vadTimer=null,_vac=null;
 function vDisp(t){const d=$('voiceDisplay');if(!d)return;if(t){d.textContent=t;d.style.display='block';}else{d.style.display='none';}}
 async function _pickMic(){try{const ds=await navigator.mediaDevices.enumerateDevices();const ins=ds.filter(d=>d.kind==='audioinput');const g=ins.find(d=>/pixy/i.test(d.label)&&!/virtual/i.test(d.label))||ins.find(d=>d.label&&!/virtual/i.test(d.label))||ins[0];return g?g.deviceId:null;}catch(_){return null;}}
 async function toggleVoiceInput(){const b=$('voiceMicBtn');
@@ -387,8 +399,20 @@ async function toggleVoiceInput(){const b=$('voiceMicBtn');
   const mm=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':((window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm'))?'audio/webm':'');
   try{_mrec=mm?new MediaRecorder(_mstream,{mimeType:mm}):new MediaRecorder(_mstream);}catch(e){vDisp('Recorder unsupported');return;}
   _mrec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)_mchunks.push(e.data);};
-  _mrec.onstart=()=>{_listening=true;b&&b.classList.add('voice-listening');vDisp('🎙 Listening… tap mic to stop');try{speechSynthesis.cancel();}catch(_){}};
-  _mrec.onstop=async()=>{_listening=false;b&&b.classList.remove('voice-listening');try{_mstream.getTracks().forEach(t=>t.stop());}catch(_){}
+  _mrec.onstart=()=>{_listening=true;b&&b.classList.add('voice-listening');vDisp('🎙 Listening… speak, then pause');try{speechSynthesis.cancel();}catch(_){}
+    // Auto-stop on silence (VAD): once you speak, a ~1.4s pause ends + sends it — no 2nd tap.
+    try{
+      _vac=new (window.AudioContext||window.webkitAudioContext)();
+      const src=_vac.createMediaStreamSource(_mstream);const an=_vac.createAnalyser();an.fftSize=2048;src.connect(an);
+      const buf=new Float32Array(an.fftSize);let spoke=false,lastLoud=Date.now();
+      _vadTimer=setInterval(()=>{
+        an.getFloatTimeDomainData(buf);let peak=0;for(let i=0;i<buf.length;i++){const a=Math.abs(buf[i]);if(a>peak)peak=a;}
+        const now=Date.now();
+        if(peak>0.045){spoke=true;lastLoud=now;vDisp('🎙 Listening…');}
+        if(spoke&&(now-lastLoud)>1400){try{_mrec&&_mrec.state==='recording'&&_mrec.stop();}catch(_){}}
+      },120);
+    }catch(_){}};
+  _mrec.onstop=async()=>{_listening=false;b&&b.classList.remove('voice-listening');try{clearInterval(_vadTimer);}catch(_){}try{_vac&&_vac.close();}catch(_){}try{_mstream.getTracks().forEach(t=>t.stop());}catch(_){}
     const blob=new Blob(_mchunks,{type:(_mrec&&_mrec.mimeType)||'audio/webm'});
     if(!blob||!blob.size){vDisp('');return;}
     vDisp('⏳ Transcribing…');
@@ -433,7 +457,7 @@ async function sendMessage(){
   const msgs=$('chatMessages'),typing=$('typingIndicator');typing.style.display='block';msgs.scrollTop=msgs.scrollHeight;
   const out=bubbleAI();let acc='';
   try{
-    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,mode:MODE,messages:history})});
+    const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,mode:MODE,route:ROUTE,messages:history})});
     typing.style.display='none';const rd=res.body.getReader(),dec=new TextDecoder();
     while(true){const{done,value}=await rd.read();if(done)break;acc+=dec.decode(value,{stream:true});out.textContent=acc;msgs.scrollTop=msgs.scrollHeight;}
     out.textContent=acc||'(no response)';history.push({role:'assistant',content:acc});if(speakOut&&acc)speak(acc);

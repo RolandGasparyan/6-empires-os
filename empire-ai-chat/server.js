@@ -45,7 +45,14 @@ const isEmpire = (m) => typeof m === 'string' && m.startsWith('empire-');
 
 // --- Groq frontier routing: when a Groq key is present, EMPIRE models run on a
 //     real 70B model (instant + far smarter than the local CPU box) ---
-const GROQ_KEY = process.env.FREE_GROQ_KEY || '';
+// Keys live in a shared JSON file that the admin page (/keys) writes, so updates
+// take effect instantly with NO restart. Falls back to the env var.
+const KEYS_FILE = process.env.KEYS_FILE || '/root/6-empires-os-full/apps/api/keys.json';
+const _fsk = require('fs');
+function readKeys() { try { return JSON.parse(_fsk.readFileSync(KEYS_FILE, 'utf8')); } catch { return {}; } }
+function readGroqKey() { const k = (readKeys().FREE_GROQ_KEY || '').trim(); return k || (process.env.FREE_GROQ_KEY || ''); }
+function adminPass() { return (readKeys().admin_pass || process.env.ADMIN_PASS || 'EMPIRE_KEYS_2026'); }
+let GROQ_KEY = readGroqKey();          // refreshed at the top of every request
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 // stream Groq tokens straight to the browser; returns true if it handled the request
 function groqStream(messages, res) {
@@ -111,12 +118,113 @@ function ollama(reqPath, method, body) {
   });
 }
 
+const KEYS_PAGE = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EMPIRE · API Keys</title><style>
+*{box-sizing:border-box}body{margin:0;background:#05060a;color:#FDC72C;font-family:'Chakra Petch',system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+.card{width:100%;max-width:440px;background:rgba(10,12,18,.96);border:1px solid rgba(253,199,44,.25);border-radius:14px;padding:28px;box-shadow:0 12px 48px rgba(0,0,0,.6)}
+h1{font-size:18px;letter-spacing:.22em;margin:0 0 4px}.sub{font-size:11px;color:rgba(253,199,44,.5);margin:0 0 20px;letter-spacing:.1em}
+label{display:block;font-size:11px;letter-spacing:.14em;margin:14px 0 6px;color:rgba(253,199,44,.75)}
+input{width:100%;padding:11px 12px;background:rgba(253,199,44,.06);border:1px solid rgba(253,199,44,.28);border-radius:7px;color:#FDC72C;font-family:'Space Mono',monospace;font-size:13px}
+input:focus{outline:none;border-color:#FDC72C}
+button{width:100%;margin-top:18px;padding:12px;background:#FDC72C;color:#05060a;border:none;border-radius:7px;font-weight:700;letter-spacing:.14em;font-size:13px;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:12px}
+.msg{margin-top:14px;font-size:12px;line-height:1.5;min-height:18px}
+.ok{color:#4ade80}.err{color:#f87171}.muted{color:rgba(253,199,44,.5)}
+.status{margin-top:8px;font-family:'Space Mono',monospace;font-size:12px;color:rgba(253,199,44,.7)}
+</style></head><body><div class="card">
+<h1>◆ EMPIRE · API KEYS</h1><p class="sub">Fill only what you want to change, then SAVE ALL. Applies live — no restart. Blank = keep current.</p>
+<label>ADMIN PASSWORD</label><input id="pass" type="password" placeholder="admin password" autocomplete="off">
+<label>GROQ <span class="muted" id="c_FREE_GROQ_KEY"></span></label><input data-key="FREE_GROQ_KEY" type="text" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+<label>OPENAI <span class="muted" id="c_OPENAI_API_KEY"></span></label><input data-key="OPENAI_API_KEY" type="text" placeholder="sk-..." autocomplete="off" spellcheck="false">
+<label>ANTHROPIC <span class="muted" id="c_ANTHROPIC_API_KEY"></span></label><input data-key="ANTHROPIC_API_KEY" type="text" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+<label>COMPOSIO <span class="muted" id="c_COMPOSIO_API_KEY"></span></label><input data-key="COMPOSIO_API_KEY" type="text" placeholder="composio key" autocomplete="off" spellcheck="false">
+<button id="save" onclick="save()">SAVE ALL &amp; APPLY</button>
+<div class="row"><button style="margin:0;background:none;border:1px solid rgba(253,199,44,.3);color:#FDC72C" onclick="status()">CHECK CURRENT</button></div>
+<div id="msg" class="msg muted">Groq / OpenAI / Anthropic keys are live-validated before saving.</div>
+</div><script>
+const api=(p)=>location.pathname.replace(/\\/keys.*$/,'').replace(/\\/admin.*$/,'')+p;
+function inputs(){return Array.from(document.querySelectorAll('input[data-key]'));}
+async function status(){const pass=document.getElementById('pass').value;const msg=document.getElementById('msg');msg.textContent='checking…';msg.className='msg muted';
+ try{const r=await fetch(api('/api/admin/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass})});const j=await r.json();
+ if(!j.ok){msg.textContent='✗ '+(j.error||'error');msg.className='msg err';return;}
+ for(const k in j.keys){const el=document.getElementById('c_'+k);if(el)el.textContent='· '+j.keys[k];}
+ msg.textContent='Current keys shown next to each label.';msg.className='msg ok';}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}}
+async function save(){const pass=document.getElementById('pass').value;const keys={};inputs().forEach(i=>{const v=i.value.trim();if(v)keys[i.dataset.key]=v;});
+ const msg=document.getElementById('msg');const btn=document.getElementById('save');
+ if(!Object.keys(keys).length){msg.textContent='Fill at least one key.';msg.className='msg err';return;}
+ btn.disabled=true;msg.textContent='Validating & saving…';msg.className='msg muted';
+ try{const r=await fetch(api('/api/admin/save'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass,keys})});const j=await r.json();
+ if(j.ok){msg.innerHTML=Object.entries(j.results).map(([k,v])=>k+': '+v).join('<br>');msg.className='msg '+(JSON.stringify(j.results).includes('✗')?'err':'ok');inputs().forEach(i=>i.value='');status();}
+ else{msg.textContent='✗ '+(j.error||'failed');msg.className='msg err';}}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}
+ btn.disabled=false;}
+</script></body></html>`;
+
 const server = http.createServer(async (req, res) => {
   // Normalize the URL so the app works whether mounted at "/" or behind "/chat".
   // nginx proxies /chat → here without stripping, so strip a leading /chat ourselves.
   let url = req.url.replace(/^\/chat(?=\/|$)/, '') || '/';
   url = url.split('?')[0];
   if (url === '') url = '/';
+
+  // Always use the latest saved Groq key (admin page can change it live).
+  GROQ_KEY = readGroqKey();
+
+  // --- ADMIN: API-key manager page (password-gated) ---
+  if (req.method === 'GET' && (url === '/keys' || url === '/admin')) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(KEYS_PAGE);
+  }
+  // All keys the manager knows about. `validate` keys are live-checked before save.
+  const KEY_DEFS = [
+    { id: 'FREE_GROQ_KEY',    label: 'Groq',      prefix: 'gsk_',      validate: 'groq' },
+    { id: 'OPENAI_API_KEY',   label: 'OpenAI',    prefix: 'sk-',       validate: 'openai' },
+    { id: 'ANTHROPIC_API_KEY',label: 'Anthropic', prefix: 'sk-ant-',   validate: 'anthropic' },
+    { id: 'COMPOSIO_API_KEY', label: 'Composio',  prefix: '',          validate: null },
+  ];
+  const mask = (k) => k ? (k.slice(0, 8) + '…' + k.slice(-4)) : '';
+  async function validateKey(kind, key) {
+    try {
+      if (kind === 'groq') { const r = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': 'Bearer ' + key } }); return r.ok; }
+      if (kind === 'openai') { const r = await fetch('https://api.openai.com/v1/models', { headers: { 'Authorization': 'Bearer ' + key } }); return r.ok; }
+      if (kind === 'anthropic') { const r = await fetch('https://api.anthropic.com/v1/models', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' } }); return r.ok; }
+    } catch { return false; }
+    return true; // no validator → accept
+  }
+  if (req.method === 'POST' && url === '/api/admin/status') {
+    let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
+      let b = {}; try { b = JSON.parse(raw); } catch {}
+      if ((b.pass || '') !== adminPass()) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
+      const cur = readKeys();
+      const out = {};
+      for (const d of KEY_DEFS) { const v = (d.id === 'FREE_GROQ_KEY') ? readGroqKey() : (cur[d.id] || ''); out[d.id] = v ? mask(v) : '(none)'; }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, keys: out }));
+    });
+    return;
+  }
+  if (req.method === 'POST' && url === '/api/admin/save') {
+    let raw = ''; req.on('data', c => raw += c); req.on('end', async () => {
+      let b = {}; try { b = JSON.parse(raw); } catch {}
+      if ((b.pass || '') !== adminPass()) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
+      const incoming = b.keys || {};
+      const cur = readKeys(); if (!cur.admin_pass) cur.admin_pass = adminPass();
+      const results = {};
+      for (const d of KEY_DEFS) {
+        const val = (incoming[d.id] || '').trim();
+        if (!val) continue;                                   // only update fields the user filled
+        if (d.prefix && !val.startsWith(d.prefix)) { results[d.label] = '✗ must start with ' + d.prefix; continue; }
+        if (d.validate) { const ok = await validateKey(d.validate, val); if (!ok) { results[d.label] = '✗ rejected by ' + d.label + ' (invalid)'; continue; } }
+        cur[d.id] = val;
+        results[d.label] = '✓ saved ' + mask(val);
+      }
+      try { _fsk.writeFileSync(KEYS_FILE, JSON.stringify(cur, null, 2)); } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'write failed: ' + e.message })); }
+      GROQ_KEY = readGroqKey();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, results }));
+    });
+    return;
+  }
 
   // --- UI ---
   if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
@@ -202,22 +310,33 @@ const server = http.createServer(async (req, res) => {
       const sys = { role: 'system', content: sysContent };
       const messages = [sys, ...incoming.filter((m) => m.role !== 'system')];
 
-      // EMPIRE models → prefer Groq frontier (70B, instant) when a key is set;
-      // fall back to the local VPS router if Groq is unavailable.
+      // EMPIRE models → HYBRID (option 3): trivial greetings stay 100% local/private
+      // on your own VPS; anything substantive escalates to the Groq big brain (70B)
+      // for ChatGPT-class answers. Bulletproof cross-fallback so it never dead-ends.
       if (isEmpire(model)) {
-        if (GROQ_KEY) {
-          groqStream(messages, res).then((ok) => {
-            if (ok) return;
-            // Groq failed → fall back to local router (non-stream)
-            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
-            empireChat(model, messages).then((t) => res.end(t)).catch((e) => res.end('⚠️ router unreachable: ' + e.message));
-          });
+        const lastUser = (incoming.filter((m) => m.role === 'user').pop() || {}).content || '';
+        const isGreeting = /^\s*(hi|hey+|hello|yo|sup|barev|привет|ok|okay|k|thanks|thank you|ty|lol|nice|cool|good|great|bye|👍)[\s!.,?]*$/i.test(lastUser);
+        // Privacy routing mode chosen by the user in the UI (persisted client-side):
+        //   'local'  → everything on your VPS (private, slower)
+        //   'cloud'  → everything on Groq 70B (fastest, best quality)
+        //   'hybrid' → greetings local, real questions Groq (default)
+        const route = String(payload.route || 'hybrid').toLowerCase();
+        let useGroq;
+        if (route === 'local') useGroq = false;
+        else if (route === 'cloud' || route === 'groq') useGroq = !!GROQ_KEY;
+        else useGroq = GROQ_KEY && !isGreeting;
+
+        const localFallback = () => {
+          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+          empireChat(model, messages).then((t) => res.end(t || '…')).catch((e) => res.end('⚠️ router unreachable: ' + e.message));
+        };
+
+        if (useGroq) {
+          groqStream(messages, res).then((ok) => { if (!ok) localFallback(); });
           return;
         }
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
-        empireChat(model, messages)
-          .then((text) => res.end(text))
-          .catch((e) => res.end('⚠️ EMPIRE router unreachable: ' + e.message));
+        // greeting (or no Groq key) → local/private router (which is itself hybrid)
+        localFallback();
         return;
       }
 
