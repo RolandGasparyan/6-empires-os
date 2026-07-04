@@ -1,5 +1,8 @@
 <div data-six-root style="position:relative;background:#000000;color:#E8EAED;font-family:'Sora',sans-serif;overflow:hidden;">
 
+  <!-- ============ FIXED DIAGONAL LINES OVERLAY (all pages) ============ -->
+  <div style="position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(135deg,rgba(248,226,49,.035) 0px,rgba(248,226,49,.035) 1px,transparent 1px,transparent 64px);"></div>
+
   <!-- ============ FIXED ANIMATED BACKGROUND (mesh + Empire skyline) ============ -->
   <canvas id="bgMesh" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
@@ -8,9 +11,8 @@
 
   <!-- ============ FIXED HUD OVERLAY ============ -->
   <div style="position:fixed;inset:0;z-index:90;pointer-events:none;mix-blend-mode:normal;">
-    <!-- scanline sweep -->
-    <div style="position:absolute;left:0;right:0;height:90px;background:linear-gradient(180deg,transparent,rgba(248,226,49,.05),transparent);animation:sixScan 7s linear infinite;"></div>
     <!-- corner brackets -->
+    <div id="cityAudioBtn" data-muted="0" title="Mute city audio" style="position:fixed;bottom:28px;right:28px;z-index:999;width:38px;height:38px;border:1px solid rgba(248,226,49,.4);background:rgba(2,4,8,.75);color:#F8E231;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .5s;backdrop-filter:blur(6px);pointer-events:auto;">🔊</div>
     <div style="position:absolute;top:22px;left:22px;width:32px;height:32px;border-top:2px solid #F8E231;border-left:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
     <div style="position:absolute;top:22px;right:22px;width:32px;height:32px;border-top:2px solid #F8E231;border-right:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
     <div style="position:absolute;bottom:22px;left:22px;width:32px;height:32px;border-bottom:2px solid #F8E231;border-left:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
@@ -38,27 +40,44 @@
   </div>
 
   <!-- ============ SCENE 01 · BOOT ============ -->
-  <section data-scene="boot" data-screen-label="Boot" style="position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;background:transparent;">
+  <section data-scene="boot" data-screen-label="Boot" style="position:relative;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:2vh;text-align:center;padding-left:24px;padding-right:24px;background:transparent;overflow:hidden;">
+    <!-- dark blur overlay removed from section -->
+    <!-- geometric background layer -->
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+      <!-- 6-EMPIRES watermark removed -->
+      <!-- orbit ring TL -->
+      <div style="position:absolute;top:-120px;left:-120px;width:400px;height:400px;border:1px solid rgba(248,226,49,.05);border-radius:50%;animation:sixSpin 80s linear infinite;"></div>
+      <!-- orbit ring BR -->
+      <div style="position:absolute;bottom:-120px;right:-120px;width:500px;height:500px;border:1px dashed rgba(248,226,49,.04);border-radius:50%;animation:sixSpinR 100s linear infinite;"></div>
+      <!-- cross TR -->
+      <svg style="position:absolute;top:12%;right:8%;width:60px;height:60px;opacity:.12;" viewBox="0 0 60 60"><line x1="30" y1="5" x2="30" y2="55" stroke="#F8E231" stroke-width="1"/><line x1="5" y1="30" x2="55" y2="30" stroke="#F8E231" stroke-width="1"/><circle cx="30" cy="30" r="8" fill="none" stroke="#F8E231" stroke-width="1"/></svg>
+      <!-- cross BL -->
+      <svg style="position:absolute;bottom:14%;left:7%;width:50px;height:50px;opacity:.1;" viewBox="0 0 50 50"><line x1="25" y1="4" x2="25" y2="46" stroke="#F8E231" stroke-width="1"/><line x1="4" y1="25" x2="46" y2="25" stroke="#F8E231" stroke-width="1"/><circle cx="25" cy="25" r="7" fill="none" stroke="#F8E231" stroke-width="1"/></svg>
+      <!-- dot grid -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.04;" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dotgrid" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="1" fill="#F8E231"/></pattern></defs><rect width="100%" height="100%" fill="url(#dotgrid)"/></svg>
+    </div>
 
-    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;margin-top:-120px;">
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;margin-top:0;">
+      <div style="display:flex;flex-direction:column;align-items:center;padding:16px 80px 32px;width:min(90vw,820px);">
       <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:rgba(248,226,49,.7);margin-bottom:26px;animation:sixFlick 2.4s steps(1) 1;">// INITIALIZING SOVEREIGN CORE</div>
-      <div style="width:300px;height:2px;background:rgba(248,226,49,.14);margin-bottom:54px;overflow:hidden;position:relative;">
+      <div style="width:300px;height:2px;background:rgba(248,226,49,.14);margin-bottom:32px;overflow:hidden;position:relative;">
         <div style="height:100%;background:#F8E231;box-shadow:0 0 10px #F8E231;animation:sixBootBar 1.8s cubic-bezier(.7,0,.2,1) both;"></div>
       </div>
       <!-- hex emblem + wordmark -->
       <div style="display:flex;align-items:center;gap:18px;animation:sixFadeUp 1s 1.4s both;">
-        <div style="position:relative;width:92px;height:104px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;width:clamp(70px,9vw,110px);height:clamp(80px,10.2vw,125px);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <div style="position:absolute;inset:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,rgba(248,226,49,.18),rgba(248,226,49,.02));"></div>
           <div style="position:absolute;inset:3px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:#070809;"></div>
-          <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:52px;color:#F8E231;text-shadow:0 0 24px rgba(248,226,49,.6);">6</span>
+          <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(40px,6.5vw,80px);color:#F8E231;text-shadow:0 0 18px rgba(248,226,49,.7);line-height:1;">6</span>
         </div>
-        <div style="text-align:left;">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(34px,6vw,66px);letter-spacing:.12em;line-height:.95;color:#F4F5F7;">EMPIRES</div>
-        </div>
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(40px,6.5vw,80px);letter-spacing:.14em;line-height:1;background:linear-gradient(90deg,#fff 0%,#F8E231 40%,#fff 60%,#F8E231 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sixShine 4s linear infinite;">EMPIRES</div>
         
-          <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:180px;height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22));animation:sixLogoBreathe 7s ease-in-out 1.6s infinite;will-change:transform,filter;">
+          <div style="position:relative;flex-shrink:0;">
+            <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:clamp(70px,9vw,110px);height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 12px rgba(255,255,255,.5));animation:sixRotateCW 60s linear infinite,sixGlowPulse 3.5s ease-in-out infinite;will-change:transform;">
+          </div>
         
       </div>
+      <div style="margin-top:4px;font-family:'Space Mono',monospace;font-size:clamp(10px,1.2vw,14px);letter-spacing:.22em;color:rgba(248,226,49,.85);text-transform:uppercase;text-shadow:0 0 14px rgba(248,226,49,.5);animation:sixPulse 3.5s ease-in-out infinite;">World's First Sovereign AI Corporation</div>
     </div>
     <!-- scroll cue -->
     <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;animation:sixFadeUp 1s 2.4s both;">
@@ -81,8 +100,8 @@
       <!-- CENTRAL HERO TEXT (exterior scene) -->
       <div style="position:relative;z-index:5;text-align:center;padding:0 48px;">
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.32em;color:rgba(248,226,49,.65);margin-bottom:22px;animation:sixFadeUp 1s 0.3s both;">01 · GLOBAL HQ</div>
-        <h1 style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(48px,8vw,110px);letter-spacing:.1em;line-height:.92;margin:0 0 28px;color:#F4F5F7;animation:sixFadeUp 1s 0.5s both;text-shadow:0 0 80px rgba(248,226,49,.2);">6—EMPIRES</h1>
-        <div style="font-family:'Sora',sans-serif;font-weight:300;font-size:clamp(14px,2vw,20px);color:rgba(232,234,237,.55);letter-spacing:.06em;max-width:600px;margin:0 auto;animation:sixFadeUp 1s 0.7s both;">Decentralized intelligence. Autonomous innovation. Sovereign by design.</div>
+        <h1 style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(48px,8vw,110px);letter-spacing:.1em;line-height:.92;margin:0 0 18px;color:#F4F5F7;animation:sixFadeUp 1s 0.5s both;text-shadow:0 0 80px rgba(248,226,49,.2);">6—EMPIRES</h1>
+        <div style="font-family:'Sora',sans-serif;font-weight:300;font-size:clamp(14px,2vw,20px);color:rgba(232,234,237,.55);letter-spacing:.06em;max-width:600px;margin:0 auto;animation:sixFadeUp 1s 0.7s both;">Sovereign intelligence · Autonomous systems · Infinite scale</div>
         <!-- gold horizontal rule -->
         <div style="width:60px;height:1px;background:rgba(248,226,49,.5);margin:30px auto 0;animation:sixFadeUp 1s 0.9s both;"></div>
       </div>
@@ -92,22 +111,21 @@
         
         <!-- left: coordinates & altitude -->
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(248,226,49,.7);line-height:1.8;">
-          <div>LAT 06.660 // LON −06.066</div>
-          <div>ALT 0036m // APPROACH</div>
+          <div>34°03′N · 118°15′W · LOS ANGELES</div>
+          <div>ALT 0036m · SECTOR // GLOBAL HQ</div>
         </div>
 
         <!-- center: corporation description -->
         <div style="flex:1;margin:0 40px;text-align:center;">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.12em;color:#F8E231;text-shadow:0 0 16px #F8E231;margin-bottom:6px;">6-EMPIRES CORPORATION</div>
           <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);line-height:1.6;">
-            Decentralized intelligence. Autonomous innovation. Resilient architecture.<br/>A unified empire powering the future of self-governed systems.
+            World's first AI-powered self-governing corporate empire.
           </div>
         </div>
 
         <!-- right: approach phase -->
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(248,226,49,.7);text-align:right;line-height:1.8;">
-          <div>APPROACH PHASE //</div>
-          <div style="font-size:13px;font-weight:700;color:#F8E231;">SOVEREIGN</div>
+          <div>STATUS // OPERATIONAL</div>
+          <div style="font-size:13px;font-weight:700;color:#F8E231;">EMPIRE ONLINE</div>
         </div>
       </div>
     </div>
@@ -139,31 +157,13 @@
       <!-- left panel: bars -->
       <div data-depth="54" style="position:absolute;left:9%;bottom:22%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
         <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:12px;">NODE THROUGHPUT</div>
-        <div style="display:flex;align-items:flex-end;gap:6px;height:54px;">
-          <div style="flex:1;height:40%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:70%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:55%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:88%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));box-shadow:0 0 12px rgba(248,226,49,.5);"></div>
-          <div style="flex:1;height:62%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:78%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-        </div>
+        <canvas id="tradingChart" style="width:100%;height:54px;display:block;"></canvas>
       </div>
       <!-- right panel: network -->
       <div data-depth="-60" style="position:absolute;right:8%;top:26%;width:210px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(8px);box-shadow:0 0 30px rgba(248,226,49,.06),inset 0 0 20px rgba(248,226,49,.02);">
         <div style="position:absolute;top:-1px;right:-1px;width:12px;height:12px;border-top:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
         <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:10px;">MESH TOPOLOGY</div>
-        <svg viewBox="0 0 180 110" style="width:100%;height:auto;">
-          <line x1="30" y1="24" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="150" y1="20" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="38" y1="88" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="148" y1="92" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="30" y1="24" x2="150" y2="20" stroke="rgba(248,226,49,.18)" stroke-width="1"/>
-          <circle cx="92" cy="56" r="7" fill="#F8E231"/>
-          <circle cx="30" cy="24" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="150" cy="20" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="38" cy="88" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="148" cy="92" r="4" fill="#F8E231" opacity=".8"/>
-        </svg>
+        <canvas id="meshPyramid" style="width:100%;height:110px;display:block;"></canvas>
       </div>
       <!-- right panel: readout -->
       <div data-depth="48" style="position:absolute;right:9%;bottom:24%;width:198px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);font-family:'Space Mono',monospace;">
@@ -184,10 +184,11 @@
   <section data-scene="pillars" data-screen-label="Pillars" style="position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 64px;background:rgba(2,4,8,.78);overflow:hidden;">
     <!-- ambient scan line -->
     <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(248,226,49,.4),transparent);animation:scanH 6s linear infinite;pointer-events:none;"></div>
-    <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);margin-bottom:46px;max-width:760px;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+    <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);margin-bottom:46px;max-width:760px;margin-left:auto;margin-right:auto;text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;">
         <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#F8E231;">03 · ARCHITECTURE OF VALUES</div>
+        <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
       </div>
       <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(30px,4.5vw,52px);line-height:1.05;margin:0;">Four pillars hold<br/>the empire upright.</h2>
     </div>
@@ -212,11 +213,32 @@
       </div>
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s .36s cubic-bezier(.2,.8,.2,1);position:relative;padding:34px 28px 40px;background:linear-gradient(180deg,#0c1018,#070a0e);border-top:1px solid rgba(248,226,49,.5);box-shadow:0 0 40px rgba(248,226,49,.04),inset 0 1px 0 rgba(248,226,49,.15);"><div style="position:absolute;top:0;left:0;width:16px;height:16px;border-top:2px solid #F8E231;border-left:2px solid #F8E231;"></div><div style="position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:2px solid rgba(248,226,49,.3);border-right:2px solid rgba(248,226,49,.3);"></div>
         <div style="position:absolute;top:14px;right:16px;font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.4);">04</div>
-        <svg viewBox="0 0 48 48" style="width:46px;height:46px;margin-bottom:22px;"><line x1="12" y1="12" x2="36" y2="14" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="12" y1="12" x2="14" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="36" y1="14" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="14" y1="36" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="12" y1="12" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".3"/><circle cx="12" cy="12" r="3.4" fill="#F8E231"/><circle cx="36" cy="14" r="3.4" fill="#F8E231"/><circle cx="14" cy="36" r="3.4" fill="#F8E231"/><circle cx="34" cy="36" r="3.4" fill="#F8E231"/></svg>
+        <svg viewBox="0 0 48 48" style="width:46px;height:46px;margin-bottom:22px;"><polygon points="24,4 44,40 4,40" fill="none" stroke="#F8E231" stroke-width="1.4"/><polygon points="24,14 38,40 10,40" fill="rgba(248,226,49,.07)" stroke="#F8E231" stroke-width=".8" opacity=".6"/><line x1="24" y1="4" x2="24" y2="40" stroke="#F8E231" stroke-width=".8" opacity=".35"/><circle cx="24" cy="22" r="3" fill="none" stroke="#F8E231" stroke-width="1.2"/><circle cx="24" cy="22" r="1.2" fill="#F8E231"/></svg>
         <h3 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:21px;margin:0 0 10px;letter-spacing:.04em;">Interconnectedness</h3>
         <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.65;color:rgba(232,234,237,.55);margin:0;">A living network of collaborative relationships and synergies. No empire stands alone — value flows between every node.</p>
       </div>
     </div>
+
+    <!-- metrics strip below pillars -->
+    <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .9s .5s cubic-bezier(.2,.8,.2,1);display:flex;gap:1px;background:rgba(248,226,49,.12);border:1px solid rgba(248,226,49,.15);margin-top:1px;">
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">6</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">EMPIRES</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">12+</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">AI AGENTS</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">100%</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">SOVEREIGN</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">∞</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">SCALE</div>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ SCENE 05 · MANIFESTO ============ -->
@@ -253,22 +275,88 @@
   </section>
 
   <!-- ============ SCENE 06 · FOUNDER ============ -->
-  <section data-scene="founder" data-screen-label="Founder" style="position:relative;min-height:100vh;display:flex;align-items:center;padding:120px 64px;background:rgba(2,4,8,.7);overflow:hidden;">
-    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(248,226,49,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(248,226,49,.03) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;"></div><div style="display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:64px;align-items:center;width:100%;max-width:1180px;margin:0 auto;position:relative;z-index:1;">
+  <section data-scene="founder" data-screen-label="Founder" style="position:relative;min-height:100vh;display:flex;align-items:center;padding:80px 64px;background:rgba(2,4,8,.7);overflow:hidden;">
+    <!-- hologram sun orb — right side -->
+    <div style="position:absolute;right:4%;top:50%;transform:translateY(-50%);width:260px;height:260px;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;">
+      <div style="position:absolute;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle,rgba(248,226,49,.18),transparent 62%);filter:blur(10px);"></div>
+      <div style="position:absolute;width:230px;height:230px;border:1px solid rgba(248,226,49,.25);border-radius:50%;animation:sixSpin 24s linear infinite;"></div>
+      <div style="position:absolute;width:178px;height:178px;border:1px dashed rgba(248,226,49,.3);border-radius:50%;animation:sixSpinR 18s linear infinite;"></div>
+      <div style="position:absolute;width:230px;height:230px;border-radius:50%;border-top:1.5px solid #F8E231;transform:rotateX(74deg);animation:sixSpin 9s linear infinite;box-shadow:0 0 20px rgba(248,226,49,.25);"></div>
+      <div style="position:absolute;width:178px;height:178px;border-radius:50%;border-left:1.5px solid rgba(248,226,49,.6);transform:rotateY(74deg);animation:sixSpinR 11s linear infinite;"></div>
+      <div style="width:86px;height:86px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFF7C2,#F8E231 40%,#8a7a18);box-shadow:0 0 50px rgba(248,226,49,.6),inset -8px -10px 20px rgba(0,0,0,.4);animation:sixPulse 3.4s ease-in-out infinite;"></div>
+    </div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(248,226,49,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(248,226,49,.03) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;"></div>
+    <!-- large watermark bg text -->
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(60px,10vw,140px);letter-spacing:.18em;color:rgba(248,226,49,.04);white-space:nowrap;pointer-events:none;user-select:none;">THE ARCHITECT</div>
+    <div style="display:grid;grid-template-columns:minmax(220px,360px) 1fr;gap:52px;align-items:flex-start;width:100%;max-width:1180px;margin:0 auto;position:relative;z-index:1;">
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);position:relative;">
         <div style="position:absolute;top:-12px;left:-12px;width:30px;height:30px;border-top:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
         <div style="position:absolute;bottom:-12px;right:-12px;width:30px;height:30px;border-bottom:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
-        <div style="display:block;width:100%;aspect-ratio:4/5;border:1px solid rgba(248,226,49,.3);background:linear-gradient(160deg,#0c1018,#070a0e);display:flex;align-items:center;justify-content:center;filter:grayscale(.1);"><img src="empire-logo.png" alt="6-EMPIRE" style="width:62%;height:auto;filter:drop-shadow(0 0 30px rgba(248,226,49,.4));" /></div>
+        <!-- hologram sun orb removed from here -->
+        <img src="founder.jpg" alt="Roland Gasparyan" style="display:block;width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center top;border:1px solid rgba(248,226,49,.3);filter:grayscale(.15) contrast(1.08);position:relative;z-index:1;">
         <div style="position:absolute;left:0;bottom:0;right:0;padding:14px 16px;background:linear-gradient(transparent,rgba(5,6,8,.92));font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.7);">ORIGIN NODE · FOUNDER</div>
       </div>
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s .15s cubic-bezier(.2,.8,.2,1);">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
           <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
-          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#F8E231;">05 · THE ARCHITECT</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:#F8E231;">06 · THE ARCHITECT</div>
         </div>
-        <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(30px,4vw,50px);line-height:1.04;margin:0 0 6px;">Roland Gasparyan</h2>
-        <div style="font-family:'Sora',sans-serif;font-weight:400;font-size:14px;letter-spacing:.04em;color:rgba(248,226,49,.85);margin-bottom:26px;">Founder · Creative Direction</div>
-        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:16px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 22px;max-width:560px;">A vision born outside the machine. Roland's roots in music production, video, and creative direction bring an artist's instinct to AI — a focus on human-centered design, expression, and the soul of the systems we build.</p>
+        <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(26px,3.5vw,44px);line-height:1.04;margin:0 0 4px;">Roland Gasparyan</h2>
+        <div style="font-family:'Sora',sans-serif;font-weight:400;font-size:13px;letter-spacing:.04em;color:rgba(248,226,49,.85);margin-bottom:18px;">Founder · CEO · Creative Direction</div>
+
+        <!-- stat strip -->
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px;">
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">ORIGIN</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Yerevan, Armenia</div>
+          </div>
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">BASE</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Los Angeles, CA</div>
+          </div>
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">FOUNDED</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">2024</div>
+          </div>
+        </div>
+
+        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 12px;max-width:560px;">Born in Yerevan in 1986, Roland is a composer, music producer, filmmaker, and entrepreneur across music, film, AI, business, and investment. As founder of Reincarnation Studios and Reincarnation Orchestra, he built a creative legacy spanning live performance and global audiences.</p>
+        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 16px;max-width:560px;">Now based in Los Angeles, Roland channels two decades of creative and business leadership into 6 Empires Corporation — a sovereign AI-powered ecosystem built to own, create, and operate at scale across six interconnected domains.</p>
+
+        <!-- project milestones -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">PROJECT</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">6 Empires Corp</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">AI sovereign platform</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">STUDIO</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Reincarnation Studios</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">Music label · Artist mgmt</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">VISION</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Decentralized AI Empire</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">6 sovereign divisions</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">APPROACH</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">We Build · We Create</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">We own everything we make</div>
+          </div>
+        </div>
+
+        <!-- tags -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">COMPOSER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">FILMMAKER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">AI ARCHITECT</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">PHILOSOPHER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">ENTREPRENEUR</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">DESIGNER</span>
+        </div>
+
         <blockquote style="margin:0;padding:20px 26px;border-left:2px solid #F8E231;background:rgba(248,226,49,.04);">
           <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(17px,2.2vw,24px);line-height:1.4;color:#F4F5F7;margin:0;">"Technology should amplify human potential — not replace it. The empire is decentralized by design, sovereign by intent."</p>
         </blockquote>
@@ -397,6 +485,14 @@
                 <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Sentinel</div>
                 <div style="font-size:11px;color:rgba(232,234,237,.4);">Security & resilience</div>
               </div>
+              <div data-reveal style="opacity:0;transform:translateX(-20px);transition:all .8s .4s cubic-bezier(.2,.8,.2,1);padding:12px;background:rgba(248,226,49,.06);border:1px solid rgba(248,226,49,.15);font-family:'Sora',sans-serif;font-size:13px;color:rgba(232,234,237,.75);">
+                <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Trader</div>
+                <div style="font-size:11px;color:rgba(232,234,237,.4);">Markets & trading AI</div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateX(-20px);transition:all .8s .5s cubic-bezier(.2,.8,.2,1);padding:12px;background:rgba(248,226,49,.06);border:1px solid rgba(248,226,49,.15);font-family:'Sora',sans-serif;font-size:13px;color:rgba(232,234,237,.75);">
+                <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Oracle</div>
+                <div style="font-size:11px;color:rgba(232,234,237,.4);">Data & intelligence</div>
+              </div>
             </div>
           </div>
 
@@ -404,37 +500,56 @@
           <div style="position:relative;padding:24px;background:linear-gradient(180deg,#0d1118,#070a0e);border-right:1px solid rgba(248,226,49,.18);">
             <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#F8E231;margin-bottom:18px;display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#F8E231;border-radius:50%;animation:sixPulse 1.4s .2s ease-in-out infinite;"></span>ACTIVE PROJECTS</div>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .0s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.15),rgba(248,226,49,.04));border:1px solid rgba(248,226,49,.2);border-radius:2px;">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Sovereign Protocol</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">87%</span>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .0s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.15),rgba(248,226,49,.04));border:1px solid rgba(248,226,49,.2);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">6-Empires</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">LIVE</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:87%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">AI-powered sovereign corporate OS</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:92%;background:#F8E231;"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .1s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.12),rgba(248,226,49,.02));border:1px solid rgba(248,226,49,.15);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Decentralized Labs</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">64%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Reincarnation Studios</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">ACTIVE</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:64%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Music label · Artist management · LA</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:78%;background:rgba(248,226,49,.7);"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .2s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.1),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.12);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Growth Ecosystem</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">52%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Dzayn.app</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">BUILD</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:52%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Cyclical Intelligence AI assistant</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:65%;background:rgba(248,226,49,.6);"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .3s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Research Initiative</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">78%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Trading Guru AI</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">LAUNCH</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:78%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">World's first AI trading championship platform</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:40%;background:rgba(248,226,49,.5);"></div></div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .4s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">AI Booking Manager</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">BUILD</span>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Autonomous scheduling & booking AI</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:30%;background:rgba(248,226,49,.45);"></div></div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .5s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Empire AI Models</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">PRIVATE</span>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Fully private sovereign LLMs · internal use</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:22%;background:rgba(248,226,49,.4);"></div></div>
               </div>
             </div>
           </div>
-
           <!-- right column: workspace status -->
           <div style="position:relative;padding:24px;background:linear-gradient(180deg,#0d1118,#070a0e);">
             <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#F8E231;margin-bottom:18px;display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#F8E231;border-radius:50%;animation:sixPulse 1.4s .4s ease-in-out infinite;"></span>WORKSPACE STATUS</div>
@@ -520,7 +635,7 @@
 
       <!-- tagline -->
       <div data-reveal style="opacity:0;transform:translateY(24px);transition:all .9s .3s cubic-bezier(.2,.8,.2,1);margin-bottom:56px;">
-        <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(20px,2.8vw,32px);line-height:1.4;color:rgba(232,234,237,.8);margin:0;">"Sovereign by design.<br/>Infinite by ambition."</p>
+        <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(20px,2.8vw,32px);line-height:1.4;color:rgba(232,234,237,.8);margin:0;">"We build, we create, we own."</p>
       </div>
 
       <!-- divider -->
@@ -547,6 +662,10 @@
         <button onClick="openAdminLogin()" data-cta-btn="primary" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;text-decoration:none;border:none;cursor:pointer;will-change:transform,opacity;transform:translate3d(0,0,0);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s;">
           <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="12" height="8" rx="1"/><path d="M6 8V5.5a3 3 0 0 1 6 0V8"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
           ADMIN LOGIN
+        </button>
+        <button onClick="openAdminLogin()" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;border:2px solid #F8E231;cursor:pointer;transition:all .22s;">
+          <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h14v9H2z"/><path d="M5 15l4-3h7"/></svg>
+          EMPIRE CHAT
         </button>
       </div>
     </div>

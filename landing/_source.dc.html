@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<canvas id="manhattanBg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
+<canvas id="manhattanBg" style="display:none;"></canvas>
 
 <helmet>
 <style>html,body{background:#030508!important;margin:0;padding:0;}</style>
@@ -26,6 +26,8 @@
   ::-webkit-scrollbar-thumb:hover{background:#F8E231}
   @keyframes sixBlink{50%{opacity:.15}}
   @keyframes sixFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+  @keyframes sixGlowPulse{0%,100%{filter:brightness(0) invert(1) drop-shadow(0 0 8px rgba(255,255,255,.4))}50%{filter:brightness(0) invert(1) drop-shadow(0 0 28px rgba(255,255,255,.9))}}
+  @keyframes sixShine{from{background-position:150% center}to{background-position:-50% center}}
   @keyframes sixSpin{to{transform:rotate(360deg)}}
   @keyframes sixSpinR{to{transform:rotate(-360deg)}}
   @keyframes sixGrid{to{background-position:0 44px}}
@@ -37,7 +39,7 @@
   @keyframes sixRainSnow{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
   @keyframes sixPyramidPulse{0%,100%{opacity:.6;filter:brightness(1) drop-shadow(0 0 12px currentColor)}50%{opacity:1;filter:brightness(1.4) drop-shadow(0 0 28px currentColor)}}
   @keyframes sixFlick{0%,100%{opacity:1}8%{opacity:.3}12%{opacity:1}40%{opacity:.6}44%{opacity:1}}
-  @keyframes sixChev{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(8px);opacity:1}}
+  @keyframes hexPulse{0%,100%{scale:1}50%{scale:1.18}}
   @keyframes sixDash{to{stroke-dashoffset:0}}
   @keyframes sixRotateCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes sixLogoBreathe{0%,100%{transform:translateY(0) scale(1);filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22))}50%{transform:translateY(-10px) scale(1.045);filter:brightness(0) invert(1) drop-shadow(0 0 46px rgba(255,255,255,.65))}}
@@ -112,6 +114,9 @@
 </helmet>
 <div data-six-root style="position:relative;background:{{ bgColor }};color:#E8EAED;font-family:'Sora',sans-serif;overflow:hidden;">
 
+  <!-- ============ FIXED DIAGONAL LINES OVERLAY (all pages) ============ -->
+  <div style="position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(135deg,rgba(248,226,49,.035) 0px,rgba(248,226,49,.035) 1px,transparent 1px,transparent 64px);"></div>
+
   <!-- ============ FIXED ANIMATED BACKGROUND (mesh + Empire skyline) ============ -->
   <canvas id="bgMesh" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
@@ -120,9 +125,8 @@
 
   <!-- ============ FIXED HUD OVERLAY ============ -->
   <div style="position:fixed;inset:0;z-index:90;pointer-events:none;mix-blend-mode:normal;">
-    <!-- scanline sweep -->
-    <div style="position:absolute;left:0;right:0;height:90px;background:linear-gradient(180deg,transparent,rgba(248,226,49,.05),transparent);animation:sixScan 7s linear infinite;"></div>
     <!-- corner brackets -->
+    <div id="cityAudioBtn" data-muted="0" title="Mute city audio" style="position:fixed;bottom:28px;right:28px;z-index:999;width:38px;height:38px;border:1px solid rgba(248,226,49,.4);background:rgba(2,4,8,.75);color:#F8E231;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .5s;backdrop-filter:blur(6px);pointer-events:auto;">🔊</div>
     <div style="position:absolute;top:22px;left:22px;width:32px;height:32px;border-top:2px solid #F8E231;border-left:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
     <div style="position:absolute;top:22px;right:22px;width:32px;height:32px;border-top:2px solid #F8E231;border-right:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
     <div style="position:absolute;bottom:22px;left:22px;width:32px;height:32px;border-bottom:2px solid #F8E231;border-left:2px solid #F8E231;box-shadow:0 0 10px rgba(248,226,49,.3);"></div>
@@ -150,27 +154,44 @@
   </div>
 
   <!-- ============ SCENE 01 · BOOT ============ -->
-  <section data-scene="boot" data-screen-label="Boot" style="position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;background:transparent;">
+  <section data-scene="boot" data-screen-label="Boot" style="position:relative;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:2vh;text-align:center;padding-left:24px;padding-right:24px;background:transparent;overflow:hidden;">
+    <!-- dark blur overlay removed from section -->
+    <!-- geometric background layer -->
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+      <!-- 6-EMPIRES watermark removed -->
+      <!-- orbit ring TL -->
+      <div style="position:absolute;top:-120px;left:-120px;width:400px;height:400px;border:1px solid rgba(248,226,49,.05);border-radius:50%;animation:sixSpin 80s linear infinite;"></div>
+      <!-- orbit ring BR -->
+      <div style="position:absolute;bottom:-120px;right:-120px;width:500px;height:500px;border:1px dashed rgba(248,226,49,.04);border-radius:50%;animation:sixSpinR 100s linear infinite;"></div>
+      <!-- cross TR -->
+      <svg style="position:absolute;top:12%;right:8%;width:60px;height:60px;opacity:.12;" viewBox="0 0 60 60"><line x1="30" y1="5" x2="30" y2="55" stroke="#F8E231" stroke-width="1"/><line x1="5" y1="30" x2="55" y2="30" stroke="#F8E231" stroke-width="1"/><circle cx="30" cy="30" r="8" fill="none" stroke="#F8E231" stroke-width="1"/></svg>
+      <!-- cross BL -->
+      <svg style="position:absolute;bottom:14%;left:7%;width:50px;height:50px;opacity:.1;" viewBox="0 0 50 50"><line x1="25" y1="4" x2="25" y2="46" stroke="#F8E231" stroke-width="1"/><line x1="4" y1="25" x2="46" y2="25" stroke="#F8E231" stroke-width="1"/><circle cx="25" cy="25" r="7" fill="none" stroke="#F8E231" stroke-width="1"/></svg>
+      <!-- dot grid -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.04;" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dotgrid" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="1" fill="#F8E231"/></pattern></defs><rect width="100%" height="100%" fill="url(#dotgrid)"/></svg>
+    </div>
 
-    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;margin-top:-120px;">
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;margin-top:0;">
+      <div style="display:flex;flex-direction:column;align-items:center;padding:16px 80px 32px;width:min(90vw,820px);">
       <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:rgba(248,226,49,.7);margin-bottom:26px;animation:sixFlick 2.4s steps(1) 1;">// INITIALIZING SOVEREIGN CORE</div>
-      <div style="width:300px;height:2px;background:rgba(248,226,49,.14);margin-bottom:54px;overflow:hidden;position:relative;">
+      <div style="width:300px;height:2px;background:rgba(248,226,49,.14);margin-bottom:32px;overflow:hidden;position:relative;">
         <div style="height:100%;background:#F8E231;box-shadow:0 0 10px #F8E231;animation:sixBootBar 1.8s cubic-bezier(.7,0,.2,1) both;"></div>
       </div>
       <!-- hex emblem + wordmark -->
       <div style="display:flex;align-items:center;gap:18px;animation:sixFadeUp 1s 1.4s both;">
-        <div style="position:relative;width:92px;height:104px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;width:clamp(70px,9vw,110px);height:clamp(80px,10.2vw,125px);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <div style="position:absolute;inset:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,rgba(248,226,49,.18),rgba(248,226,49,.02));"></div>
           <div style="position:absolute;inset:3px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:#070809;"></div>
-          <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:52px;color:{{ accentColor }};text-shadow:0 0 24px rgba(248,226,49,.6);">6</span>
+          <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(40px,6.5vw,80px);color:#F8E231;text-shadow:0 0 18px rgba(248,226,49,.7);line-height:1;">6</span>
         </div>
-        <div style="text-align:left;">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(34px,6vw,66px);letter-spacing:.12em;line-height:.95;color:#F4F5F7;">{{ heroTitle }}</div>
-        </div>
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(40px,6.5vw,80px);letter-spacing:.14em;line-height:1;background:linear-gradient(90deg,#fff 0%,#F8E231 40%,#fff 60%,#F8E231 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sixShine 4s linear infinite;">{{ heroTitle }}</div>
         <sc-if value="{{ showWhiteLogo }}" hint-placeholder-val="{{ true }}">
-          <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:{{ logoSizePx }};height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22));animation:sixLogoBreathe 7s ease-in-out 1.6s infinite;will-change:transform,filter;">
+          <div style="position:relative;flex-shrink:0;">
+            <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:clamp(70px,9vw,110px);height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 12px rgba(255,255,255,.5));animation:sixRotateCW 60s linear infinite,sixGlowPulse 3.5s ease-in-out infinite;will-change:transform;">
+          </div>
         </sc-if>
       </div>
+      <div style="margin-top:4px;font-family:'Space Mono',monospace;font-size:clamp(10px,1.2vw,14px);letter-spacing:.22em;color:rgba(248,226,49,.85);text-transform:uppercase;text-shadow:0 0 14px rgba(248,226,49,.5);animation:sixPulse 3.5s ease-in-out infinite;">World's First Sovereign AI Corporation</div>
     </div>
     <!-- scroll cue -->
     <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;animation:sixFadeUp 1s 2.4s both;">
@@ -193,8 +214,8 @@
       <!-- CENTRAL HERO TEXT (exterior scene) -->
       <div style="position:relative;z-index:5;text-align:center;padding:0 48px;">
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.32em;color:rgba(248,226,49,.65);margin-bottom:22px;animation:sixFadeUp 1s 0.3s both;">01 · GLOBAL HQ</div>
-        <h1 style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(48px,8vw,110px);letter-spacing:.1em;line-height:.92;margin:0 0 28px;color:#F4F5F7;animation:sixFadeUp 1s 0.5s both;text-shadow:0 0 80px rgba(248,226,49,.2);">6—EMPIRES</h1>
-        <div style="font-family:'Sora',sans-serif;font-weight:300;font-size:clamp(14px,2vw,20px);color:rgba(232,234,237,.55);letter-spacing:.06em;max-width:600px;margin:0 auto;animation:sixFadeUp 1s 0.7s both;">Decentralized intelligence. Autonomous innovation. Sovereign by design.</div>
+        <h1 style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(48px,8vw,110px);letter-spacing:.1em;line-height:.92;margin:0 0 18px;color:#F4F5F7;animation:sixFadeUp 1s 0.5s both;text-shadow:0 0 80px rgba(248,226,49,.2);">6—EMPIRES</h1>
+        <div style="font-family:'Sora',sans-serif;font-weight:300;font-size:clamp(14px,2vw,20px);color:rgba(232,234,237,.55);letter-spacing:.06em;max-width:600px;margin:0 auto;animation:sixFadeUp 1s 0.7s both;">Sovereign intelligence · Autonomous systems · Infinite scale</div>
         <!-- gold horizontal rule -->
         <div style="width:60px;height:1px;background:rgba(248,226,49,.5);margin:30px auto 0;animation:sixFadeUp 1s 0.9s both;"></div>
       </div>
@@ -204,22 +225,21 @@
         
         <!-- left: coordinates & altitude -->
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(248,226,49,.7);line-height:1.8;">
-          <div>LAT 06.660 // LON −06.066</div>
-          <div>ALT 0036m // APPROACH</div>
+          <div>34°03′N · 118°15′W · LOS ANGELES</div>
+          <div>ALT 0036m · SECTOR // GLOBAL HQ</div>
         </div>
 
         <!-- center: corporation description -->
         <div style="flex:1;margin:0 40px;text-align:center;">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.12em;color:#F8E231;text-shadow:0 0 16px #F8E231;margin-bottom:6px;">6-EMPIRES CORPORATION</div>
           <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);line-height:1.6;">
-            Decentralized intelligence. Autonomous innovation. Resilient architecture.<br/>A unified empire powering the future of self-governed systems.
+            World's first AI-powered self-governing corporate empire.
           </div>
         </div>
 
         <!-- right: approach phase -->
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(248,226,49,.7);text-align:right;line-height:1.8;">
-          <div>APPROACH PHASE //</div>
-          <div style="font-size:13px;font-weight:700;color:#F8E231;">SOVEREIGN</div>
+          <div>STATUS // OPERATIONAL</div>
+          <div style="font-size:13px;font-weight:700;color:#F8E231;">EMPIRE ONLINE</div>
         </div>
       </div>
     </div>
@@ -251,31 +271,13 @@
       <!-- left panel: bars -->
       <div data-depth="54" style="position:absolute;left:9%;bottom:22%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
         <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:12px;">NODE THROUGHPUT</div>
-        <div style="display:flex;align-items:flex-end;gap:6px;height:54px;">
-          <div style="flex:1;height:40%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:70%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:55%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:88%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));box-shadow:0 0 12px rgba(248,226,49,.5);"></div>
-          <div style="flex:1;height:62%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-          <div style="flex:1;height:78%;background:linear-gradient(#F8E231,rgba(248,226,49,.3));"></div>
-        </div>
+        <canvas id="tradingChart" style="width:100%;height:54px;display:block;"></canvas>
       </div>
       <!-- right panel: network -->
       <div data-depth="-60" style="position:absolute;right:8%;top:26%;width:210px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(8px);box-shadow:0 0 30px rgba(248,226,49,.06),inset 0 0 20px rgba(248,226,49,.02);">
         <div style="position:absolute;top:-1px;right:-1px;width:12px;height:12px;border-top:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
         <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:10px;">MESH TOPOLOGY</div>
-        <svg viewBox="0 0 180 110" style="width:100%;height:auto;">
-          <line x1="30" y1="24" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="150" y1="20" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="38" y1="88" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="148" y1="92" x2="92" y2="56" stroke="rgba(248,226,49,.5)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="30" y1="24" x2="150" y2="20" stroke="rgba(248,226,49,.18)" stroke-width="1"/>
-          <circle cx="92" cy="56" r="7" fill="#F8E231"/>
-          <circle cx="30" cy="24" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="150" cy="20" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="38" cy="88" r="4" fill="#F8E231" opacity=".8"/>
-          <circle cx="148" cy="92" r="4" fill="#F8E231" opacity=".8"/>
-        </svg>
+        <canvas id="meshPyramid" style="width:100%;height:110px;display:block;"></canvas>
       </div>
       <!-- right panel: readout -->
       <div data-depth="48" style="position:absolute;right:9%;bottom:24%;width:198px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);font-family:'Space Mono',monospace;">
@@ -296,10 +298,11 @@
   <section data-scene="pillars" data-screen-label="Pillars" style="position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 64px;background:rgba(2,4,8,.78);overflow:hidden;">
     <!-- ambient scan line -->
     <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(248,226,49,.4),transparent);animation:scanH 6s linear infinite;pointer-events:none;"></div>
-    <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);margin-bottom:46px;max-width:760px;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+    <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);margin-bottom:46px;max-width:760px;margin-left:auto;margin-right:auto;text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;">
         <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
         <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#F8E231;">03 · ARCHITECTURE OF VALUES</div>
+        <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
       </div>
       <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(30px,4.5vw,52px);line-height:1.05;margin:0;">Four pillars hold<br/>the empire upright.</h2>
     </div>
@@ -324,11 +327,32 @@
       </div>
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s .36s cubic-bezier(.2,.8,.2,1);position:relative;padding:34px 28px 40px;background:linear-gradient(180deg,#0c1018,#070a0e);border-top:1px solid rgba(248,226,49,.5);box-shadow:0 0 40px rgba(248,226,49,.04),inset 0 1px 0 rgba(248,226,49,.15);"><div style="position:absolute;top:0;left:0;width:16px;height:16px;border-top:2px solid #F8E231;border-left:2px solid #F8E231;"></div><div style="position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:2px solid rgba(248,226,49,.3);border-right:2px solid rgba(248,226,49,.3);"></div>
         <div style="position:absolute;top:14px;right:16px;font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.4);">04</div>
-        <svg viewBox="0 0 48 48" style="width:46px;height:46px;margin-bottom:22px;"><line x1="12" y1="12" x2="36" y2="14" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="12" y1="12" x2="14" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="36" y1="14" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="14" y1="36" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".6"/><line x1="12" y1="12" x2="34" y2="36" stroke="#F8E231" stroke-width="1" opacity=".3"/><circle cx="12" cy="12" r="3.4" fill="#F8E231"/><circle cx="36" cy="14" r="3.4" fill="#F8E231"/><circle cx="14" cy="36" r="3.4" fill="#F8E231"/><circle cx="34" cy="36" r="3.4" fill="#F8E231"/></svg>
+        <svg viewBox="0 0 48 48" style="width:46px;height:46px;margin-bottom:22px;"><polygon points="24,4 44,40 4,40" fill="none" stroke="#F8E231" stroke-width="1.4"/><polygon points="24,14 38,40 10,40" fill="rgba(248,226,49,.07)" stroke="#F8E231" stroke-width=".8" opacity=".6"/><line x1="24" y1="4" x2="24" y2="40" stroke="#F8E231" stroke-width=".8" opacity=".35"/><circle cx="24" cy="22" r="3" fill="none" stroke="#F8E231" stroke-width="1.2"/><circle cx="24" cy="22" r="1.2" fill="#F8E231"/></svg>
         <h3 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:21px;margin:0 0 10px;letter-spacing:.04em;">Interconnectedness</h3>
         <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.65;color:rgba(232,234,237,.55);margin:0;">A living network of collaborative relationships and synergies. No empire stands alone — value flows between every node.</p>
       </div>
     </div>
+
+    <!-- metrics strip below pillars -->
+    <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .9s .5s cubic-bezier(.2,.8,.2,1);display:flex;gap:1px;background:rgba(248,226,49,.12);border:1px solid rgba(248,226,49,.15);margin-top:1px;">
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">6</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">EMPIRES</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">12+</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">AI AGENTS</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">100%</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">SOVEREIGN</div>
+      </div>
+      <div style="flex:1;padding:22px 28px;background:rgba(5,8,12,.85);text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:#F8E231;margin-bottom:4px;">∞</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.5);">SCALE</div>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ SCENE 05 · MANIFESTO ============ -->
@@ -365,22 +389,88 @@
   </section>
 
   <!-- ============ SCENE 06 · FOUNDER ============ -->
-  <section data-scene="founder" data-screen-label="Founder" style="position:relative;min-height:100vh;display:flex;align-items:center;padding:120px 64px;background:rgba(2,4,8,.7);overflow:hidden;">
-    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(248,226,49,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(248,226,49,.03) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;"></div><div style="display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:64px;align-items:center;width:100%;max-width:1180px;margin:0 auto;position:relative;z-index:1;">
+  <section data-scene="founder" data-screen-label="Founder" style="position:relative;min-height:100vh;display:flex;align-items:center;padding:80px 64px;background:rgba(2,4,8,.7);overflow:hidden;">
+    <!-- hologram sun orb — right side -->
+    <div style="position:absolute;right:4%;top:50%;transform:translateY(-50%);width:260px;height:260px;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;">
+      <div style="position:absolute;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle,rgba(248,226,49,.18),transparent 62%);filter:blur(10px);"></div>
+      <div style="position:absolute;width:230px;height:230px;border:1px solid rgba(248,226,49,.25);border-radius:50%;animation:sixSpin 24s linear infinite;"></div>
+      <div style="position:absolute;width:178px;height:178px;border:1px dashed rgba(248,226,49,.3);border-radius:50%;animation:sixSpinR 18s linear infinite;"></div>
+      <div style="position:absolute;width:230px;height:230px;border-radius:50%;border-top:1.5px solid #F8E231;transform:rotateX(74deg);animation:sixSpin 9s linear infinite;box-shadow:0 0 20px rgba(248,226,49,.25);"></div>
+      <div style="position:absolute;width:178px;height:178px;border-radius:50%;border-left:1.5px solid rgba(248,226,49,.6);transform:rotateY(74deg);animation:sixSpinR 11s linear infinite;"></div>
+      <div style="width:86px;height:86px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFF7C2,#F8E231 40%,#8a7a18);box-shadow:0 0 50px rgba(248,226,49,.6),inset -8px -10px 20px rgba(0,0,0,.4);animation:sixPulse 3.4s ease-in-out infinite;"></div>
+    </div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(248,226,49,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(248,226,49,.03) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;"></div>
+    <!-- large watermark bg text -->
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(60px,10vw,140px);letter-spacing:.18em;color:rgba(248,226,49,.04);white-space:nowrap;pointer-events:none;user-select:none;">THE ARCHITECT</div>
+    <div style="display:grid;grid-template-columns:minmax(220px,360px) 1fr;gap:52px;align-items:flex-start;width:100%;max-width:1180px;margin:0 auto;position:relative;z-index:1;">
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s cubic-bezier(.2,.8,.2,1);position:relative;">
         <div style="position:absolute;top:-12px;left:-12px;width:30px;height:30px;border-top:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
         <div style="position:absolute;bottom:-12px;right:-12px;width:30px;height:30px;border-bottom:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
-        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="six-founder-portrait" shape="rect" placeholder="Drop founder portrait" style="display:block;width:100%;aspect-ratio:4/5;border:1px solid rgba(248,226,49,.3);filter:grayscale(.3) contrast(1.05);" hint-size="100%,500px"></x-import>
+        <!-- hologram sun orb removed from here -->
+        <img src="uploads/067A2130-d0bf5e14.jpg" alt="Roland Gasparyan" style="display:block;width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center top;border:1px solid rgba(248,226,49,.3);filter:grayscale(.15) contrast(1.08);position:relative;z-index:1;">
         <div style="position:absolute;left:0;bottom:0;right:0;padding:14px 16px;background:linear-gradient(transparent,rgba(5,6,8,.92));font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.7);">ORIGIN NODE · FOUNDER</div>
       </div>
       <div data-reveal style="opacity:0;transform:translateY(30px);transition:all .9s .15s cubic-bezier(.2,.8,.2,1);">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
           <div style="width:24px;height:1px;background:#F8E231;box-shadow:0 0 8px #F8E231;"></div>
-          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#F8E231;">05 · THE ARCHITECT</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:#F8E231;">06 · THE ARCHITECT</div>
         </div>
-        <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(30px,4vw,50px);line-height:1.04;margin:0 0 6px;">Roland Gasparyan</h2>
-        <div style="font-family:'Sora',sans-serif;font-weight:400;font-size:14px;letter-spacing:.04em;color:rgba(248,226,49,.85);margin-bottom:26px;">Founder · Creative Direction</div>
-        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:16px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 22px;max-width:560px;">A vision born outside the machine. Roland's roots in music production, video, and creative direction bring an artist's instinct to AI — a focus on human-centered design, expression, and the soul of the systems we build.</p>
+        <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(26px,3.5vw,44px);line-height:1.04;margin:0 0 4px;">Roland Gasparyan</h2>
+        <div style="font-family:'Sora',sans-serif;font-weight:400;font-size:13px;letter-spacing:.04em;color:rgba(248,226,49,.85);margin-bottom:18px;">Founder · CEO · Creative Direction</div>
+
+        <!-- stat strip -->
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px;">
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">ORIGIN</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Yerevan, Armenia</div>
+          </div>
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">BASE</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Los Angeles, CA</div>
+          </div>
+          <div style="border-left:2px solid rgba(248,226,49,.5);padding-left:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:3px;">FOUNDED</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">2024</div>
+          </div>
+        </div>
+
+        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 12px;max-width:560px;">Born in Yerevan in 1986, Roland is a composer, music producer, filmmaker, and entrepreneur across music, film, AI, business, and investment. As founder of Reincarnation Studios and Reincarnation Orchestra, he built a creative legacy spanning live performance and global audiences.</p>
+        <p style="font-family:'Sora',sans-serif;font-weight:300;font-size:14px;line-height:1.75;color:rgba(232,234,237,.62);margin:0 0 16px;max-width:560px;">Now based in Los Angeles, Roland channels two decades of creative and business leadership into 6 Empires Corporation — a sovereign AI-powered ecosystem built to own, create, and operate at scale across six interconnected domains.</p>
+
+        <!-- project milestones -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">PROJECT</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">6 Empires Corp</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">AI sovereign platform</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">STUDIO</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Reincarnation Studios</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">Music label · Artist mgmt</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">VISION</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">Decentralized AI Empire</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">6 sovereign divisions</div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.12);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(248,226,49,.5);margin-bottom:4px;">APPROACH</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:500;">We Build · We Create</div>
+            <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-top:2px;">We own everything we make</div>
+          </div>
+        </div>
+
+        <!-- tags -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">COMPOSER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">FILMMAKER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">AI ARCHITECT</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">PHILOSOPHER</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">ENTREPRENEUR</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:rgba(248,226,49,.8);border:1px solid rgba(248,226,49,.25);padding:4px 10px;">DESIGNER</span>
+        </div>
+
         <blockquote style="margin:0;padding:20px 26px;border-left:2px solid #F8E231;background:rgba(248,226,49,.04);">
           <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(17px,2.2vw,24px);line-height:1.4;color:#F4F5F7;margin:0;">"Technology should amplify human potential — not replace it. The empire is decentralized by design, sovereign by intent."</p>
         </blockquote>
@@ -509,6 +599,14 @@
                 <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Sentinel</div>
                 <div style="font-size:11px;color:rgba(232,234,237,.4);">Security & resilience</div>
               </div>
+              <div data-reveal style="opacity:0;transform:translateX(-20px);transition:all .8s .4s cubic-bezier(.2,.8,.2,1);padding:12px;background:rgba(248,226,49,.06);border:1px solid rgba(248,226,49,.15);font-family:'Sora',sans-serif;font-size:13px;color:rgba(232,234,237,.75);">
+                <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Trader</div>
+                <div style="font-size:11px;color:rgba(232,234,237,.4);">Markets & trading AI</div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateX(-20px);transition:all .8s .5s cubic-bezier(.2,.8,.2,1);padding:12px;background:rgba(248,226,49,.06);border:1px solid rgba(248,226,49,.15);font-family:'Sora',sans-serif;font-size:13px;color:rgba(232,234,237,.75);">
+                <div style="color:#F8E231;font-weight:600;margin-bottom:3px;">Agent Oracle</div>
+                <div style="font-size:11px;color:rgba(232,234,237,.4);">Data & intelligence</div>
+              </div>
             </div>
           </div>
 
@@ -516,37 +614,56 @@
           <div style="position:relative;padding:24px;background:linear-gradient(180deg,#0d1118,#070a0e);border-right:1px solid rgba(248,226,49,.18);">
             <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#F8E231;margin-bottom:18px;display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#F8E231;border-radius:50%;animation:sixPulse 1.4s .2s ease-in-out infinite;"></span>ACTIVE PROJECTS</div>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .0s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.15),rgba(248,226,49,.04));border:1px solid rgba(248,226,49,.2);border-radius:2px;">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Sovereign Protocol</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">87%</span>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .0s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.15),rgba(248,226,49,.04));border:1px solid rgba(248,226,49,.2);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">6-Empires</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">LIVE</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:87%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">AI-powered sovereign corporate OS</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:92%;background:#F8E231;"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .1s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.12),rgba(248,226,49,.02));border:1px solid rgba(248,226,49,.15);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Decentralized Labs</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">64%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Reincarnation Studios</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">ACTIVE</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:64%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Music label · Artist management · LA</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:78%;background:rgba(248,226,49,.7);"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .2s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.1),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.12);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Growth Ecosystem</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">52%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Dzayn.app</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">BUILD</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:52%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Cyclical Intelligence AI assistant</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:65%;background:rgba(248,226,49,.6);"></div></div>
               </div>
               <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .3s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Research Initiative</span>
-                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">78%</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Trading Guru AI</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">LAUNCH</span>
                 </div>
-                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);border-radius:1px;overflow:hidden;"><div style="height:100%;width:78%;background:#F8E231;border-radius:1px;"></div></div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">World's first AI trading championship platform</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:40%;background:rgba(248,226,49,.5);"></div></div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .4s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">AI Booking Manager</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">BUILD</span>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Autonomous scheduling & booking AI</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:30%;background:rgba(248,226,49,.45);"></div></div>
+              </div>
+              <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .8s .5s cubic-bezier(.2,.8,.2,1);padding:12px;background:linear-gradient(135deg,rgba(248,226,49,.08),rgba(248,226,49,.01));border:1px solid rgba(248,226,49,.1);">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:#F8E231;">Empire AI Models</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);">PRIVATE</span>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:11px;color:rgba(232,234,237,.45);margin-bottom:6px;">Fully private sovereign LLMs · internal use</div>
+                <div style="width:100%;height:3px;background:rgba(248,226,49,.12);"><div style="height:100%;width:22%;background:rgba(248,226,49,.4);"></div></div>
               </div>
             </div>
           </div>
-
           <!-- right column: workspace status -->
           <div style="position:relative;padding:24px;background:linear-gradient(180deg,#0d1118,#070a0e);">
             <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#F8E231;margin-bottom:18px;display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#F8E231;border-radius:50%;animation:sixPulse 1.4s .4s ease-in-out infinite;"></span>WORKSPACE STATUS</div>
@@ -632,7 +749,7 @@
 
       <!-- tagline -->
       <div data-reveal style="opacity:0;transform:translateY(24px);transition:all .9s .3s cubic-bezier(.2,.8,.2,1);margin-bottom:56px;">
-        <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(20px,2.8vw,32px);line-height:1.4;color:rgba(232,234,237,.8);margin:0;">"Sovereign by design.<br/>Infinite by ambition."</p>
+        <p style="font-family:'Chakra Petch',sans-serif;font-weight:300;font-size:clamp(20px,2.8vw,32px);line-height:1.4;color:rgba(232,234,237,.8);margin:0;">"We build, we create, we own."</p>
       </div>
 
       <!-- divider -->
@@ -659,6 +776,10 @@
         <button onClick="{{ openAdminLogin }}" data-cta-btn="primary" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;text-decoration:none;border:none;cursor:pointer;will-change:transform,opacity;transform:translate3d(0,0,0);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s;">
           <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="12" height="8" rx="1"/><path d="M6 8V5.5a3 3 0 0 1 6 0V8"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
           ADMIN LOGIN
+        </button>
+        <button onClick="{{ openAdminLogin }}" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;border:2px solid #F8E231;cursor:pointer;transition:all .22s;">
+          <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h14v9H2z"/><path d="M5 15l4-3h7"/></svg>
+          EMPIRE CHAT
         </button>
       </div>
     </div>
@@ -731,7 +852,19 @@ class Component extends DCLogic {
       const alpha = b.layer === 0 ? 0.92 : 0.97;
       const dark = b.layer === 0 ? '#090c14' : '#0c1020';
       ctx.fillStyle = dark; ctx.fillRect(b.x, bY, b.w, b.h);
-      if (b.layer === 1) { ctx.strokeStyle = 'rgba(248,226,49,0.07)'; ctx.lineWidth = 1; ctx.strokeRect(b.x, bY, b.w, b.h); }
+      if (b.layer === 1) { ctx.strokeStyle = 'rgba(248,226,49,0.07)'; ctx.lineWidth = 1; ctx.strokeRect(b.x, bY, b.w, b.h);
+        // gold logo on buildings wide enough
+        // gold logo on buildings
+        const logo=this._bldgLogo||null;
+        if(logo && b.w>60){
+          const sz=Math.min(b.w*0.45,44), lx=b.x+b.w/2-sz/2, ly=bY+b.h*0.1;
+          const glow=0.4+0.25*Math.sin(t*0.35+b.x*0.01);
+          ctx.save(); ctx.globalAlpha=0.6+0.2*glow;
+          ctx.shadowColor='rgba(248,226,49,0.9)'; ctx.shadowBlur=Math.round(10*glow);
+          ctx.drawImage(logo,lx,ly,sz,sz);
+          ctx.shadowBlur=0; ctx.globalAlpha=1; ctx.restore();
+        }
+      }
       // Windows
       b.windows.forEach(w => {
         if (Math.random() < w.rate) w.lit = !w.lit;
@@ -823,89 +956,764 @@ class Component extends DCLogic {
     if(hint) hint.textContent = open ? 'EXIT · CLOSE CUTAWAY' : 'CLICK TOWER · ENTER HQ';
   }
   drawSkyline(ctx,W,H,sky,t){
+    // Draw each building with its profile
     for(const b of sky){
       const topY=H-b.h;
+      const mx=b.x+b.w/2;
+      // main body
       const g=ctx.createLinearGradient(0,topY,0,H);
-      g.addColorStop(0,'rgba(17,18,23,0.97)'); g.addColorStop(1,'rgba(6,7,9,0.99)');
+      if(b.empire){
+        g.addColorStop(0,'rgba(6,5,1,1.0)'); g.addColorStop(0.3,'rgba(3,4,7,1.0)'); g.addColorStop(1,'rgba(0,1,2,1.0)');
+      } else {
+        g.addColorStop(0,'rgba(3,4,7,1.0)'); g.addColorStop(1,'rgba(0,1,2,1.0)');
+      }
       ctx.fillStyle=g; ctx.fillRect(b.x,topY,b.w,b.h);
-      // top + side rim glow
-      ctx.strokeStyle='rgba(248,226,49,0.30)'; ctx.lineWidth=1;
+      // luxury gold shimmer for empire tower
+      if(b.empire){
+        const shimmer=ctx.createLinearGradient(b.x,0,b.x+b.w,0);
+        const sp=0.5+0.5*Math.sin(t*0.5);
+        shimmer.addColorStop(0,'rgba(248,226,49,0)');
+        shimmer.addColorStop(sp*0.5,'rgba(248,226,49,0.06)');
+        shimmer.addColorStop(sp,'rgba(248,226,49,0.12)');
+        shimmer.addColorStop(Math.min(1,sp+0.3),'rgba(248,226,49,0.04)');
+        shimmer.addColorStop(1,'rgba(248,226,49,0)');
+        ctx.fillStyle=shimmer; ctx.fillRect(b.x,topY,b.w,b.h);
+      }
+      ctx.strokeStyle='rgba(248,226,49,0.6)'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.moveTo(b.x,topY); ctx.lineTo(b.x+b.w,topY); ctx.stroke();
-      ctx.strokeStyle='rgba(248,226,49,0.09)';
+      // luxury edge glow
+      ctx.strokeStyle='rgba(248,226,49,0.18)';
       ctx.beginPath(); ctx.moveTo(b.x,topY); ctx.lineTo(b.x,H); ctx.moveTo(b.x+b.w,topY); ctx.lineTo(b.x+b.w,H); ctx.stroke();
       // windows
-      const cw=b.w/b.cols, rh=18;
+      const cw=b.w/b.cols, rh=16;
       for(const w of b.wins){ const wx=b.x+w.c*cw+cw*0.28, wy=topY+9+w.r*rh; if(wy>H-4) continue;
-        const lit=0.18+0.5*(0.5+0.5*Math.sin(t*w.sp+w.ph));
+        const lit=0.25+0.50*(0.5+0.5*Math.sin(t*w.sp+w.ph));
         ctx.fillStyle='rgba(248,226,49,'+lit.toFixed(3)+')';
-        ctx.fillRect(wx,wy,Math.max(2,cw*0.32),3); }
-      if(b.empire){
-        // stepped art-deco crown
+        ctx.fillRect(wx,wy,Math.max(2,cw*0.36),3); }
+      // NYC setback tiers (all buildings get 1-3 setbacks based on height)
+      if(b.tiers){
         let ty=topY;
-        const tiers=[[0.72,20],[0.48,18],[0.30,18]];
-        for(const tr of tiers){ const ntw=b.w*tr[0], th=tr[1], ntx=b.x+(b.w-ntw)/2;
-          ctx.fillStyle='rgba(21,22,27,0.98)'; ctx.fillRect(ntx,ty-th,ntw,th);
-          ctx.strokeStyle='rgba(248,226,49,0.4)'; ctx.lineWidth=1; ctx.strokeRect(ntx+0.5,ty-th+0.5,ntw-1,th-1);
-          ty-=th; }
-        // antenna mast
-        const mx=b.x+b.w/2, mastH=b.h*0.20;
+        for(const tr of b.tiers){
+          const ntw=b.w*tr[0], th=tr[1], ntx=b.x+(b.w-ntw)/2;
+          ctx.fillStyle='rgba(18,22,30,0.96)'; ctx.fillRect(ntx,ty-th,ntw,th);
+          ctx.strokeStyle='rgba(248,226,49,'+(b.empire?0.45:0.28)+')'; ctx.lineWidth=1;
+          ctx.strokeRect(ntx+.5,ty-th+.5,ntw-1,th-1);
+          // tier windows
+          const tcw=ntw/Math.max(2,Math.floor(ntw/14));
+          for(let c=0;c<Math.floor(ntw/14);c++){
+            const lit=0.2+0.3*(0.5+0.5*Math.sin(t*0.8+c+ty));
+            ctx.fillStyle='rgba(248,226,49,'+lit.toFixed(2)+')';
+            ctx.fillRect(ntx+c*tcw+tcw*0.3,ty-th+6,Math.max(2,tcw*0.3),3);
+          }
+          ty-=th;
+        }
+        // spire/antenna
+        const mastH=b.h*(b.empire?0.22:0.10);
         const mg=ctx.createLinearGradient(0,ty-mastH,0,ty);
-        mg.addColorStop(0,'rgba(248,226,49,0)'); mg.addColorStop(1,'rgba(248,226,49,0.75)');
-        ctx.strokeStyle=mg; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(mx,ty); ctx.lineTo(mx,ty-mastH); ctx.stroke();
-        // blinking beacon
-        const bl=0.5+0.5*Math.sin(t*3);
-        const bg=ctx.createRadialGradient(mx,ty-mastH,0,mx,ty-mastH,18);
-        bg.addColorStop(0,'rgba(248,226,49,'+(0.3*bl).toFixed(3)+')'); bg.addColorStop(1,'rgba(248,226,49,0)');
-        ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(mx,ty-mastH,18,0,6.2832); ctx.fill();
-        ctx.fillStyle='rgba(248,226,49,'+(0.55+0.45*bl).toFixed(3)+')';
-        ctx.beginPath(); ctx.arc(mx,ty-mastH,2.4+bl*1.3,0,6.2832); ctx.fill();
+        mg.addColorStop(0,'rgba(248,226,49,0)'); mg.addColorStop(1,'rgba(248,226,49,0.7)');
+        ctx.strokeStyle=mg; ctx.lineWidth=b.empire?2:1.2;
+        ctx.beginPath(); ctx.moveTo(mx,ty); ctx.lineTo(mx,ty-mastH); ctx.stroke();
+        // beacon
+        const bl=0.5+0.5*Math.sin(t*2.5);
+        ctx.fillStyle='rgba(248,226,49,'+(0.5+0.45*bl).toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(mx,ty-mastH,b.empire?3:1.8,0,Math.PI*2); ctx.fill();
+        if(b.empire){
+          const bg=ctx.createRadialGradient(mx,ty-mastH,0,mx,ty-mastH,22);
+          bg.addColorStop(0,'rgba(248,226,49,'+(0.28*bl).toFixed(2)+')'); bg.addColorStop(1,'rgba(248,226,49,0)');
+          ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(mx,ty-mastH,22,0,Math.PI*2); ctx.fill();
+        }
+      }
+      // emblem logo on non-central buildings
+      if(b.emblem){
+        const logo=this._bldgLogo||null;
+        if(logo){
+          const sz=b.w*0.50, iy=topY+b.h*0.18;
+          const glow=0.5+0.3*Math.sin(t*0.3+b.x*0.001);
+          ctx.save(); ctx.globalAlpha=0.72+0.18*glow;
+          ctx.shadowColor='rgba(248,226,49,1)'; ctx.shadowBlur=Math.round(16*glow);
+          ctx.drawImage(logo,mx-sz/2,iy-sz/2,sz,sz);
+          ctx.shadowBlur=0; ctx.globalAlpha=1; ctx.restore();
+        }
+      }
+      // sign on central building only
+      // sign on central building — one line, gold
+      if(b.sign){
+        const signY=topY+b.h*0.38;
+        const signGlow=0.55+0.45*Math.sin(t*1.4+1.2);
+        ctx.save();
+        const fsize=Math.max(10,Math.round(b.w*0.19));
+        ctx.font='700 '+fsize+'px "Chakra Petch",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.shadowColor='#F8E231'; ctx.shadowBlur=Math.round(18*signGlow);
+        ctx.fillStyle='rgba(248,226,49,'+(0.88+0.12*signGlow).toFixed(2)+')';
+        ctx.fillText('6-EMPIRES',mx,signY);
+        // underline
+        const uw=ctx.measureText('6-EMPIRES').width;
+        ctx.strokeStyle='rgba(248,226,49,'+(0.35*signGlow).toFixed(2)+')'; ctx.lineWidth=0.7;
+        ctx.beginPath(); ctx.moveTo(mx-uw/2,signY+fsize*0.75); ctx.lineTo(mx+uw/2,signY+fsize*0.75); ctx.stroke();
+        ctx.shadowBlur=0; ctx.restore();
       }
     }
+  }
+  initCityAudio(){
+    // Real city night ambient sound via HTML5 Audio
+    const audio = new Audio();
+    audio.src = 'https://cdn.pixabay.com/audio/2022/02/09/audio_c33fe07abe.mp3';
+    audio.loop = true;
+    audio.volume = 0.22;
+    audio.preload = 'none';
+    this._cityAudio = audio;
+    let started = false;
+    const btn = document.getElementById('cityAudioBtn');
+    const startAudio = () => {
+      if(started) return; started = true;
+      audio.play().catch(()=>{});
+      if(btn){ btn.style.opacity='1'; btn.innerHTML='🔊'; }
+    };
+    document.addEventListener('click', e => { if(e.target!==btn) startAudio(); }, {once:true});
+    document.addEventListener('keydown', startAudio, {once:true});
+    document.addEventListener('touchstart', startAudio, {once:true});
+    if(btn){
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        startAudio();
+        const muted = btn.dataset.muted === '1';
+        audio.muted = !muted;
+        btn.dataset.muted = muted ? '0' : '1';
+        btn.innerHTML = muted ? '🔊' : '🔇';
+      });
+    }
+  }
+  initTradingChart(){
+    const canvas=document.getElementById('tradingChart'); if(!canvas) return;
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    const resize=()=>{ canvas.width=canvas.clientWidth*DPR; canvas.height=canvas.clientHeight*DPR; };
+    resize();
+    // generate candlestick data
+    const bars=32; let price=100;
+    const data=Array.from({length:bars},()=>{
+      const o=price, change=(Math.random()-.47)*4;
+      const h=o+Math.random()*3, l=o-Math.random()*3;
+      const c=o+change; price=c;
+      return {o,h,l,c};
+    });
+    const priceStream=()=>{
+      const last=data[data.length-1];
+      const change=(Math.random()-.47)*2.5;
+      const c=last.c+change;
+      data.push({o:last.c,h:Math.max(last.c,c)+Math.random()*1.5,l:Math.min(last.c,c)-Math.random()*1.5,c});
+      if(data.length>bars) data.shift();
+    };
+    setInterval(priceStream,600);
+    const draw=()=>{
+      const W=canvas.width/DPR, H=canvas.height/DPR;
+      const ctx=canvas.getContext('2d');
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.clearRect(0,0,W,H);
+      const min=Math.min(...data.map(d=>d.l)), max=Math.max(...data.map(d=>d.h));
+      const range=max-min||1;
+      const bw=Math.floor(W/bars)-1;
+      const toY=v=>H-(v-min)/range*H*0.88-H*0.06;
+      // line
+      ctx.beginPath();
+      data.forEach((d,i)=>{ const x=i*(bw+1)+bw/2; i===0?ctx.moveTo(x,toY(d.c)):ctx.lineTo(x,toY(d.c)); });
+      ctx.strokeStyle='rgba(248,226,49,0.4)'; ctx.lineWidth=0.8; ctx.stroke();
+      // candles
+      data.forEach((d,i)=>{
+        const x=i*(bw+1), bull=d.c>=d.o;
+        const col=bull?'rgba(80,220,100,0.85)':'rgba(220,60,60,0.85)';
+        // wick
+        ctx.strokeStyle=col; ctx.lineWidth=0.8;
+        ctx.beginPath(); ctx.moveTo(x+bw/2,toY(d.h)); ctx.lineTo(x+bw/2,toY(d.l)); ctx.stroke();
+        // body
+        const top=toY(Math.max(d.o,d.c)), bot=toY(Math.min(d.o,d.c)), bh=Math.max(1,bot-top);
+        ctx.fillStyle=col; ctx.fillRect(x,top,bw,bh);
+      });
+      // last price label
+      const last=data[data.length-1];
+      ctx.font='bold 9px monospace'; ctx.fillStyle='#F8E231';
+      ctx.textAlign='right'; ctx.fillText(last.c.toFixed(2),W-2,10);
+      this._tradingChartRaf=requestAnimationFrame(draw);
+    };
+    this._tradingChartRaf=requestAnimationFrame(draw);
+  }
+  initMeshPyramid(){
+    const canvas=document.getElementById('meshPyramid'); if(!canvas) return;
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    const resize=()=>{ canvas.width=canvas.clientWidth*DPR; canvas.height=canvas.clientHeight*DPR; };
+    resize(); window.addEventListener('resize',resize);
+    const ctx=canvas.getContext('2d');
+    let f=0;
+    const draw=()=>{
+      f++; const t=f/60;
+      const W=canvas.width/DPR, H=canvas.height/DPR;
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.clearRect(0,0,W,H);
+      const cx=W/2, cy=H*0.88;
+      const apx=W/2, apy=H*0.06;
+      const bl=[W*0.04,cy], br=[W*0.96,cy];
+      const pulse=0.55+0.45*Math.sin(t*1.2);
+      const slowPulse=0.6+0.4*Math.sin(t*0.5);
+      // outer glow halo around apex
+      const halo=ctx.createRadialGradient(apx,apy,0,apx,apy,H*0.55);
+      halo.addColorStop(0,'rgba(248,226,49,'+(0.22*pulse).toFixed(3)+')');
+      halo.addColorStop(0.4,'rgba(248,226,49,'+(0.08*pulse).toFixed(3)+')');
+      halo.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+      // scan lines (horizontal rays from apex)
+      for(let i=1;i<=4;i++){
+        const iy=apy+i*(cy-apy)/5;
+        const spread=((iy-apy)/(cy-apy))*(W*0.46);
+        ctx.strokeStyle='rgba(248,226,49,'+(0.04+0.03*Math.sin(t*2+i)).toFixed(3)+')';
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(cx-spread,iy); ctx.lineTo(cx+spread,iy); ctx.stroke();
+      }
+      // inner filled faces
+      ctx.fillStyle='rgba(248,226,49,'+(0.05*slowPulse).toFixed(3)+')';
+      ctx.beginPath(); ctx.moveTo(apx,apy); ctx.lineTo(cx,cy); ctx.lineTo(...br); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(248,226,49,'+(0.10*slowPulse).toFixed(3)+')';
+      ctx.beginPath(); ctx.moveTo(apx,apy); ctx.lineTo(...bl); ctx.lineTo(cx,cy); ctx.closePath(); ctx.fill();
+      // outer triangle
+      ctx.strokeStyle='rgba(248,226,49,'+(0.55+0.35*pulse).toFixed(3)+')';
+      ctx.lineWidth=1.5;
+      ctx.shadowColor='#F8E231'; ctx.shadowBlur=8*pulse;
+      ctx.beginPath(); ctx.moveTo(apx,apy); ctx.lineTo(...bl); ctx.lineTo(...br); ctx.closePath(); ctx.stroke();
+      ctx.shadowBlur=0;
+      // inner triangles
+      for(let n=1;n<=2;n++){
+        const f2=n/3;
+        const ix1=apx+(bl[0]-apx)*f2, iy1=apy+(cy-apy)*f2;
+        const ix2=apx+(br[0]-apx)*f2, iy2=apy+(cy-apy)*f2;
+        const ibl=[apx+(bl[0]-apx)*f2+((bl[0]-cx)*f2),cy*f2+apy*(1-f2)]; 
+        ctx.strokeStyle='rgba(248,226,49,'+(0.3+0.2*Math.sin(t*1.5+n)).toFixed(3)+')';
+        ctx.lineWidth=0.8;
+        ctx.beginPath(); ctx.moveTo(apx+(bl[0]-apx)*(f2*0.5+0.15),apy+(cy-apy)*(f2*0.5+0.15));
+        const lx1=bl[0]+(apx-bl[0])*(1-f2), ly1=cy;
+        const lx2=br[0]+(apx-br[0])*(1-f2), ly2=cy;
+        ctx.moveTo(apx,apy+(cy-apy)*n/3); ctx.lineTo(lx1,ly1); ctx.lineTo(lx2,ly2); ctx.closePath(); ctx.stroke();
+      }
+      // apex dot glow
+      const apexGlow=ctx.createRadialGradient(apx,apy,0,apx,apy,14);
+      apexGlow.addColorStop(0,'rgba(255,255,220,'+(0.9+0.1*pulse).toFixed(2)+')');
+      apexGlow.addColorStop(0.4,'rgba(248,226,49,'+(0.7*pulse).toFixed(2)+')');
+      apexGlow.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.fillStyle=apexGlow; ctx.beginPath(); ctx.arc(apx,apy,14,0,Math.PI*2); ctx.fill();
+      // corner dots
+      [[bl[0],cy],[br[0],cy]].forEach(([px,py])=>{
+        const dg=ctx.createRadialGradient(px,py,0,px,py,6);
+        dg.addColorStop(0,'rgba(248,226,49,'+(0.7*pulse).toFixed(2)+')');
+        dg.addColorStop(1,'rgba(248,226,49,0)');
+        ctx.fillStyle=dg; ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2); ctx.fill();
+      });
+      // center hypnotic spiral (no eye)
+      const eyeCx=cx, eyeCy=apy+(cy-apy)*0.52;
+      const spirals=3;
+      for(let s=0;s<spirals;s++){
+        const sph=s*(Math.PI*2/spirals);
+        for(let ring=1;ring<=5;ring++){
+          const rr=ring*H*0.08, phase=t*0.25*(ring%2===0?1:-1)+sph;
+          ctx.strokeStyle='rgba(248,226,49,'+(0.04+0.06*(1-ring/6)+0.04*Math.sin(t*1.2+ring)).toFixed(3)+')';
+          ctx.lineWidth=0.9;
+          ctx.beginPath();
+          for(let a=0;a<=Math.PI*2;a+=0.06){
+            const rx=eyeCx+Math.cos(a+phase)*rr;
+            const ry=eyeCy+Math.sin(a+phase)*rr*(0.32+0.12*Math.sin(t*0.5+ring+s));
+            a===0?ctx.moveTo(rx,ry):ctx.lineTo(rx,ry);
+          }
+          ctx.closePath(); ctx.stroke();
+        }
+      }
+      // bright center dot
+      const cDot=ctx.createRadialGradient(eyeCx,eyeCy,0,eyeCx,eyeCy,6);
+      cDot.addColorStop(0,'rgba(255,255,200,'+(0.8+0.2*pulse).toFixed(2)+')');
+      cDot.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.fillStyle=cDot; ctx.beginPath(); ctx.arc(eyeCx,eyeCy,6,0,Math.PI*2); ctx.fill();
+      // pulsing emission rings from apex
+      for(let r=0;r<3;r++){
+        const rph=(t*0.8+r)%2.4, rp=rph/2.4;
+        const rr=rp*H*0.55, al=(1-rp)*0.25*pulse;
+        ctx.strokeStyle='rgba(248,226,49,'+al.toFixed(3)+')'; ctx.lineWidth=0.8;
+        ctx.beginPath(); ctx.arc(apx,apy,rr,0,Math.PI*2); ctx.stroke();
+      }
+      this._meshPyramidRaf=requestAnimationFrame(draw);
+    };
+    this._meshPyramidRaf=requestAnimationFrame(draw);
   }
   initBgMesh(){
     const canvas=document.getElementById('bgMesh'); if(!canvas) return;
     const ctx=canvas.getContext('2d');
     let W=0,H=0; const DPR=Math.min(window.devicePixelRatio||1,2);
     let nodes=[], sky=[];
-    const seedNodes=()=>{ nodes=[]; const n=Math.max(24,Math.min(50,Math.floor((W*H)/44000)));
-      for(let i=0;i<n;i++) nodes.push({x:Math.random()*W,y:Math.random()*H*0.78,vx:(Math.random()-.5)*.09,vy:(Math.random()-.5)*.09,r:Math.random()*1.7+1.0,ph:Math.random()*6.28}); };
+    const seedNodes=()=>{ nodes=[]; const n=Math.max(35,Math.min(65,Math.floor((W*H)/28000)));
+      for(let i=0;i<n;i++) nodes.push({x:Math.random()*W,y:Math.random()*H*0.85,vx:(Math.random()-.5)*.055,vy:(Math.random()-.5)*.055,r:Math.random()*2.4+1.0,ph:Math.random()*6.28}); };
     const buildSkyline=()=>{
       sky=[];
+      // 6 Empire Corporation towers only
       const defs=[
-        {cx:0.07,w:0.06,h:0.16},{cx:0.15,w:0.05,h:0.12},{cx:0.24,w:0.06,h:0.23},{cx:0.33,w:0.045,h:0.15},
-        {cx:0.50,w:0.085,h:0.46,empire:true},
-        {cx:0.64,w:0.05,h:0.17},{cx:0.72,w:0.07,h:0.27},{cx:0.81,w:0.05,h:0.15},{cx:0.90,w:0.06,h:0.21},{cx:0.97,w:0.05,h:0.13}
+        {cx:0.08, w:0.085,h:0.40, emblem:true, tiers:[[0.78,16],[0.55,14],[0.35,12]]},
+        {cx:0.24, w:0.09, h:0.48, emblem:true, tiers:[[0.76,18],[0.52,15],[0.32,13]]},
+        {cx:0.38, w:0.08, h:0.36, emblem:true, tiers:[[0.75,14],[0.5,12]]},
+        {cx:0.50, w:0.11, h:0.65, empire:true, sign:'6-EMPIRES', tiers:[[0.80,22],[0.58,18],[0.38,16],[0.22,14]]},
+        {cx:0.64, w:0.08, h:0.42, emblem:true, tiers:[[0.77,15],[0.54,13],[0.33,11]]},
+        {cx:0.78, w:0.085,h:0.38, emblem:true, tiers:[[0.75,14],[0.5,12]]},
+        {cx:0.93, w:0.08, h:0.44, emblem:true, tiers:[[0.78,16],[0.54,13]]},
       ];
       for(const d of defs){
         const w=d.w*W, x=d.cx*W - w/2, h=d.h*H;
-        const cols=Math.max(2,Math.floor(w/14)), rows=Math.max(2,Math.floor(h/18)), wins=[];
-        for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ if(Math.random()<0.45) wins.push({c,r,ph:Math.random()*6.28,sp:0.4+Math.random()*1.1}); }
-        sky.push({x,w,h,empire:!!d.empire,cols,rows,wins});
+        const cols=Math.max(2,Math.floor(w/13)), rows=Math.max(2,Math.floor(h/15)), wins=[];
+        for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ if(Math.random()<0.48) wins.push({c,r,ph:Math.random()*6.28,sp:0.4+Math.random()*1.0}); }
+        sky.push({x,w,h,empire:!!d.empire,sign:d.sign||null,emblem:!!d.emblem,tiers:d.tiers||null,cols,rows,wins});
       }
     };
-    const resize=()=>{ W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0); seedNodes(); buildSkyline(); };
+    const drawUFO=(ctx,x,y,sz,t,ph)=>{
+      ctx.save();
+      ctx.translate(x,y);
+      // tractor beam
+      const beam=ctx.createLinearGradient(0,0,0,sz*2.2);
+      beam.addColorStop(0,'rgba(248,226,49,.12)'); beam.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.fillStyle=beam;
+      ctx.beginPath(); ctx.moveTo(-sz*0.6,sz*0.3); ctx.lineTo(sz*0.6,sz*0.3); ctx.lineTo(sz*0.35,sz*2.2); ctx.lineTo(-sz*0.35,sz*2.2); ctx.closePath(); ctx.fill();
+      // hull
+      const hg=ctx.createLinearGradient(0,-sz*0.5,0,sz*0.35);
+      hg.addColorStop(0,'rgba(40,42,50,.95)'); hg.addColorStop(1,'rgba(20,22,28,.9)');
+      ctx.fillStyle=hg;
+      ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.28,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(248,226,49,.45)'; ctx.lineWidth=.8;
+      ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.28,0,0,Math.PI*2); ctx.stroke();
+      // dome
+      ctx.fillStyle='rgba(248,226,49,.08)';
+      ctx.beginPath(); ctx.ellipse(0,-sz*0.15,sz*0.42,sz*0.32,0,Math.PI,0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(248,226,49,.25)'; ctx.lineWidth=.7;
+      ctx.beginPath(); ctx.ellipse(0,-sz*0.15,sz*0.42,sz*0.32,0,Math.PI,0); ctx.closePath(); ctx.stroke();
+      // signal lights (pulsing ring)
+      const nLights=6;
+      for(let i=0;i<nLights;i++){
+        const a=i*(Math.PI*2/nLights)+t*0.4+ph;
+        const lx=Math.cos(a)*sz*0.72, ly=Math.sin(a)*sz*0.19;
+        const pulse=0.3+0.7*Math.abs(Math.sin(t*2.5+i*1.1+ph));
+        const col=i%2===0?'rgba(248,226,49,':'rgba(80,220,255,';
+        ctx.fillStyle=col+pulse.toFixed(2)+')';
+        ctx.shadowColor=i%2===0?'#F8E231':'#50dcff'; ctx.shadowBlur=6*pulse;
+        ctx.beginPath(); ctx.arc(lx,ly,sz*0.07,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+      }
+      ctx.restore();
+    };
+    // fleet of UFOs (different sizes, speeds, heights)
+    const ufos=[
+      {x:-140,y:0,sz:18,speed:0.018,bobPh:0.0, yFrac:0.18},
+      {x:-80, y:0,sz:10,speed:0.010,bobPh:1.4, yFrac:0.32},
+      {x:200, y:0,sz:26,speed:0.025,bobPh:2.8, yFrac:0.12},
+      {x:600, y:0,sz:8, speed:0.008,bobPh:4.2, yFrac:0.42},
+      {x:400, y:0,sz:14,speed:0.014,bobPh:5.6, yFrac:0.25},
+    ];
+    const drawAtlas=(ctx,x,y,sz,t,ph)=>{
+      ctx.save(); ctx.translate(x,y);
+      const pulse=0.5+0.3*Math.sin(t*0.8+ph);
+      // core sphere
+      const cg=ctx.createRadialGradient(0,0,0,0,0,sz);
+      cg.addColorStop(0,'rgba(248,226,49,0.18)'); cg.addColorStop(0.6,'rgba(40,60,120,0.12)'); cg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2); ctx.fill();
+      // inner ring
+      ctx.strokeStyle='rgba(248,226,49,'+(0.5*pulse).toFixed(2)+')'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(0,0,sz*0.4,0,Math.PI*2); ctx.stroke();
+      // rotating solar panels (2 arms)
+      const rot=t*0.15+ph;
+      for(let arm=0;arm<2;arm++){
+        ctx.save(); ctx.rotate(rot+arm*Math.PI);
+        // arm strut
+        ctx.strokeStyle='rgba(180,180,220,'+(0.55*pulse).toFixed(2)+')'; ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.moveTo(sz*0.4,0); ctx.lineTo(sz*1.6,0); ctx.stroke();
+        // panel
+        ctx.fillStyle='rgba(248,226,49,'+(0.22*pulse).toFixed(2)+')';
+        ctx.strokeStyle='rgba(248,226,49,'+(0.45*pulse).toFixed(2)+')';
+        ctx.fillRect(sz*1.05,-sz*0.35,sz*0.55,sz*0.7);
+        ctx.strokeRect(sz*1.05,-sz*0.35,sz*0.55,sz*0.7);
+        // panel grid lines
+        ctx.strokeStyle='rgba(248,226,49,'+(0.15*pulse).toFixed(2)+')'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(sz*1.33,-sz*0.35); ctx.lineTo(sz*1.33,sz*0.35); ctx.stroke();
+        ctx.restore();
+      }
+      // signal dish
+      ctx.save(); ctx.rotate(-rot*0.7);
+      ctx.strokeStyle='rgba(100,220,255,'+(0.5*pulse).toFixed(2)+')'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(0,-sz*0.4); ctx.lineTo(0,-sz*0.9); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0,-sz*0.9,sz*0.22,sz*0.1,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      // data pulse rings
+      for(let ring=1;ring<=3;ring++){
+        const rph=(t*0.6+ph+ring*1.0)%3;
+        const rp=rph/3, rr=sz*(0.5+rp*2.5), al=(1-rp)*0.25*pulse;
+        ctx.strokeStyle='rgba(248,226,49,'+al.toFixed(2)+')'; ctx.lineWidth=0.8;
+        ctx.beginPath(); ctx.arc(0,0,rr,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+    };
+    if(!this._atlases){
+      this._atlases=[
+        {x:-300,y:0,sz:14,speed:0.022,yFrac:0.14,ph:0},
+        {x:500, y:0,sz:10,speed:0.012,yFrac:0.52,ph:2.1},
+        {x:200, y:0,sz:18,speed:0.016,yFrac:0.31,ph:4.3},
+      ];
+    }
+    const resize=()=>{ W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0); this._stars=null; this._planets=null; this._bgPyramids=null; if(this._atlases) this._atlases.forEach(a=>{a.y=H*a.yFrac;a.ySet=true;}); seedNodes(); buildSkyline(); ufos.forEach(u=>u.y=H*u.yFrac); };
+    // load logos for buildings — strip white background
+    const stripWhiteBg=(img)=>{
+      const oc=document.createElement('canvas'); oc.width=img.naturalWidth; oc.height=img.naturalHeight;
+      const ox=oc.getContext('2d'); ox.drawImage(img,0,0);
+      const d=ox.getImageData(0,0,oc.width,oc.height);
+      for(let i=0;i<d.data.length;i+=4){
+        const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
+        // gold: strong red-blue gap, red dominant
+        const goldGap=r-b;
+        if(goldGap<70||r<80){
+          d.data[i+3]=0;
+        } else {
+          // smooth edge based on gold strength
+          d.data[i+3]=Math.min(255,Math.round((goldGap-70)*4));
+        }
+      }
+      ox.putImageData(d,0,0); return oc;
+    };
+    if(!this._bldgLogo){
+      const img=new Image(); img.src='6-empire-logo-gold3.png';
+      img.onload=()=>{ this._bldgLogo=stripWhiteBg(img); };
+    }
     resize(); this._bgResize=resize; window.addEventListener('resize',resize);
+    const drawSun=(ctx,cx,cy,r,al,t)=>{
+      ctx.save(); ctx.globalAlpha=al;
+      // rays
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6+t*0.3, r2=r*1.5+Math.sin(t*2+i)*3;
+        ctx.strokeStyle='rgba(248,226,49,.6)'; ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*r*1.1,cy+Math.sin(a)*r*1.1);
+        ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2); ctx.stroke();
+      }
+      // circle
+      const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      sg.addColorStop(0,'rgba(248,226,49,.6)'); sg.addColorStop(1,'rgba(248,226,49,.08)');
+      ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(248,226,49,.4)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    };
+    const drawEye=(ctx,cx,cy,sz,al,t)=>{
+      ctx.save(); ctx.globalAlpha=al;
+      ctx.strokeStyle='rgba(248,226,49,.7)'; ctx.lineWidth=1.2;
+      // eye outline
+      ctx.beginPath();
+      ctx.moveTo(cx-sz,cy);
+      ctx.quadraticCurveTo(cx,cy-sz*0.55,cx+sz,cy);
+      ctx.quadraticCurveTo(cx,cy+sz*0.55,cx-sz,cy);
+      ctx.stroke();
+      // iris
+      const ig=ctx.createRadialGradient(cx,cy,0,cx,cy,sz*0.38);
+      ig.addColorStop(0,'rgba(248,226,49,.5)'); ig.addColorStop(1,'rgba(248,226,49,.08)');
+      ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(cx,cy,sz*0.38,0,Math.PI*2); ctx.fill();
+      // pupil
+      ctx.fillStyle='rgba(5,6,8,.8)'; ctx.beginPath(); ctx.arc(cx,cy,sz*0.16,0,Math.PI*2); ctx.fill();
+      // pupil glow
+      ctx.fillStyle='rgba(248,226,49,'+(0.4+0.4*Math.sin(t*1.5)).toFixed(2)+')';
+      ctx.beginPath(); ctx.arc(cx,cy,sz*0.08,0,Math.PI*2); ctx.fill();
+      // lashes (top)
+      for(let i=-2;i<=2;i++){
+        const lx=cx+i*(sz*0.35), la=Math.PI*1.4+i*0.15;
+        ctx.strokeStyle='rgba(248,226,49,.35)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(lx,cy-sz*0.5);
+        ctx.lineTo(lx+Math.cos(la)*10,cy-sz*0.5-10); ctx.stroke();
+      }
+      ctx.restore();
+    };
+    const drawOwl=(ctx,cx,cy,sz,al,t)=>{
+      ctx.save(); ctx.globalAlpha=al;
+      ctx.strokeStyle='rgba(248,226,49,.55)'; ctx.lineWidth=1.2;
+      // body
+      ctx.beginPath(); ctx.ellipse(cx,cy+sz*0.2,sz*0.55,sz*0.7,0,0,Math.PI*2);
+      ctx.fillStyle='rgba(15,17,22,.7)'; ctx.fill(); ctx.stroke();
+      // wings hint
+      ctx.beginPath(); ctx.ellipse(cx-sz*0.7,cy+sz*0.3,sz*0.35,sz*0.5,Math.PI/5,0,Math.PI*2);
+      ctx.fillStyle='rgba(12,14,18,.6)'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx+sz*0.7,cy+sz*0.3,sz*0.35,sz*0.5,-Math.PI/5,0,Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      // left eye
+      const eyePulse=0.4+0.5*Math.abs(Math.sin(t*1.2));
+      ctx.fillStyle='rgba(248,226,49,'+eyePulse.toFixed(2)+')';
+      ctx.beginPath(); ctx.arc(cx-sz*0.22,cy-sz*0.12,sz*0.2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(5,6,8,.9)'; ctx.beginPath(); ctx.arc(cx-sz*0.22,cy-sz*0.12,sz*0.1,0,Math.PI*2); ctx.fill();
+      // right eye
+      ctx.fillStyle='rgba(248,226,49,'+eyePulse.toFixed(2)+')';
+      ctx.beginPath(); ctx.arc(cx+sz*0.22,cy-sz*0.12,sz*0.2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(5,6,8,.9)'; ctx.beginPath(); ctx.arc(cx+sz*0.22,cy-sz*0.12,sz*0.1,0,Math.PI*2); ctx.fill();
+      // beak
+      ctx.fillStyle='rgba(248,226,49,.5)';
+      ctx.beginPath(); ctx.moveTo(cx,cy+sz*0.05); ctx.lineTo(cx-sz*0.1,cy+sz*0.22); ctx.lineTo(cx+sz*0.1,cy+sz*0.22); ctx.closePath(); ctx.fill();
+      // ear tufts
+      ctx.strokeStyle='rgba(248,226,49,.4)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx-sz*0.25,cy-sz*0.38); ctx.lineTo(cx-sz*0.32,cy-sz*0.7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+sz*0.25,cy-sz*0.38); ctx.lineTo(cx+sz*0.32,cy-sz*0.7); ctx.stroke();
+      ctx.restore();
+    };
+    const drawPyramid=(ctx,cx,cy,sz,al,t,rot)=>{
+      ctx.save(); ctx.globalAlpha=al;
+      ctx.translate(cx,cy); ctx.rotate(rot||0); ctx.translate(-cx,-cy);
+      const pulse=0.7+0.3*Math.sin(t*0.6);
+      // outer glow
+      const pg=ctx.createRadialGradient(cx,cy,0,cx,cy,sz*1.2);
+      pg.addColorStop(0,'rgba(248,226,49,'+(0.18*pulse).toFixed(3)+')'); pg.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(cx,cy,sz*1.2,0,Math.PI*2); ctx.fill();
+      // pyramid faces
+      const apex=[cx,cy-sz], bl=[cx-sz*0.85,cy+sz*0.55], br=[cx+sz*0.85,cy+sz*0.55];
+      // left face
+      ctx.beginPath(); ctx.moveTo(...apex); ctx.lineTo(...bl); ctx.lineTo(cx,cy+sz*0.55); ctx.closePath();
+      ctx.fillStyle='rgba(248,226,49,'+(0.08*pulse).toFixed(3)+')'; ctx.fill();
+      // right face
+      ctx.beginPath(); ctx.moveTo(...apex); ctx.lineTo(cx,cy+sz*0.55); ctx.lineTo(...br); ctx.closePath();
+      ctx.fillStyle='rgba(248,226,49,'+(0.14*pulse).toFixed(3)+')'; ctx.fill();
+      // outline
+      ctx.strokeStyle='rgba(248,226,49,'+(0.55*pulse).toFixed(3)+')'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(...apex); ctx.lineTo(...bl); ctx.lineTo(...br); ctx.closePath(); ctx.stroke();
+      // base line
+      ctx.strokeStyle='rgba(248,226,49,'+(0.3*pulse).toFixed(3)+')'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(...bl); ctx.lineTo(...br); ctx.stroke();
+      // eye of pyramid
+      const eyeY=cy-sz*0.15;
+      ctx.strokeStyle='rgba(248,226,49,'+(0.6*pulse).toFixed(3)+')'; ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(cx-sz*0.2,eyeY); ctx.quadraticCurveTo(cx,eyeY-sz*0.14,cx+sz*0.2,eyeY);
+      ctx.quadraticCurveTo(cx,eyeY+sz*0.14,cx-sz*0.2,eyeY); ctx.stroke();
+      ctx.fillStyle='rgba(248,226,49,'+(0.45+0.35*Math.sin(t*1.8)).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(cx,eyeY,sz*0.055,0,Math.PI*2); ctx.fill();
+      // scan lines
+      for(let i=1;i<=4;i++){
+        const ly=cy-sz+i*(sz*1.55/5);
+        const spread=((ly-(cy-sz))/(sz*1.55))*(sz*0.85);
+        ctx.strokeStyle='rgba(248,226,49,'+(0.06*pulse).toFixed(3)+')'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(cx-spread,ly); ctx.lineTo(cx+spread,ly); ctx.stroke();
+      }
+      ctx.restore();
+    };
+    const symbols=[
+      {type:'sun',  x:0.15, y:0.30, ph:0,   period:23, dur:7},
+      {type:'sun',    x:0.62, y:0.70, ph:15,  period:37, dur:5},
+    ];
     let f=0;
     const draw=()=>{
       f++; const t=f/60;
-      ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
-      // radar arcs (lower-left)
+      ctx.fillStyle='#010103'; ctx.fillRect(0,0,W,H);
+      const vig=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.55);
+      vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.45)');
+      ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
+      // ── SPACE LAYER: nebula clouds + star field ──────────────────────
+      if(!this._stars || this._stars._W!==W || this._stars._H!==H){
+        this._stars={_W:W,_H:H,pts:[]};
+        for(let i=0;i<320;i++) this._stars.pts.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.2,ph:Math.random()*6.28,sp:0.3+Math.random()*1.4,col:Math.random()<0.12?'rgba(190,220,255,':'rgba(248,226,49,'});
+      }
+      // nebula blobs
+      const nebDefs=[[W*0.18,H*0.22,W*0.28,H*0.22,'rgba(60,20,90,.08)','rgba(248,120,40,.03)'],
+                     [W*0.72,H*0.55,W*0.22,H*0.18,'rgba(20,40,100,.07)','rgba(248,226,49,.02)'],
+                     [W*0.44,H*0.78,W*0.3, H*0.2, 'rgba(30,60,80,.06)', 'rgba(100,220,255,.02)']];
+      for(const [nx,ny,rw,rh,c0,c1] of nebDefs){
+        ctx.save();
+        ctx.scale(1,rh/rw);
+        const ng=ctx.createRadialGradient(nx,ny*(rw/rh),0,nx,ny*(rw/rh),rw);
+        ng.addColorStop(0,c0); ng.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(nx,ny*(rw/rh),rw,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.scale(1,rh/rw);
+        const ng2=ctx.createRadialGradient(nx,ny*(rw/rh),0,nx,ny*(rw/rh),rw*0.5);
+        ng2.addColorStop(0,c1); ng2.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=ng2; ctx.beginPath(); ctx.arc(nx,ny*(rw/rh),rw*0.5,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      // milky way streak
+      ctx.save();
+      ctx.rotate(-0.22);
+      const mw=ctx.createLinearGradient(0,H*0.3,W*1.4,H*0.7);
+      mw.addColorStop(0,'rgba(0,0,0,0)'); mw.addColorStop(0.3,'rgba(80,60,120,.03)'); mw.addColorStop(0.5,'rgba(120,100,180,.05)'); mw.addColorStop(0.7,'rgba(80,60,120,.03)'); mw.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=mw; ctx.fillRect(0,0,W*1.8,H*1.4);
+      ctx.restore();
+      // stars
+      for(const s of this._stars.pts){
+        const tw=0.12+0.18*Math.abs(Math.sin(t*s.sp+s.ph));
+        ctx.fillStyle=s.col+tw.toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.2832); ctx.fill();
+        if(s.r>1.0){ ctx.strokeStyle=s.col+'0.08)'; ctx.lineWidth=s.r+1;
+          ctx.beginPath(); ctx.arc(s.x,s.y,s.r*2.5,0,6.2832); ctx.stroke(); }
+      }
+      // ─────────────────────────────────────────────────────────────────
+      // PLANETS
+      if(!this._planets || this._planets._W!==W){
+        const palettes=[
+          ['#1a3a6e','#2a5fa8','#4a8fd4'],['#6e1a1a','#a83030','#d46060'],
+          ['#1a5c2a','#2a9c46','#60d480'],['#5c3a1a','#9c6430','#d49e60'],
+          ['#3a1a6e','#6a30c0','#a870f0'],['#1a5c5c','#2aa0a0','#60d4d4'],
+        ];
+        this._planets={_W:W,pts:[]};
+        const sizes=[14,20,32];
+        for(let i=0;i<3;i++){
+          const r=sizes[Math.floor(Math.random()*sizes.length)]*(0.7+Math.random()*0.6);
+          const pal=palettes[Math.floor(Math.random()*palettes.length)];
+          this._planets.pts.push({
+            x:Math.random()*W, y:Math.random()*H*0.88, r,
+            vx:(Math.random()-.5)*0.018, vy:(Math.random()-.5)*0.006,
+            pal, hasRing:Math.random()<0.35, ringAngle:Math.random()*Math.PI,
+            tiltX:0.25+Math.random()*0.5, ph:Math.random()*6.28
+          });
+        }
+      }
+      for(const p of this._planets.pts){
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<-p.r*4)p.x=W+p.r*2; if(p.x>W+p.r*4)p.x=-p.r*2;
+        if(p.y<-p.r*3)p.y=H*0.88+p.r; if(p.y>H*0.9+p.r)p.y=-p.r;
+        ctx.save();
+        // ring behind
+        if(p.hasRing){
+          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.ringAngle);
+          ctx.scale(1,p.tiltX*0.35);
+          const rg=ctx.createLinearGradient(-p.r*2.2,0,p.r*2.2,0);
+          rg.addColorStop(0,'rgba(0,0,0,0)'); rg.addColorStop(0.3,p.pal[0]+'99');
+          rg.addColorStop(0.5,p.pal[1]+'cc'); rg.addColorStop(0.7,p.pal[0]+'99'); rg.addColorStop(1,'rgba(0,0,0,0)');
+          ctx.strokeStyle=rg; ctx.lineWidth=p.r*0.28;
+          ctx.beginPath(); ctx.ellipse(0,0,p.r*2.0,p.r*0.22,0,0,Math.PI*2); ctx.stroke();
+          ctx.restore();
+        }
+        // planet sphere
+        const pg=ctx.createRadialGradient(p.x-p.r*0.3,p.y-p.r*0.3,p.r*0.05,p.x,p.y,p.r);
+        pg.addColorStop(0,p.pal[2]); pg.addColorStop(0.5,p.pal[1]); pg.addColorStop(1,'rgba(0,0,0,0.85)');
+        ctx.fillStyle=pg; ctx.globalAlpha=0.45;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        // atmosphere glow
+        const ag=ctx.createRadialGradient(p.x,p.y,p.r*0.7,p.x,p.y,p.r*1.35);
+        ag.addColorStop(0,'rgba(0,0,0,0)'); ag.addColorStop(1,p.pal[1]+'22');
+        ctx.fillStyle=ag; ctx.globalAlpha=0.6;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r*1.35,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      // PYRAMIDS (slow drifting)
+      if(!this._bgPyramids){
+        this._bgPyramids=[
+          {x:W*0.12,y:H*0.62,sz:28,vx:0.009,vy:0.004,rot:0,rotV:0.0008,ph:0},
+          {x:W*0.82,y:H*0.28,sz:22,vx:-0.007,vy:0.003,rot:1.2,rotV:-0.0006,ph:2},
+        ];
+      }
+      for(const py of this._bgPyramids){
+        py.x+=py.vx; py.y+=py.vy; py.rot+=py.rotV;
+        if(py.x<-py.sz*3)py.x=W+py.sz; if(py.x>W+py.sz*3)py.x=-py.sz;
+        if(py.y<-py.sz*3)py.y=H+py.sz; if(py.y>H+py.sz)py.y=-py.sz;
+        const al=0.07+0.04*Math.sin(t*0.4+py.ph);
+        drawPyramid(ctx,py.x,py.y,py.sz,al,t,py.rot);
+      }
+      // left-side darkness veil
+      const leftVeil=ctx.createLinearGradient(0,0,W*0.42,0);
+      leftVeil.addColorStop(0,'rgba(0,0,0,0.72)'); leftVeil.addColorStop(0.6,'rgba(0,0,0,0.28)'); leftVeil.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=leftVeil; ctx.fillRect(0,0,W*0.42,H);
+      // mystic hidden symbols — left zone, appear/disappear slowly
+      const mysticSlots=[
+        {x:0.07,y:0.22,period:18,dur:5,ph:0,  type:'pyramid'},
+        {x:0.14,y:0.58,period:24,dur:6,ph:7,  type:'rune'},
+        {x:0.05,y:0.75,period:31,dur:7,ph:14, type:'eye'},
+        {x:0.20,y:0.38,period:27,dur:5,ph:3,  type:'pyramid'},
+        {x:0.10,y:0.87,period:22,dur:6,ph:9,  type:'rune'},
+      ];
+      for(const s of mysticSlots){
+        const cycle=(t+s.ph)%s.period, pos=cycle/s.period, winEnd=s.dur/s.period;
+        let al=0;
+        if(pos<winEnd){ const h=winEnd/2; al=pos<h?pos/h:1-(pos-h)/h; al=Math.max(0,Math.min(1,al))*0.28; }
+        if(al<0.005) continue;
+        const sx=s.x*W, sy=s.y*H;
+        ctx.save(); ctx.globalAlpha=al;
+        if(s.type==='eye') drawEye(ctx,sx,sy,22,1,t);
+        else if(s.type==='pyramid' || s.type==='sigil'){
+          // mini pyramid
+          const r=18, rot=t*0.06+s.ph;
+          ctx.save(); ctx.translate(sx,sy); ctx.rotate(rot);
+          ctx.strokeStyle='rgba(248,226,49,0.85)'; ctx.lineWidth=1.1;
+          ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(r*0.87,r*0.55); ctx.lineTo(-r*0.87,r*0.55); ctx.closePath(); ctx.stroke();
+          ctx.strokeStyle='rgba(248,226,49,0.45)'; ctx.lineWidth=0.8;
+          ctx.beginPath(); ctx.moveTo(0,-r*0.3); ctx.lineTo(r*0.45,r*0.55); ctx.lineTo(-r*0.45,r*0.55); ctx.closePath(); ctx.stroke();
+          ctx.fillStyle='rgba(248,226,49,'+(0.5+0.4*Math.sin(t*1.6+s.ph)).toFixed(2)+')';
+          ctx.beginPath(); ctx.arc(0,-r,2.5,0,Math.PI*2); ctx.fill();
+          ctx.restore();
+        } else if(s.type==='rune'){
+          // rune: vertical staff + 2 branches
+          const rh=20, rot=t*0.05+s.ph;
+          ctx.strokeStyle='rgba(248,226,49,0.85)'; ctx.lineWidth=1.2;
+          ctx.save(); ctx.translate(sx,sy); ctx.rotate(rot);
+          ctx.beginPath(); ctx.moveTo(0,-rh); ctx.lineTo(0,rh); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,-rh*0.3); ctx.lineTo(rh*0.6,-rh*0.7); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,rh*0.2); ctx.lineTo(rh*0.6,-rh*0.1); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,-rh*0.3); ctx.lineTo(-rh*0.4,-rh*0.6); ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+      }
       const ax=-W*0.03, ay=H*0.5;
       for(let i=1;i<=8;i++){ const rad=i*Math.min(W,H)*0.08 + Math.sin(t*0.25+i)*4;
-        ctx.strokeStyle='rgba(248,226,49,'+Math.max(0,0.055-i*0.005).toFixed(3)+')'; ctx.lineWidth=1;
+        ctx.strokeStyle='rgba(248,226,49,'+Math.max(0,0.09-i*0.008).toFixed(3)+')'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.arc(ax,ay,rad,-0.35,1.7); ctx.stroke(); }
       // drifting constellation mesh
       for(const p of nodes){ p.x+=p.vx; p.y+=p.vy;
         if(p.x<0)p.x+=W; else if(p.x>W)p.x-=W;
-        const yb=H*0.78; if(p.y<0)p.y+=yb; else if(p.y>yb)p.y-=yb; }
+        const yb=H*0.85; if(p.y<0)p.y+=yb; else if(p.y>yb)p.y-=yb; }
       for(let i=0;i<nodes.length;i++){ const a=nodes[i];
         for(let j=i+1;j<nodes.length;j++){ const b=nodes[j]; const dx=a.x-b.x,dy=a.y-b.y;
-          if(dx>190||dx<-190||dy>190||dy<-190) continue; const d=Math.hypot(dx,dy);
-          if(d<190){ const al=(1-d/190)*0.15; ctx.strokeStyle='rgba(212,186,40,'+al.toFixed(3)+')'; ctx.lineWidth=1;
+          if(dx>280||dx<-280||dy>280||dy<-280) continue; const d=Math.hypot(dx,dy);
+          if(d<300){ const al=(1-d/300)*0.45; ctx.strokeStyle='rgba(230,200,40,'+al.toFixed(3)+')'; ctx.lineWidth=.9;
             ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } } }
       for(const p of nodes){ const tw=0.5+0.5*Math.sin(t*1.1+p.ph);
-        ctx.fillStyle='rgba(248,226,49,'+(0.35+0.5*tw).toFixed(3)+')';
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); }
+        ctx.fillStyle='rgba(248,226,49,'+(0.55+0.45*tw).toFixed(3)+')';
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r+0.4,0,6.2832); ctx.fill(); }
+      // hidden symbols (fade in/out on cycle)
+      for(const s of symbols){
+        const cycle=t+s.ph, pos=(cycle%s.period)/s.period;
+        const winStart=0, winEnd=s.dur/s.period;
+        let al=0;
+        if(pos<winEnd){ const half=winEnd/2; al=pos<half?pos/half:1-(pos-half)/half; al=Math.max(0,Math.min(1,al))*0.38; }
+        if(al>0.005){
+          const cx=s.x*W, cy=s.y*H;
+          if(s.type==='sun') drawSun(ctx,cx,cy,28,al,t);
+          else if(s.type==='eye') drawEye(ctx,cx,cy,32,al,t);
+          else if(s.type==='owl') drawOwl(ctx,cx,cy,26,al,t);
+          else if(s.type==='pyramid'){
+            const drift=s.drift?Math.sin(t*0.07+s.ph)*W*0.06:0;
+            const driftY=s.drift?Math.cos(t*0.05+s.ph)*H*0.04:0;
+            const rot=t*0.12+s.ph;
+            drawPyramid(ctx,cx+drift,cy+driftY,44,al,t,rot);
+          }
+        }
+      }
+      // hypnotic spiral vortex (always on, very faint)
+      ctx.save();
+      const spiralCx=W*0.5, spiralCy=H*0.42;
+      for(let ring=1;ring<=6;ring++){
+        const r=ring*Math.min(W,H)*0.055;
+        const phase=t*0.18*(ring%2===0?1:-1);
+        ctx.strokeStyle='rgba(248,226,49,'+(0.03-ring*0.004).toFixed(3)+')';
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        for(let a=0;a<=Math.PI*2;a+=0.08){
+          const rx=spiralCx+Math.cos(a+phase)*r;
+          const ry=spiralCy+Math.sin(a+phase)*r*(0.38+0.12*Math.sin(t*0.4+ring));
+          a===0?ctx.moveTo(rx,ry):ctx.lineTo(rx,ry);
+        }
+        ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+      // AI Atlas satellites
+      if(!this._atlases[0].ySet){ this._atlases.forEach(a=>{ a.y=H*a.yFrac; a.ySet=true; }); }
+      for(const a of this._atlases){
+        a.x+=a.speed; a.y+=Math.sin(t*0.18+a.ph)*0.06;
+        if(a.x>W+a.sz*5){ a.x=-(a.sz*6); a.y=H*(0.08+Math.random()*0.55); }
+        drawAtlas(ctx,a.x,a.y,a.sz,t,a.ph);
+      }
+      // UFO fleet
+      for(const u of ufos){
+        u.x+=u.speed; u.bobPh+=0.012;
+        if(u.x>W+200){ u.x=-(u.sz*8); u.y=H*(0.08+Math.random()*0.45); }
+        const ufoY=u.y+Math.sin(u.bobPh)*14;
+        drawUFO(ctx,u.x,ufoY,u.sz,t,u.bobPh);
+      }
       // Empire State skyline
       this.drawSkyline(ctx,W,H,sky,t);
       this._bgRaf=requestAnimationFrame(draw);
@@ -1199,9 +2007,12 @@ class Component extends DCLogic {
   }
 
     componentDidMount(){
+    this.initCityAudio();
     this.initManhattanBg();
     this.initBgMesh();
     this.initAgentCanvas();
+    this.initMeshPyramid();
+    this.initTradingChart();
     this.onScroll = this.onScroll.bind(this);
     window.addEventListener('scroll', this.onScroll, {passive:true});
     window.addEventListener('resize', this.onScroll, {passive:true});
@@ -1215,6 +2026,9 @@ class Component extends DCLogic {
     setTimeout(() => this.initTextScramble(), 600);
   }
   componentWillUnmount(){
+    if(this._cityAC) this._cityAC.close();
+    if(this._meshPyramidRaf) cancelAnimationFrame(this._meshPyramidRaf);
+    if(this._tradingChartRaf) cancelAnimationFrame(this._tradingChartRaf);
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('resize', this.onScroll);
     if (this._glowRaf) cancelAnimationFrame(this._glowRaf);

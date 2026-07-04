@@ -10,6 +10,8 @@ html,body{background:#030508!important;margin:0;padding:0;}
   ::-webkit-scrollbar-thumb:hover{background:#F8E231}
   @keyframes sixBlink{50%{opacity:.15}}
   @keyframes sixFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+  @keyframes sixGlowPulse{0%,100%{filter:brightness(0) invert(1) drop-shadow(0 0 8px rgba(255,255,255,.4))}50%{filter:brightness(0) invert(1) drop-shadow(0 0 28px rgba(255,255,255,.9))}}
+  @keyframes sixShine{from{background-position:150% center}to{background-position:-50% center}}
   @keyframes sixSpin{to{transform:rotate(360deg)}}
   @keyframes sixSpinR{to{transform:rotate(-360deg)}}
   @keyframes sixGrid{to{background-position:0 44px}}
@@ -21,7 +23,7 @@ html,body{background:#030508!important;margin:0;padding:0;}
   @keyframes sixRainSnow{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
   @keyframes sixPyramidPulse{0%,100%{opacity:.6;filter:brightness(1) drop-shadow(0 0 12px currentColor)}50%{opacity:1;filter:brightness(1.4) drop-shadow(0 0 28px currentColor)}}
   @keyframes sixFlick{0%,100%{opacity:1}8%{opacity:.3}12%{opacity:1}40%{opacity:.6}44%{opacity:1}}
-  @keyframes sixChev{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(8px);opacity:1}}
+  @keyframes hexPulse{0%,100%{scale:1}50%{scale:1.18}}
   @keyframes sixDash{to{stroke-dashoffset:0}}
   @keyframes sixRotateCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes sixLogoBreathe{0%,100%{transform:translateY(0) scale(1);filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22))}50%{transform:translateY(-10px) scale(1.045);filter:brightness(0) invert(1) drop-shadow(0 0 46px rgba(255,255,255,.65))}}

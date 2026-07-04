@@ -16,7 +16,19 @@ _drawManhattan(ts) {
       const alpha = b.layer === 0 ? 0.92 : 0.97;
       const dark = b.layer === 0 ? '#090c14' : '#0c1020';
       ctx.fillStyle = dark; ctx.fillRect(b.x, bY, b.w, b.h);
-      if (b.layer === 1) { ctx.strokeStyle = 'rgba(248,226,49,0.07)'; ctx.lineWidth = 1; ctx.strokeRect(b.x, bY, b.w, b.h); }
+      if (b.layer === 1) { ctx.strokeStyle = 'rgba(248,226,49,0.07)'; ctx.lineWidth = 1; ctx.strokeRect(b.x, bY, b.w, b.h);
+        // gold logo on buildings wide enough
+        // gold logo on buildings
+        const logo=this._bldgLogo||null;
+        if(logo && b.w>60){
+          const sz=Math.min(b.w*0.45,44), lx=b.x+b.w/2-sz/2, ly=bY+b.h*0.1;
+          const glow=0.4+0.25*Math.sin(t*0.35+b.x*0.01);
+          ctx.save(); ctx.globalAlpha=0.6+0.2*glow;
+          ctx.shadowColor='rgba(248,226,49,0.9)'; ctx.shadowBlur=Math.round(10*glow);
+          ctx.drawImage(logo,lx,ly,sz,sz);
+          ctx.shadowBlur=0; ctx.globalAlpha=1; ctx.restore();
+        }
+      }
       // Windows
       b.windows.forEach(w => {
         if (Math.random() < w.rate) w.lit = !w.lit;
