@@ -50,6 +50,46 @@ var SIX2 = {
     };
     this._bgRaf=requestAnimationFrame(draw);
   },
+  drawSkyline(ctx,W,H,sky,t){
+    for(const b of sky){
+      const topY=H-b.h;
+      const g=ctx.createLinearGradient(0,topY,0,H);
+      g.addColorStop(0,'rgba(17,18,23,0.97)'); g.addColorStop(1,'rgba(6,7,9,0.99)');
+      ctx.fillStyle=g; ctx.fillRect(b.x,topY,b.w,b.h);
+      // top + side rim glow
+      ctx.strokeStyle='rgba(248,226,49,0.30)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(b.x,topY); ctx.lineTo(b.x+b.w,topY); ctx.stroke();
+      ctx.strokeStyle='rgba(248,226,49,0.09)';
+      ctx.beginPath(); ctx.moveTo(b.x,topY); ctx.lineTo(b.x,H); ctx.moveTo(b.x+b.w,topY); ctx.lineTo(b.x+b.w,H); ctx.stroke();
+      // windows
+      const cw=b.w/b.cols, rh=18;
+      for(const w of b.wins){ const wx=b.x+w.c*cw+cw*0.28, wy=topY+9+w.r*rh; if(wy>H-4) continue;
+        const lit=0.18+0.5*(0.5+0.5*Math.sin(t*w.sp+w.ph));
+        ctx.fillStyle='rgba(248,226,49,'+lit.toFixed(3)+')';
+        ctx.fillRect(wx,wy,Math.max(2,cw*0.32),3); }
+      if(b.empire){
+        // stepped art-deco crown
+        let ty=topY;
+        const tiers=[[0.72,20],[0.48,18],[0.30,18]];
+        for(const tr of tiers){ const ntw=b.w*tr[0], th=tr[1], ntx=b.x+(b.w-ntw)/2;
+          ctx.fillStyle='rgba(21,22,27,0.98)'; ctx.fillRect(ntx,ty-th,ntw,th);
+          ctx.strokeStyle='rgba(248,226,49,0.4)'; ctx.lineWidth=1; ctx.strokeRect(ntx+0.5,ty-th+0.5,ntw-1,th-1);
+          ty-=th; }
+        // antenna mast
+        const mx=b.x+b.w/2, mastH=b.h*0.20;
+        const mg=ctx.createLinearGradient(0,ty-mastH,0,ty);
+        mg.addColorStop(0,'rgba(248,226,49,0)'); mg.addColorStop(1,'rgba(248,226,49,0.75)');
+        ctx.strokeStyle=mg; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(mx,ty); ctx.lineTo(mx,ty-mastH); ctx.stroke();
+        // blinking beacon
+        const bl=0.5+0.5*Math.sin(t*3);
+        const bg=ctx.createRadialGradient(mx,ty-mastH,0,mx,ty-mastH,18);
+        bg.addColorStop(0,'rgba(248,226,49,'+(0.3*bl).toFixed(3)+')'); bg.addColorStop(1,'rgba(248,226,49,0)');
+        ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(mx,ty-mastH,18,0,6.2832); ctx.fill();
+        ctx.fillStyle='rgba(248,226,49,'+(0.55+0.45*bl).toFixed(3)+')';
+        ctx.beginPath(); ctx.arc(mx,ty-mastH,2.4+bl*1.3,0,6.2832); ctx.fill();
+      }
+    }
+  },
   initCursorGlow() {
     const glow = document.getElementById('cursorGlow');
     if (!glow) return;

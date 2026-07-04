@@ -88,6 +88,7 @@ def grab_arrow_prop(name):
     return ''
 
 bg_mesh       = grab_method('initBgMesh')
+draw_skyline  = grab_method('drawSkyline')  # dependency of initBgMesh's draw loop
 cursor_glow   = grab_method('initCursorGlow')
 magnetic      = grab_method('initMagnetic')
 text_scramble = grab_method('initTextScramble')
@@ -101,6 +102,7 @@ admin_login_fn = re.sub(
 enhancements = f"""
 var SIX2 = {{
   {bg_mesh},
+  {draw_skyline},
   {cursor_glow},
   {magnetic},
   {text_scramble}
