@@ -18,6 +18,7 @@ binds = {
     '{{ logoSizePx }}': '180px',
     '{{ showWhiteLogo }}': 'true',
     '{{ true }}': 'true',
+    '{{ openAdminLogin }}': 'openAdminLogin()',
 }
 for k, v in binds.items():
     body = body.replace(k, v)
@@ -64,8 +65,59 @@ def grab(name):
 build = grab('_buildManhattan')
 draw  = grab('_drawManhattan')
 
+# 8) Extract newer self-contained enhancement methods (bg mesh, cursor glow,
+#    magnetic tilt, text scramble) as plain object methods on a shared SIX2
+#    object, plus the standalone openAdminLogin() handler used by the CTA button.
+def grab_method(name):
+    """Grab a `name(args){...}` method body (class method shorthand)."""
+    return grab(name)
+
+def grab_arrow_prop(name):
+    """Grab a `name: (args) => {...}` object-literal arrow function body
+    (used for renderVals() props like openAdminLogin), stopping at the
+    matching closing brace (not including the trailing comma)."""
+    mm = re.search(r'%s\s*:\s*\([^)]*\)\s*=>\s*\{' % re.escape(name), dcjs)
+    if not mm: return ''
+    i = mm.end() - 1; depth = 0
+    for j in range(i, len(dcjs)):
+        if dcjs[j] == '{': depth += 1
+        elif dcjs[j] == '}':
+            depth -= 1
+            if depth == 0:
+                return dcjs[mm.start():j+1]
+    return ''
+
+bg_mesh       = grab_method('initBgMesh')
+cursor_glow   = grab_method('initCursorGlow')
+magnetic      = grab_method('initMagnetic')
+text_scramble = grab_method('initTextScramble')
+admin_login   = grab_arrow_prop('openAdminLogin')
+# admin_login is captured as `openAdminLogin: (...) => { ... }` — turn it into
+# a standalone global function declaration.
+admin_login_fn = re.sub(
+    r'^openAdminLogin\s*:\s*\(\)\s*=>\s*\{', 'function openAdminLogin() {', admin_login
+) if admin_login else ''
+
+enhancements = f"""
+var SIX2 = {{
+  {bg_mesh},
+  {cursor_glow},
+  {magnetic},
+  {text_scramble}
+}};
+{admin_login_fn}
+(function(){{
+  if(!SIX2.initBgMesh) return;
+  SIX2.initBgMesh();
+  SIX2.initCursorGlow();
+  SIX2.initMagnetic();
+  setTimeout(function(){{ SIX2.initTextScramble(); }}, 600);
+}})();
+""" if bg_mesh else ''
+
 open("./_body.html","w",encoding="utf-8").write(body)
 open("./_styles.css","w",encoding="utf-8").write(styles)
 open("./_build.js","w",encoding="utf-8").write(build)
 open("./_draw.js","w",encoding="utf-8").write(draw)
-print("body len", len(body), "styles", len(styles), "build", len(build), "draw", len(draw))
+open("./_enhancements.js","w",encoding="utf-8").write(enhancements)
+print("body len", len(body), "styles", len(styles), "build", len(build), "draw", len(draw), "enhancements", len(enhancements))

@@ -46,12 +46,77 @@
   @keyframes glowBorder{0%,100%{box-shadow:0 0 0 0 rgba(248,226,49,0),inset 0 0 20px rgba(248,226,49,.03)}50%{box-shadow:0 0 18px rgba(248,226,49,.15),inset 0 0 30px rgba(248,226,49,.06)}}
   @keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(100vw)}}
   @keyframes dataTick{0%,100%{opacity:.3}50%{opacity:1}}
+  /* ═══ MICRO-INTERACTION KEYFRAMES ═══ */
+  @keyframes btnGlowPulse{0%,100%{box-shadow:0 0 22px rgba(248,226,49,.42),0 6px 28px rgba(248,226,49,.18)}50%{box-shadow:0 0 44px rgba(248,226,49,.68),0 10px 54px rgba(248,226,49,.34)}}
+  /* ═══ GPU COMPOSITING HINTS ═══ */
+  #bgMesh,#manhattanBg,#agentCanvas{will-change:transform;}
+  #cursorGlow{will-change:transform,opacity;}
+  [data-six-progress]{will-change:height;}
+  /* ═══ REDUCED MOTION ═══ */
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+    #cursorGlow{display:none!important;}
+  }
+  /* ═══ RESPONSIVE — 1024px ═══ */
+  @media(max-width:1024px){
+    [data-scene="founder"]>div>div:nth-child(1){max-width:340px!important;}
+  }
+  /* ═══ RESPONSIVE — 768px ═══ */
+  @media(max-width:768px){
+    [data-six-ticks]{display:none!important;}
+    [data-scene="pillars"]{padding:72px 20px!important;}
+    [data-scene="manifesto"]{padding:72px 20px!important;}
+    [data-scene="founder"]{padding:72px 20px!important;}
+    [data-scene="founder"]>div{grid-template-columns:1fr!important;gap:36px!important;}
+    [data-scene="close"]{padding:80px 20px!important;}
+    [data-scene="spaces"]>div{padding:0 20px!important;}
+    [data-scene="spaces"] [style*="grid-template-columns:repeat(auto-fit,minmax(200px"]{grid-template-columns:repeat(2,1fr)!important;}
+    [data-scene="console"]>div{padding:0 20px!important;}
+    [data-scene="console"] [style*="grid-template-columns:1fr 1.2fr 1fr"]{grid-template-columns:1fr!important;}
+    [data-scene="console"] [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important;}
+    [data-scene="close"] [style*="gap:16px;justify-content:center;flex-wrap:wrap"]{flex-direction:column!important;align-items:center!important;}
+    [data-scene="exterior"] [style*="height:18%"]{flex-direction:column!important;gap:8px!important;padding:16px!important;height:auto!important;}
+  }
+  /* ═══ RESPONSIVE — 480px ═══ */
+  @media(max-width:480px){
+    [data-scene="pillars"] [style*="grid-template-columns:repeat(auto-fit"]{grid-template-columns:1fr!important;}
+    [data-scene="spaces"] [style*="grid-template-columns:repeat(auto-fit"]{grid-template-columns:1fr!important;}
+    [data-scene="console"] [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important;}
+    [data-scene="close"] [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr!important;gap:12px!important;}
+  }
 </style>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+    <rect width="400" height="300" fill="#050608"/>
+    <rect width="400" height="300" fill="url(#bg)"/>
+    <defs>
+      <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="rgba(248,226,49,0.08)"/>
+        <stop offset="100%" stop-color="#030407"/>
+      </radialGradient>
+    </defs>
+    <!-- HUD corners -->
+    <polyline points="20,20 20,38 38,38" fill="none" stroke="#F8E231" stroke-width="1.5"/>
+    <polyline points="380,20 380,38 362,38" fill="none" stroke="#F8E231" stroke-width="1.5"/>
+    <polyline points="20,280 20,262 38,262" fill="none" stroke="#F8E231" stroke-width="1.5"/>
+    <polyline points="380,280 380,262 362,262" fill="none" stroke="#F8E231" stroke-width="1.5"/>
+    <!-- Tower silhouette -->
+    <rect x="178" y="90" width="44" height="140" fill="rgba(248,226,49,0.06)" stroke="rgba(248,226,49,0.3)" stroke-width="1"/>
+    <rect x="186" y="68" width="28" height="24" fill="rgba(248,226,49,0.08)" stroke="rgba(248,226,49,0.25)" stroke-width="1"/>
+    <polygon points="200,48 210,68 190,68" fill="#F8E231" opacity="0.6"/>
+    <!-- Title -->
+    <text x="200" y="258" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" letter-spacing="8" fill="#F8E231" opacity="0.8">6-EMPIRES</text>
+    <text x="200" y="272" text-anchor="middle" font-family="monospace" font-size="7" letter-spacing="4" fill="rgba(248,226,49,0.4)">AI CORPORATION</text>
+  </svg>
+</template>
 </helmet>
 <div data-six-root style="position:relative;background:{{ bgColor }};color:#E8EAED;font-family:'Sora',sans-serif;overflow:hidden;">
 
   <!-- ============ FIXED ANIMATED BACKGROUND (mesh + Empire skyline) ============ -->
   <canvas id="bgMesh" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
+  <!-- CURSOR AMBIENT GLOW — GPU layer, positioned via transform3d only -->
+  <div id="cursorGlow" style="position:fixed;left:0;top:0;width:460px;height:460px;border-radius:50%;pointer-events:none;z-index:86;background:radial-gradient(circle,rgba(248,226,49,.052) 0%,rgba(248,226,49,.016) 36%,transparent 68%);opacity:0;transform:translate3d(-230px,-230px,0);"></div>
 
   <!-- ============ FIXED HUD OVERLAY ============ -->
   <div style="position:fixed;inset:0;z-index:90;pointer-events:none;mix-blend-mode:normal;">
@@ -103,7 +168,7 @@
           <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(34px,6vw,66px);letter-spacing:.12em;line-height:.95;color:#F4F5F7;">{{ heroTitle }}</div>
         </div>
         <sc-if value="{{ showWhiteLogo }}" hint-placeholder-val="{{ true }}">
-          <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:{{ logoSizePx }};height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22));animation:sixLogoBreathe 7s ease-in-out 1.6s infinite;will-change:transform,filter;" data-comment-anchor="7c0c2c1c57-img">
+          <img src="6-empires-emblem.png" alt="6-EMPIRES Logo" style="display:block;width:{{ logoSizePx }};height:auto;filter:brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,255,255,.22));animation:sixLogoBreathe 7s ease-in-out 1.6s infinite;will-change:transform,filter;">
         </sc-if>
       </div>
     </div>
@@ -591,12 +656,10 @@
 
       <!-- CTA -->
       <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .9s .52s cubic-bezier(.2,.8,.2,1);display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-        <a href="https://6-empires.com" target="_blank" style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.12em;text-decoration:none;border:none;cursor:pointer;transition:all .2s ease;">
-          ENTER THE EMPIRE →
-        </a>
-        <div style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px;letter-spacing:.12em;border:1px solid rgba(248,226,49,.6);box-shadow:0 0 20px rgba(248,226,49,.08);">
-          6-EMPIRES.COM
-        </div>
+        <button onClick="{{ openAdminLogin }}" data-cta-btn="primary" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;text-decoration:none;border:none;cursor:pointer;will-change:transform,opacity;transform:translate3d(0,0,0);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s;">
+          <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="12" height="8" rx="1"/><path d="M6 8V5.5a3 3 0 0 1 6 0V8"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
+          ADMIN LOGIN
+        </button>
       </div>
     </div>
 
@@ -694,6 +757,53 @@ class Component extends DCLogic {
   renderVals(){
     const p = this.props || {};
     return {
+      openAdminLogin: () => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(3,4,7,.96);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+          <div style="position:relative;width:100%;max-width:400px;padding:48px 40px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(248,226,49,.35);box-shadow:0 0 80px rgba(248,226,49,.08);">
+            <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
+            <div style="position:absolute;top:0;right:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
+            <div style="position:absolute;bottom:0;left:0;width:18px;height:18px;border-bottom:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
+            <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
+            <div style="text-align:center;margin-bottom:36px;">
+              <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.28em;color:rgba(248,226,49,.5);margin-bottom:10px;">SOVEREIGN ACCESS</div>
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;letter-spacing:.1em;color:#F4F5F7;">ADMIN LOGIN</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">IDENTIFIER</div>
+                <input id="adminUser" type="text" placeholder="founder@6-empires.com" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.04em;outline:none;box-sizing:border-box;">
+              </div>
+              <div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">PASSKEY</div>
+                <input id="adminPass" type="password" placeholder="••••••••••••" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.08em;outline:none;box-sizing:border-box;">
+              </div>
+              <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
+              <div id="adminErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
+            </div>
+            <button id="adminClose" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(248,226,49,.4);font-size:18px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+          </div>`;
+        document.body.appendChild(overlay);
+        const close = () => document.body.removeChild(overlay);
+        document.getElementById('adminClose').addEventListener('click', close);
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        document.getElementById('adminSubmit').addEventListener('mouseenter', e => { e.target.style.transform='translateY(-2px)';e.target.style.boxShadow='0 8px 28px rgba(248,226,49,.45)'; });
+        document.getElementById('adminSubmit').addEventListener('mouseleave', e => { e.target.style.transform='';e.target.style.boxShadow=''; });
+        document.getElementById('adminSubmit').addEventListener('click', () => {
+          const u = document.getElementById('adminUser').value.trim();
+          const pw = document.getElementById('adminPass').value;
+          const err = document.getElementById('adminErr');
+          if (!u || !pw) { err.textContent = 'ALL FIELDS REQUIRED'; return; }
+          err.style.color = 'rgba(248,226,49,.6)';
+          err.textContent = 'AUTHENTICATING…';
+          setTimeout(() => {
+            err.style.color = 'rgba(220,60,60,.8)';
+            err.textContent = 'ACCESS RESTRICTED — CONTACT ROLAND G.';
+          }, 1400);
+        });
+        setTimeout(() => document.getElementById('adminUser').focus(), 100);
+      },
       heroTitle: p.heroTitle ?? 'EMPIRES',
       showWhiteLogo: p.showWhiteLogo ?? true,
       logoSizePx: (p.logoSize ?? 150) + 'px',
@@ -795,10 +905,7 @@ class Component extends DCLogic {
             ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } } }
       for(const p of nodes){ const tw=0.5+0.5*Math.sin(t*1.1+p.ph);
         ctx.fillStyle='rgba(248,226,49,'+(0.35+0.5*tw).toFixed(3)+')';
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
-        const gg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
-        gg.addColorStop(0,'rgba(248,226,49,'+(0.10*tw).toFixed(3)+')'); gg.addColorStop(1,'rgba(248,226,49,0)');
-        ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*4,0,6.2832); ctx.fill(); }
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); }
       // Empire State skyline
       this.drawSkyline(ctx,W,H,sky,t);
       this._bgRaf=requestAnimationFrame(draw);
@@ -988,6 +1095,109 @@ class Component extends DCLogic {
     this._agentRaf=requestAnimationFrame(step);
   }
 
+  /* ─── CURSOR AMBIENT GLOW (GPU-only: transform3d) ─── */
+  initCursorGlow() {
+    const glow = document.getElementById('cursorGlow');
+    if (!glow) return;
+    let tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+    let cx = tx, cy = ty;
+    const onMove = (e) => {
+      tx = e.clientX; ty = e.clientY;
+      glow.style.opacity = '1';
+    };
+    window.addEventListener('mousemove', onMove, { passive: true });
+    this._glowMove = onMove;
+    const run = () => {
+      cx += (tx - cx) * 0.078; cy += (ty - cy) * 0.078;
+      glow.style.transform = `translate3d(${cx - 230}px,${cy - 230}px,0)`;
+      this._glowRaf = requestAnimationFrame(run);
+    };
+    this._glowRaf = requestAnimationFrame(run);
+  }
+
+  /* ─── MAGNETIC 3D TILT (GPU: transform3d only, no layout props) ─── */
+  initMagnetic() {
+    const targets = document.querySelectorAll(
+      '[data-scene="pillars"] [data-reveal],' +
+      '[data-scene="spaces"] [data-reveal],' +
+      '[data-scene="console"] [data-reveal],' +
+      '[data-scene="close"] [data-cta-btn]'
+    );
+    targets.forEach(el => {
+      const isBtn = el.hasAttribute('data-cta-btn');
+      const move = (e) => {
+        const r = el.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width * 0.5)) / (r.width * 0.5);
+        const dy = (e.clientY - (r.top + r.height * 0.5)) / (r.height * 0.5);
+        el.style.transition = 'transform .12s cubic-bezier(.2,.8,.2,1)';
+        if (isBtn) {
+          const isPrimary = el.dataset.ctaBtn === 'primary';
+          el.style.transform = `translate3d(${dx * 3}px,${-4 + dy}px,0) scale(1.03)`;
+          el.style.boxShadow = isPrimary
+            ? '0 14px 48px rgba(248,226,49,.55)'
+            : '0 0 40px rgba(248,226,49,.28)';
+        } else {
+          el.style.transform =
+            `translate3d(${dx * 5}px,${dy * 4}px,0) perspective(900px) rotateX(${-dy * 3.8}deg) rotateY(${dx * 3.8}deg)`;
+        }
+      };
+      const leave = () => {
+        el.style.transition = 'transform .58s cubic-bezier(.2,.8,.2,1),box-shadow .58s';
+        el.style.transform = 'translate3d(0,0,0)';
+        if (isBtn && el.dataset.ctaBtn === 'outline')
+          el.style.boxShadow = '0 0 20px rgba(248,226,49,.08)';
+        else if (isBtn) el.style.boxShadow = '';
+      };
+      el.addEventListener('mousemove', move, { passive: true });
+      el.addEventListener('mouseleave', leave, { passive: true });
+    });
+  }
+
+  /* ─── TEXT SCRAMBLE REVEAL on section labels ─── */
+  initTextScramble() {
+    if (!window.IntersectionObserver) return;
+    const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+    const scramble = (el) => {
+      const orig = el.textContent;
+      let frame = 0;
+      const q = orig.split('').map((ch, i) => ({
+        to: ch,
+        start: Math.floor((i / orig.length) * 7),
+        end: 11 + Math.floor(Math.random() * 11),
+        cur: CHARS[Math.floor(Math.random() * CHARS.length)]
+      }));
+      const step = () => {
+        let out = '', done = 0;
+        for (const item of q) {
+          if (frame >= item.end) { out += item.to; done++; }
+          else if (frame >= item.start) {
+            item.cur = CHARS[Math.floor(Math.random() * CHARS.length)];
+            out += item.cur;
+          } else { out += item.to; }
+        }
+        el.textContent = out;
+        if (done < q.length) { frame++; requestAnimationFrame(step); }
+        else { el.textContent = orig; }
+      };
+      requestAnimationFrame(step);
+    };
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const txt = e.target.textContent.trim();
+          if (txt.length > 3 && txt.length < 80)
+            setTimeout(() => scramble(e.target), 90);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.55 });
+    document.querySelectorAll(
+      '[data-scene] [style*="letter-spacing:.28em"],' +
+      '[data-scene] [style*="letter-spacing:.32em"],' +
+      '[data-scene] [style*="letter-spacing:.3em"]'
+    ).forEach(el => { if (!el.children.length) obs.observe(el); });
+  }
+
     componentDidMount(){
     this.initManhattanBg();
     this.initBgMesh();
@@ -999,10 +1209,16 @@ class Component extends DCLogic {
     const ticks = document.querySelector('[data-six-ticks]');
     if(ticks){ let h=''; for(let i=0;i<11;i++){ const on=i%5===0; h += '<div style="display:flex;align-items:center;gap:6px;"><span style="width:'+(on?14:7)+'px;height:1px;background:rgba(248,226,49,'+(on?'.7':'.3')+')"></span>'+(on?'<span>'+String(i*10).padStart(3,'0')+'</span>':'')+'</div>'; } ticks.innerHTML=h; }
     this.raf = requestAnimationFrame(()=>this.onScroll());
+    /* boot new systems after first paint */
+    this.initCursorGlow();
+    this.initMagnetic();
+    setTimeout(() => this.initTextScramble(), 600);
   }
   componentWillUnmount(){
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('resize', this.onScroll);
+    if (this._glowRaf) cancelAnimationFrame(this._glowRaf);
+    if (this._glowMove) window.removeEventListener('mousemove', this._glowMove);
     if(this._agentRaf) cancelAnimationFrame(this._agentRaf);
     if(this._bgRaf) cancelAnimationFrame(this._bgRaf);
     if(this._agentResize) window.removeEventListener('resize', this._agentResize);

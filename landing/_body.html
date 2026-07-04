@@ -3,6 +3,9 @@
   <!-- ============ FIXED ANIMATED BACKGROUND (mesh + Empire skyline) ============ -->
   <canvas id="bgMesh" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
+  <!-- CURSOR AMBIENT GLOW — GPU layer, positioned via transform3d only -->
+  <div id="cursorGlow" style="position:fixed;left:0;top:0;width:460px;height:460px;border-radius:50%;pointer-events:none;z-index:86;background:radial-gradient(circle,rgba(248,226,49,.052) 0%,rgba(248,226,49,.016) 36%,transparent 68%);opacity:0;transform:translate3d(-230px,-230px,0);"></div>
+
   <!-- ============ FIXED HUD OVERLAY ============ -->
   <div style="position:fixed;inset:0;z-index:90;pointer-events:none;mix-blend-mode:normal;">
     <!-- scanline sweep -->
@@ -541,12 +544,10 @@
 
       <!-- CTA -->
       <div data-reveal style="opacity:0;transform:translateY(20px);transition:all .9s .52s cubic-bezier(.2,.8,.2,1);display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-        <a href="https://6-empires.com" target="_blank" style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.12em;text-decoration:none;border:none;cursor:pointer;transition:all .2s ease;">
-          ENTER THE EMPIRE →
-        </a>
-        <div style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px;letter-spacing:.12em;border:1px solid rgba(248,226,49,.6);box-shadow:0 0 20px rgba(248,226,49,.08);">
-          6-EMPIRES.COM
-        </div>
+        <button onClick="openAdminLogin()" data-cta-btn="primary" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:#F8E231;color:#050608;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;text-decoration:none;border:none;cursor:pointer;will-change:transform,opacity;transform:translate3d(0,0,0);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s;">
+          <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="12" height="8" rx="1"/><path d="M6 8V5.5a3 3 0 0 1 6 0V8"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
+          ADMIN LOGIN
+        </button>
       </div>
     </div>
 

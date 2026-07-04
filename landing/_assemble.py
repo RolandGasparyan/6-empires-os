@@ -4,6 +4,10 @@ body   = open("./_body.html",encoding="utf-8").read()
 styles = open("./_styles.css",encoding="utf-8").read()
 build  = open("./_build.js",encoding="utf-8").read()
 draw   = open("./_draw.js",encoding="utf-8").read()
+try:
+    enhancements = open("./_enhancements.js",encoding="utf-8").read()
+except FileNotFoundError:
+    enhancements = ""
 
 # turn the class methods into standalone functions operating on a shared state object S
 # _buildManhattan(canvas){...}  -> function buildManhattan(canvas){...}
@@ -97,6 +101,7 @@ html,body{{background:#030508;margin:0;padding:0;}}
 {body}
 <script>{canvas_js}</script>
 <script>{reveal_js}</script>
+<script>{enhancements}</script>
 </body>
 </html>
 """
