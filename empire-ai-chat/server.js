@@ -22,7 +22,7 @@ let BRAIN_CONTEXT = '';
 function loadBrain() {
   try {
     const b = JSON.parse(fs.readFileSync(BRAIN_PATH, 'utf8'));
-    const digest = (b.notes || []).map((n) => `## ${n.title}\n${n.text}`).join('\n\n').slice(0, 6000);
+    const digest = (b.notes || []).map((n) => `## ${n.title}\n${n.text}`).join('\n\n').slice(0, 1800); /* titlesOnly-trim: lean digest to conserve Groq TPD */
     BRAIN_CONTEXT = digest ? `\n\n=== EMPIRE SECOND-BRAIN (Obsidian vault — authoritative founder knowledge) ===\n${digest}\n=== END SECOND-BRAIN ===\n` : '';
   } catch { BRAIN_CONTEXT = ''; }
 }
@@ -62,6 +62,42 @@ function groqStream(messages, res) {
     const r = https.request(
       { hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY, 'Content-Length': Buffer.byteLength(data) } },
+      (up) => {
+        if (up.statusCode !== 200) { let e = ''; up.on('data', (c) => (e += c)); up.on('end', () => resolve(false)); return; }
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+        let buf = '';
+        up.on('data', (chunk) => {
+          buf += chunk.toString();
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx).trim(); buf = buf.slice(idx + 1);
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') { res.end(); resolve(true); return; }
+            try { const j = JSON.parse(payload); const t = j.choices?.[0]?.delta?.content; if (t) res.write(t); } catch {}
+          }
+        });
+        up.on('end', () => { res.end(); resolve(true); });
+      }
+    );
+    r.on('error', () => resolve(false));
+    r.write(data); r.end();
+  });
+}
+
+// --- OpenAI fallback (cheap, excellent multilingual incl. Armenian). Same SSE
+//     shape as Groq, so a 429/limit on Groq transparently escalates to here. ---
+function readOpenAIKey() { const k = (readKeys().OPENAI_API_KEY || '').trim(); return k || (process.env.OPENAI_API_KEY || ''); }
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+function openaiStream(messages, res) {
+  return new Promise((resolve) => {
+    const key = readOpenAIKey();
+    if (!key) return resolve(false);
+    const https = require('https');
+    const data = JSON.stringify({ model: OPENAI_MODEL, messages, stream: true, temperature: 0.7 });
+    const r = https.request(
+      { hostname: (process.env.OPENAI_BASE || 'api.aimlapi.com'), path: '/v1/chat/completions', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Content-Length': Buffer.byteLength(data) } },
       (up) => {
         if (up.statusCode !== 200) { let e = ''; up.on('data', (c) => (e += c)); up.on('end', () => resolve(false)); return; }
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
@@ -178,7 +214,7 @@ const server = http.createServer(async (req, res) => {
   // All keys the manager knows about. `validate` keys are live-checked before save.
   const KEY_DEFS = [
     { id: 'FREE_GROQ_KEY',    label: 'Groq',      prefix: 'gsk_',      validate: 'groq' },
-    { id: 'OPENAI_API_KEY',   label: 'OpenAI',    prefix: 'sk-',       validate: 'openai' },
+    { id: 'OPENAI_API_KEY',   label: 'OpenAI / AIML', prefix: '',      validate: null },
     { id: 'ANTHROPIC_API_KEY',label: 'Anthropic', prefix: 'sk-ant-',   validate: 'anthropic' },
     { id: 'COMPOSIO_API_KEY', label: 'Composio',  prefix: '',          validate: null },
   ];
@@ -300,6 +336,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       let payload;
       try { payload = JSON.parse(raw); } catch { payload = {}; }
+      GROQ_KEY = readGroqKey(); // per-request refresh (picks up live key rotations)
       const model = payload.model || DEFAULT_MODEL;
       const mode = payload.mode || 'god';
       const incoming = payload.messages || [];
@@ -324,19 +361,26 @@ const server = http.createServer(async (req, res) => {
         let useGroq;
         if (route === 'local') useGroq = false;
         else if (route === 'cloud' || route === 'groq') useGroq = !!GROQ_KEY;
-        else useGroq = GROQ_KEY && !isGreeting;
+        else useGroq = !!GROQ_KEY;
 
         const localFallback = () => {
           res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
           empireChat(model, messages).then((t) => res.end(t || '…')).catch((e) => res.end('⚠️ router unreachable: ' + e.message));
         };
 
-        if (useGroq) {
-          groqStream(messages, res).then((ok) => { if (!ok) localFallback(); });
-          return;
-        }
-        // greeting (or no Groq key) → local/private router (which is itself hybrid)
-        localFallback();
+        // Cloud chain: Groq (fast/free) -> OpenAI (cheap, great Armenian) -> local router.
+        // Each *Stream writes response headers ONLY on HTTP 200, so on any failure
+        // (e.g. Groq 429 daily-limit) we can transparently try the next provider.
+        const cloudChain = () => {
+          (useGroq ? groqStream(messages, res) : Promise.resolve(false)).then((ok) => {
+            if (ok) return;
+            (readOpenAIKey() ? openaiStream(messages, res) : Promise.resolve(false)).then((ok2) => {
+              if (!ok2) localFallback();
+            });
+          });
+        };
+        if (route === 'local') { localFallback(); return; }   // private-only mode
+        cloudChain();
         return;
       }
 
@@ -375,8 +419,9 @@ const server = http.createServer(async (req, res) => {
         const ext = ctype.indexOf('ogg') >= 0 ? 'ogg' : (ctype.indexOf('mp4') >= 0 ? 'mp4' : 'webm');
         const fd = new FormData();
         fd.append('file', new Blob([buf], { type: ctype }), 'audio.' + ext);
-        fd.append('model', 'whisper-large-v3-turbo');
+        fd.append('model', 'whisper-large-v3');
         fd.append('response_format', 'json');
+        fd.append('language', process.env.STT_LANG || 'hy'); // Armenian-first; set STT_LANG='' env to auto-detect
         fd.append('temperature', '0');
         const gr = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': 'Bearer ' + GROQ_KEY }, body: fd });
         const j = await gr.json().catch(() => ({}));
