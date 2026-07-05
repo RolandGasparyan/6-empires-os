@@ -1235,13 +1235,30 @@ function openAdminLogin() {
           const u = document.getElementById('adminUser').value.trim();
           const pw = document.getElementById('adminPass').value;
           const err = document.getElementById('adminErr');
-          if (!u || !pw) { err.textContent = 'ALL FIELDS REQUIRED'; return; }
+          const btn = document.getElementById('adminSubmit');
+          if (!u || !pw) { err.style.color = 'rgba(220,60,60,.8)'; err.textContent = 'ALL FIELDS REQUIRED'; return; }
           err.style.color = 'rgba(248,226,49,.6)';
           err.textContent = 'AUTHENTICATING…';
-          setTimeout(() => {
+          btn.disabled = true;
+          fetch('/chat/api/admin/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pass: pw })
+          }).then(r => r.json()).then(j => {
+            btn.disabled = false;
+            if (j.ok) {
+              err.style.color = 'rgba(80,220,120,.9)';
+              err.textContent = 'ACCESS GRANTED — REDIRECTING…';
+              setTimeout(() => { window.location.href = '/chat/keys'; }, 700);
+            } else {
+              err.style.color = 'rgba(220,60,60,.8)';
+              err.textContent = 'ACCESS DENIED — INVALID PASSKEY';
+            }
+          }).catch(() => {
+            btn.disabled = false;
             err.style.color = 'rgba(220,60,60,.8)';
-            err.textContent = 'ACCESS RESTRICTED — CONTACT ROLAND G.';
-          }, 1400);
+            err.textContent = 'CONNECTION ERROR — TRY AGAIN';
+          });
         });
         setTimeout(() => document.getElementById('adminUser').focus(), 100);
       }
