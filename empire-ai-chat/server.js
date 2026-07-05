@@ -170,7 +170,7 @@ button:disabled{opacity:.5;cursor:default}
 .status{margin-top:8px;font-family:'Space Mono',monospace;font-size:12px;color:rgba(253,199,44,.7)}
 </style></head><body><div class="card">
 <h1>◆ EMPIRE · API KEYS</h1><p class="sub">Fill only what you want to change, then SAVE ALL. Applies live — no restart. Blank = keep current.</p>
-<label>ADMIN PASSWORD</label><input id="pass" type="password" placeholder="admin password" autocomplete="off">
+<label>ADMIN PASSWORD</label><div style="position:relative"><input id="pass" type="password" placeholder="admin password" autocomplete="off" style="padding-right:42px"><button type="button" id="eyeBtn" onclick="togglePw()" title="Show / hide" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);margin:0;width:auto;padding:4px 8px;background:none;border:none;color:rgba(253,199,44,.65);cursor:pointer;font-size:16px">&#128065;</button></div><div class="row" style="justify-content:space-between"><label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;letter-spacing:0;color:rgba(253,199,44,.75)"><input type="checkbox" id="remember" style="width:auto;margin:0">Remember me</label><button type="button" onclick="quickLogin()" style="margin:0;width:auto;padding:8px 14px;background:rgba(253,199,44,.12);border:1px solid rgba(253,199,44,.4);color:#FDC72C;font-size:12px;letter-spacing:.1em">&#9889; QUICK LOGIN</button></div>
 <label>GROQ <span class="muted" id="c_FREE_GROQ_KEY"></span></label><input data-key="FREE_GROQ_KEY" type="text" placeholder="gsk_..." autocomplete="off" spellcheck="false">
 <label>OPENAI <span class="muted" id="c_OPENAI_API_KEY"></span></label><input data-key="OPENAI_API_KEY" type="text" placeholder="sk-..." autocomplete="off" spellcheck="false">
 <label>ANTHROPIC <span class="muted" id="c_ANTHROPIC_API_KEY"></span></label><input data-key="ANTHROPIC_API_KEY" type="text" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
@@ -194,6 +194,12 @@ async function save(){const pass=document.getElementById('pass').value;const key
  if(j.ok){msg.innerHTML=Object.entries(j.results).map(([k,v])=>k+': '+v).join('<br>');msg.className='msg '+(JSON.stringify(j.results).includes('✗')?'err':'ok');inputs().forEach(i=>i.value='');status();}
  else{msg.textContent='✗ '+(j.error||'failed');msg.className='msg err';}}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}
  btn.disabled=false;}
+
+const PKEY='empire_admin_pass';
+function togglePw(){var p=document.getElementById('pass'),e=document.getElementById('eyeBtn');if(p.type==='password'){p.type='text';e.innerHTML='&#128584;';}else{p.type='password';e.innerHTML='&#128065;';}}
+function rememberSync(){var r=document.getElementById('remember'),p=document.getElementById('pass').value;if(r&&r.checked&&p){localStorage.setItem(PKEY,p);}else if(r&&!r.checked){localStorage.removeItem(PKEY);}}
+function quickLogin(){var s=localStorage.getItem(PKEY);if(s){document.getElementById('pass').value=s;var r=document.getElementById('remember');if(r)r.checked=true;status();}else{var m=document.getElementById('msg');m.textContent='No saved password yet — type it once with "Remember me" on, then Quick Login works.';m.className='msg muted';}}
+window.addEventListener('DOMContentLoaded',function(){var s=localStorage.getItem(PKEY);var pi=document.getElementById('pass'),rc=document.getElementById('remember');if(s&&pi){pi.value=s;if(rc)rc.checked=true;status();}if(rc)rc.addEventListener('change',rememberSync);if(pi)pi.addEventListener('input',rememberSync);});
 </script></body></html>`;
 
 const server = http.createServer(async (req, res) => {
