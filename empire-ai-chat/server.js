@@ -22,7 +22,7 @@ let BRAIN_CONTEXT = '';
 function loadBrain() {
   try {
     const b = JSON.parse(fs.readFileSync(BRAIN_PATH, 'utf8'));
-    const digest = (b.notes || []).map((n) => `## ${n.title}\n${n.text}`).join('\n\n').slice(0, 6000);
+    const digest = (b.notes || []).map((n) => `## ${n.title}\n${n.text}`).join('\n\n').slice(0, 1800); /* titlesOnly-trim: lean digest to conserve Groq TPD */
     BRAIN_CONTEXT = digest ? `\n\n=== EMPIRE SECOND-BRAIN (Obsidian vault — authoritative founder knowledge) ===\n${digest}\n=== END SECOND-BRAIN ===\n` : '';
   } catch { BRAIN_CONTEXT = ''; }
 }
@@ -62,6 +62,42 @@ function groqStream(messages, res) {
     const r = https.request(
       { hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY, 'Content-Length': Buffer.byteLength(data) } },
+      (up) => {
+        if (up.statusCode !== 200) { let e = ''; up.on('data', (c) => (e += c)); up.on('end', () => resolve(false)); return; }
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+        let buf = '';
+        up.on('data', (chunk) => {
+          buf += chunk.toString();
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx).trim(); buf = buf.slice(idx + 1);
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') { res.end(); resolve(true); return; }
+            try { const j = JSON.parse(payload); const t = j.choices?.[0]?.delta?.content; if (t) res.write(t); } catch {}
+          }
+        });
+        up.on('end', () => { res.end(); resolve(true); });
+      }
+    );
+    r.on('error', () => resolve(false));
+    r.write(data); r.end();
+  });
+}
+
+// --- OpenAI fallback (cheap, excellent multilingual incl. Armenian). Same SSE
+//     shape as Groq, so a 429/limit on Groq transparently escalates to here. ---
+function readOpenAIKey() { const k = (readKeys().OPENAI_API_KEY || '').trim(); return k || (process.env.OPENAI_API_KEY || ''); }
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+function openaiStream(messages, res) {
+  return new Promise((resolve) => {
+    const key = readOpenAIKey();
+    if (!key) return resolve(false);
+    const https = require('https');
+    const data = JSON.stringify({ model: OPENAI_MODEL, messages, stream: true, temperature: 0.7 });
+    const r = https.request(
+      { hostname: (process.env.OPENAI_BASE || 'api.aimlapi.com'), path: '/v1/chat/completions', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Content-Length': Buffer.byteLength(data) } },
       (up) => {
         if (up.statusCode !== 200) { let e = ''; up.on('data', (c) => (e += c)); up.on('end', () => resolve(false)); return; }
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
@@ -134,7 +170,7 @@ button:disabled{opacity:.5;cursor:default}
 .status{margin-top:8px;font-family:'Space Mono',monospace;font-size:12px;color:rgba(253,199,44,.7)}
 </style></head><body><div class="card">
 <h1>◆ EMPIRE · API KEYS</h1><p class="sub">Fill only what you want to change, then SAVE ALL. Applies live — no restart. Blank = keep current.</p>
-<label>ADMIN PASSWORD</label><input id="pass" type="password" placeholder="admin password" autocomplete="off">
+<label>ADMIN PASSWORD</label><div style="position:relative"><input id="pass" type="password" placeholder="admin password" autocomplete="off" style="padding-right:42px"><button type="button" id="eyeBtn" onclick="togglePw()" title="Show / hide" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);margin:0;width:auto;padding:4px 8px;background:none;border:none;color:rgba(253,199,44,.65);cursor:pointer;font-size:16px">&#128065;</button></div><div class="row" style="justify-content:space-between"><label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;letter-spacing:0;color:rgba(253,199,44,.75)"><input type="checkbox" id="remember" style="width:auto;margin:0">Remember me</label><button type="button" onclick="quickLogin()" style="margin:0;width:auto;padding:8px 14px;background:rgba(253,199,44,.12);border:1px solid rgba(253,199,44,.4);color:#FDC72C;font-size:12px;letter-spacing:.1em">&#9889; QUICK LOGIN</button></div>
 <label>GROQ <span class="muted" id="c_FREE_GROQ_KEY"></span></label><input data-key="FREE_GROQ_KEY" type="text" placeholder="gsk_..." autocomplete="off" spellcheck="false">
 <label>OPENAI <span class="muted" id="c_OPENAI_API_KEY"></span></label><input data-key="OPENAI_API_KEY" type="text" placeholder="sk-..." autocomplete="off" spellcheck="false">
 <label>ANTHROPIC <span class="muted" id="c_ANTHROPIC_API_KEY"></span></label><input data-key="ANTHROPIC_API_KEY" type="text" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
@@ -158,6 +194,12 @@ async function save(){const pass=document.getElementById('pass').value;const key
  if(j.ok){msg.innerHTML=Object.entries(j.results).map(([k,v])=>k+': '+v).join('<br>');msg.className='msg '+(JSON.stringify(j.results).includes('✗')?'err':'ok');inputs().forEach(i=>i.value='');status();}
  else{msg.textContent='✗ '+(j.error||'failed');msg.className='msg err';}}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}
  btn.disabled=false;}
+
+const PKEY='empire_admin_pass';
+function togglePw(){var p=document.getElementById('pass'),e=document.getElementById('eyeBtn');if(p.type==='password'){p.type='text';e.innerHTML='&#128584;';}else{p.type='password';e.innerHTML='&#128065;';}}
+function rememberSync(){var r=document.getElementById('remember'),p=document.getElementById('pass').value;if(r&&r.checked&&p){localStorage.setItem(PKEY,p);}else if(r&&!r.checked){localStorage.removeItem(PKEY);}}
+function quickLogin(){var s=localStorage.getItem(PKEY);if(s){document.getElementById('pass').value=s;var r=document.getElementById('remember');if(r)r.checked=true;status();}else{var m=document.getElementById('msg');m.textContent='No saved password yet — type it once with "Remember me" on, then Quick Login works.';m.className='msg muted';}}
+window.addEventListener('DOMContentLoaded',function(){var s=localStorage.getItem(PKEY);var pi=document.getElementById('pass'),rc=document.getElementById('remember');if(s&&pi){pi.value=s;if(rc)rc.checked=true;status();}if(rc)rc.addEventListener('change',rememberSync);if(pi)pi.addEventListener('input',rememberSync);});
 </script></body></html>`;
 
 const server = http.createServer(async (req, res) => {
@@ -178,7 +220,7 @@ const server = http.createServer(async (req, res) => {
   // All keys the manager knows about. `validate` keys are live-checked before save.
   const KEY_DEFS = [
     { id: 'FREE_GROQ_KEY',    label: 'Groq',      prefix: 'gsk_',      validate: 'groq' },
-    { id: 'OPENAI_API_KEY',   label: 'OpenAI',    prefix: 'sk-',       validate: 'openai' },
+    { id: 'OPENAI_API_KEY',   label: 'OpenAI / AIML', prefix: '',      validate: null },
     { id: 'ANTHROPIC_API_KEY',label: 'Anthropic', prefix: 'sk-ant-',   validate: 'anthropic' },
     { id: 'COMPOSIO_API_KEY', label: 'Composio',  prefix: '',          validate: null },
   ];
@@ -300,6 +342,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       let payload;
       try { payload = JSON.parse(raw); } catch { payload = {}; }
+      GROQ_KEY = readGroqKey(); // per-request refresh (picks up live key rotations)
       const model = payload.model || DEFAULT_MODEL;
       const mode = payload.mode || 'god';
       const incoming = payload.messages || [];
@@ -324,19 +367,26 @@ const server = http.createServer(async (req, res) => {
         let useGroq;
         if (route === 'local') useGroq = false;
         else if (route === 'cloud' || route === 'groq') useGroq = !!GROQ_KEY;
-        else useGroq = GROQ_KEY && !isGreeting;
+        else useGroq = !!GROQ_KEY;
 
         const localFallback = () => {
           res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
           empireChat(model, messages).then((t) => res.end(t || '…')).catch((e) => res.end('⚠️ router unreachable: ' + e.message));
         };
 
-        if (useGroq) {
-          groqStream(messages, res).then((ok) => { if (!ok) localFallback(); });
-          return;
-        }
-        // greeting (or no Groq key) → local/private router (which is itself hybrid)
-        localFallback();
+        // Cloud chain: Groq (fast/free) -> OpenAI (cheap, great Armenian) -> local router.
+        // Each *Stream writes response headers ONLY on HTTP 200, so on any failure
+        // (e.g. Groq 429 daily-limit) we can transparently try the next provider.
+        const cloudChain = () => {
+          (useGroq ? groqStream(messages, res) : Promise.resolve(false)).then((ok) => {
+            if (ok) return;
+            (readOpenAIKey() ? openaiStream(messages, res) : Promise.resolve(false)).then((ok2) => {
+              if (!ok2) localFallback();
+            });
+          });
+        };
+        if (route === 'local') { localFallback(); return; }   // private-only mode
+        cloudChain();
         return;
       }
 
@@ -375,8 +425,9 @@ const server = http.createServer(async (req, res) => {
         const ext = ctype.indexOf('ogg') >= 0 ? 'ogg' : (ctype.indexOf('mp4') >= 0 ? 'mp4' : 'webm');
         const fd = new FormData();
         fd.append('file', new Blob([buf], { type: ctype }), 'audio.' + ext);
-        fd.append('model', 'whisper-large-v3-turbo');
+        fd.append('model', 'whisper-large-v3');
         fd.append('response_format', 'json');
+        fd.append('language', process.env.STT_LANG || 'hy'); // Armenian-first; set STT_LANG='' env to auto-detect
         fd.append('temperature', '0');
         const gr = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': 'Bearer ' + GROQ_KEY }, body: fd });
         const j = await gr.json().catch(() => ({}));
