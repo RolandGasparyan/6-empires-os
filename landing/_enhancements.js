@@ -1199,6 +1199,11 @@ var SIX2 = {
   }
 };
 function openAdminLogin() {
+        const TRUST_KEY = 'empire_admin_trust', TRUST_DAYS = 30;
+        const isTrusted = () => { try { const t = JSON.parse(localStorage.getItem(TRUST_KEY) || 'null'); return !!(t && t.exp && Date.now() < t.exp); } catch { return false; } };
+        const setTrusted = () => { try { localStorage.setItem(TRUST_KEY, JSON.stringify({ exp: Date.now() + TRUST_DAYS * 86400000 })); } catch {} };
+        const clearTrusted = () => { try { localStorage.removeItem(TRUST_KEY); } catch {} };
+
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(3,4,7,.96);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
@@ -1211,39 +1216,73 @@ function openAdminLogin() {
               <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.28em;color:rgba(248,226,49,.5);margin-bottom:10px;">SOVEREIGN ACCESS</div>
               <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;letter-spacing:.1em;color:#F4F5F7;">ADMIN LOGIN</div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:14px;">
-              <div>
-                <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">IDENTIFIER</div>
-                <input id="adminUser" type="text" placeholder="founder@6-empires.com" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.04em;outline:none;box-sizing:border-box;">
-              </div>
-              <div>
-                <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">PASSKEY</div>
-                <input id="adminPass" type="password" placeholder="••••••••••••" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.08em;outline:none;box-sizing:border-box;">
-              </div>
-              <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
-              <div id="adminErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
-            </div>
+            <div id="adminBody" style="display:flex;flex-direction:column;gap:14px;"></div>
             <button id="adminClose" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(248,226,49,.4);font-size:18px;cursor:pointer;line-height:1;padding:4px;">✕</button>
           </div>`;
         document.body.appendChild(overlay);
         const close = () => document.body.removeChild(overlay);
         document.getElementById('adminClose').addEventListener('click', close);
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-        document.getElementById('adminSubmit').addEventListener('mouseenter', e => { e.target.style.transform='translateY(-2px)';e.target.style.boxShadow='0 8px 28px rgba(248,226,49,.45)'; });
-        document.getElementById('adminSubmit').addEventListener('mouseleave', e => { e.target.style.transform='';e.target.style.boxShadow=''; });
-        document.getElementById('adminSubmit').addEventListener('click', () => {
-          const u = document.getElementById('adminUser').value.trim();
-          const pw = document.getElementById('adminPass').value;
-          const err = document.getElementById('adminErr');
-          if (!u || !pw) { err.textContent = 'ALL FIELDS REQUIRED'; return; }
-          err.style.color = 'rgba(248,226,49,.6)';
-          err.textContent = 'AUTHENTICATING…';
-          setTimeout(() => {
-            err.style.color = 'rgba(220,60,60,.8)';
-            err.textContent = 'ACCESS RESTRICTED — CONTACT ROLAND G.';
-          }, 1400);
-        });
-        setTimeout(() => document.getElementById('adminUser').focus(), 100);
+
+        const body = overlay.querySelector('#adminBody');
+
+        const renderForm = () => {
+          body.innerHTML = `
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">PASSKEY</div>
+              <input id="adminPass" type="password" placeholder="••••••••••••" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.08em;outline:none;box-sizing:border-box;">
+            </div>
+            <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
+            <div id="adminErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
+          `;
+          const submit = body.querySelector('#adminSubmit');
+          const passInput = body.querySelector('#adminPass');
+          const err = body.querySelector('#adminErr');
+          submit.addEventListener('mouseenter', () => { submit.style.transform = 'translateY(-2px)'; submit.style.boxShadow = '0 8px 28px rgba(248,226,49,.45)'; });
+          submit.addEventListener('mouseleave', () => { submit.style.transform = ''; submit.style.boxShadow = ''; });
+          const doSubmit = () => {
+            const pw = passInput.value;
+            if (!pw) { err.style.color = 'rgba(220,60,60,.8)'; err.textContent = 'ENTER PASSKEY'; return; }
+            err.style.color = 'rgba(248,226,49,.6)';
+            err.textContent = 'AUTHENTICATING…';
+            submit.disabled = true;
+            fetch('/chat/api/admin/status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pass: pw })
+            }).then(r => r.json()).then(j => {
+              submit.disabled = false;
+              if (j.ok) {
+                setTrusted();
+                err.style.color = 'rgba(80,220,120,.9)';
+                err.textContent = 'ACCESS GRANTED — REDIRECTING…';
+                setTimeout(() => { window.location.href = '/chat/keys'; }, 600);
+              } else {
+                err.style.color = 'rgba(220,60,60,.8)';
+                err.textContent = 'ACCESS DENIED — INVALID PASSKEY';
+              }
+            }).catch(() => {
+              submit.disabled = false;
+              err.style.color = 'rgba(220,60,60,.8)';
+              err.textContent = 'CONNECTION ERROR — TRY AGAIN';
+            });
+          };
+          submit.addEventListener('click', doSubmit);
+          passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+          setTimeout(() => passInput.focus(), 100);
+        };
+
+        const renderTrustedView = () => {
+          body.innerHTML = `
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;color:rgba(244,245,247,.8);text-align:center;margin-bottom:6px;">Welcome back — this device is trusted.</div>
+            <button id="adminContinue" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;">CONTINUE →</button>
+            <button id="adminForget" style="width:100%;padding:8px;background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(248,226,49,.4);">NOT YOU? USE PASSKEY INSTEAD</button>
+          `;
+          body.querySelector('#adminContinue').addEventListener('click', () => { window.location.href = '/chat/keys'; });
+          body.querySelector('#adminForget').addEventListener('click', () => { clearTrusted(); renderForm(); });
+        };
+
+        if (isTrusted()) renderTrustedView(); else renderForm();
       }
 (function(){
   if(!SIX2.componentDidMount) return;
