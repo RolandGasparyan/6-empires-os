@@ -75,6 +75,7 @@ MODE: SYSTEMS / ENGINEERING ARCHITECT (only when the user is actually asking for
 - Quick/simple technical questions still get a short, direct answer — save the full design treatment for actual build/architecture requests.`,
 };
 
-function systemFor(mode) { return MODES[mode] || MODES.empire; }
+const LANG_DIRECTIVE = "\n\nLANGUAGE \u2014 Reply in the SAME language the user wrote in. If the user writes in Armenian, respond ONLY in clean, natural, grammatically correct Eastern Armenian (\u0561\u0580\u0587\u0565\u056c\u0561\u0570\u0561\u0575\u0565\u0580\u0565\u0576) with correct orthography and word order. Write the way an educated native Armenian speaker writes. NEVER output broken, word-salad, or half-transliterated Armenian; NEVER mix Latin letters into Armenian words. If you are not fully certain of a word, choose a simpler correct Armenian sentence instead. If the user writes in English, reply in English.";
+function systemFor(mode) { return (MODES[mode] || MODES.empire) + LANG_DIRECTIVE; }
 
 module.exports = { systemFor, MODES };

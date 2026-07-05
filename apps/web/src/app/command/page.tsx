@@ -73,7 +73,7 @@ export default function CommandPage() {
       {!entered && (
         <div className="absolute inset-0 grid place-items-center backdrop-blur-sm" style={{ background: '#050507e6' }}>
           <div className="text-center">
-            <img src="/empire-logo.svg" width={150} height={175} alt="6 Empire" className="mx-auto" />
+            <img src="/empire-logo.png" width={160} height={160} alt="6 Empire" className="mx-auto" style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 34px rgba(253,199,44,.55))', animation: 'spinSlow 48s linear infinite' }} />
             <div className="mt-1 font-serif tracking-[0.28em] text-[12px] text-white/60">OUR EMPIRE TEAM</div>
             <button onClick={enter} className="mt-5 px-10 py-4 rounded-xl font-serif tracking-[0.2em] text-[15px] font-semibold"
               style={{ background: 'linear-gradient(135deg,#f4d98b,#c8941a)', color: '#0a0a0b', boxShadow: `0 0 50px -8px ${GOLD}` }}>

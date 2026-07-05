@@ -397,7 +397,7 @@ async function toggleVoiceInput(){const b=$('voiceMicBtn');
   try{_mstream=await navigator.mediaDevices.getUserMedia({audio:dev?{deviceId:{exact:dev},echoCancellation:true,noiseSuppression:true}:{echoCancellation:true,noiseSuppression:true}});}catch(e){vDisp('Mic error: '+e.name);return;}
   _mchunks=[];
   const mm=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':((window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm'))?'audio/webm':'');
-  try{_mrec=mm?new MediaRecorder(_mstream,{mimeType:mm}):new MediaRecorder(_mstream);}catch(e){vDisp('Recorder unsupported');return;}
+  try{_mgctx=new (window.AudioContext||window.webkitAudioContext)();var _src=_mgctx.createMediaStreamSource(_mstream);var _gn=_mgctx.createGain();_gn.gain.value=2.8;var _dst=_mgctx.createMediaStreamDestination();_src.connect(_gn);_gn.connect(_dst);_mrec=mm?new MediaRecorder(_dst.stream,{mimeType:mm}):new MediaRecorder(_dst.stream);}catch(e){try{_mrec=new MediaRecorder(_mstream);}catch(e2){vDisp('Recorder unsupported');return;}}
   _mrec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)_mchunks.push(e.data);};
   _mrec.onstart=()=>{_listening=true;b&&b.classList.add('voice-listening');vDisp('🎙 Listening… speak, then pause');try{speechSynthesis.cancel();}catch(_){}
     // Auto-stop on silence (VAD): once you speak, a ~1.4s pause ends + sends it — no 2nd tap.
@@ -412,7 +412,7 @@ async function toggleVoiceInput(){const b=$('voiceMicBtn');
         if(spoke&&(now-lastLoud)>1400){try{_mrec&&_mrec.state==='recording'&&_mrec.stop();}catch(_){}}
       },120);
     }catch(_){}};
-  _mrec.onstop=async()=>{_listening=false;b&&b.classList.remove('voice-listening');try{clearInterval(_vadTimer);}catch(_){}try{_vac&&_vac.close();}catch(_){}try{_mstream.getTracks().forEach(t=>t.stop());}catch(_){}
+  _mrec.onstop=async()=>{_listening=false;b&&b.classList.remove('voice-listening');try{clearInterval(_vadTimer);}catch(_){}try{_vac&&_vac.close();}catch(_){}try{_mstream.getTracks().forEach(t=>t.stop());}catch(_){}try{_mgctx&&_mgctx.close();_mgctx=null;}catch(_){}
     const blob=new Blob(_mchunks,{type:(_mrec&&_mrec.mimeType)||'audio/webm'});
     if(!blob||!blob.size){vDisp('');return;}
     vDisp('⏳ Transcribing…');
