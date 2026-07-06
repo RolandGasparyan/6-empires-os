@@ -12,6 +12,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const { systemFor } = require('./prompts');
 
@@ -52,6 +53,30 @@ const _fsk = require('fs');
 function readKeys() { try { return JSON.parse(_fsk.readFileSync(KEYS_FILE, 'utf8')); } catch { return {}; } }
 function readGroqKey() { const k = (readKeys().FREE_GROQ_KEY || '').trim(); return k || (process.env.FREE_GROQ_KEY || ''); }
 function adminPass() { return (readKeys().admin_pass || process.env.ADMIN_PASS || 'EMPIRE_KEYS_2026'); }
+
+// --- Admin "remember this device" sessions ---------------------------------
+// Hardened replacement for storing the raw admin password in localStorage:
+// the client never persists the real password. A successful password check
+// mints a random, revocable, 30-day opaque token (meaningless outside this
+// server's in-memory SESSIONS map) which the client stores instead. Losing
+// this token (XSS, stolen device, etc.) exposes a single expiring session,
+// never the master password.
+const SESSIONS = new Map(); // token -> expiry ms
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+function issueSession() {
+  const token = crypto.randomBytes(24).toString('hex');
+  SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+  return token;
+}
+function validSession(token) {
+  if (!token) return false;
+  const exp = SESSIONS.get(token);
+  if (!exp) return false;
+  if (Date.now() > exp) { SESSIONS.delete(token); return false; }
+  return true;
+}
+function revokeSession(token) { if (token) SESSIONS.delete(token); }
+function authOk(b) { return !!((b.pass && b.pass === adminPass()) || validSession(b.token)); }
 let GROQ_KEY = readGroqKey();          // refreshed at the top of every request
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 // stream Groq tokens straight to the browser; returns true if it handled the request
@@ -176,30 +201,53 @@ button:disabled{opacity:.5;cursor:default}
 <label>ANTHROPIC <span class="muted" id="c_ANTHROPIC_API_KEY"></span></label><input data-key="ANTHROPIC_API_KEY" type="text" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
 <label>COMPOSIO <span class="muted" id="c_COMPOSIO_API_KEY"></span></label><input data-key="COMPOSIO_API_KEY" type="text" placeholder="composio key" autocomplete="off" spellcheck="false">
 <button id="save" onclick="save()">SAVE ALL &amp; APPLY</button>
-<div class="row"><button style="margin:0;background:none;border:1px solid rgba(253,199,44,.3);color:#FDC72C" onclick="status()">CHECK CURRENT</button></div>
+<div class="row"><button style="margin:0;background:none;border:1px solid rgba(253,199,44,.3);color:#FDC72C" onclick="status()">CHECK CURRENT</button><button type="button" style="margin:0;background:none;border:1px solid rgba(220,80,80,.35);color:#f87171" onclick="forgetDevice()">FORGET DEVICE</button></div>
 <div id="msg" class="msg muted">Groq / OpenAI / Anthropic keys are live-validated before saving.</div>
 </div><script>
 const api=(p)=>location.pathname.replace(/\\/keys.*$/,'').replace(/\\/admin.*$/,'')+p;
 function inputs(){return Array.from(document.querySelectorAll('input[data-key]'));}
+
+// --- Remember this device: NEVER store the real password. A successful
+// login mints a random, revocable, 30-day session token from the server;
+// only that opaque token is kept in localStorage. ---
+const TKEY='empire_admin_token';
+function getToken(){return localStorage.getItem(TKEY)||'';}
+function setToken(t){if(t)localStorage.setItem(TKEY,t);}
+function clearToken(){localStorage.removeItem(TKEY);}
+function authBody(extra){const t=getToken();const base=t?{token:t}:{pass:document.getElementById('pass').value};return Object.assign(base,extra||{});}
+
+async function maybeRemember(passUsed){
+ const rc=document.getElementById('remember');
+ if(!(rc&&rc.checked&&passUsed&&!getToken()))return;
+ try{const r=await fetch(api('/api/admin/login'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass:passUsed})});const j=await r.json();
+ if(j.ok&&j.token)setToken(j.token);}catch(e){}
+}
+
 async function status(){const pass=document.getElementById('pass').value;const msg=document.getElementById('msg');msg.textContent='checking…';msg.className='msg muted';
- try{const r=await fetch(api('/api/admin/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass})});const j=await r.json();
+ try{const r=await fetch(api('/api/admin/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(authBody())});const j=await r.json();
  if(!j.ok){msg.textContent='✗ '+(j.error||'error');msg.className='msg err';return;}
  for(const k in j.keys){const el=document.getElementById('c_'+k);if(el)el.textContent='· '+j.keys[k];}
- msg.textContent='Current keys shown next to each label.';msg.className='msg ok';}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}}
+ msg.textContent='Current keys shown next to each label.';msg.className='msg ok';
+ await maybeRemember(pass);
+ if(getToken()){document.getElementById('pass').value='';var rc=document.getElementById('remember');if(rc)rc.checked=true;}
+ }catch(e){msg.textContent='✗ '+e;msg.className='msg err';}}
 async function save(){const pass=document.getElementById('pass').value;const keys={};inputs().forEach(i=>{const v=i.value.trim();if(v)keys[i.dataset.key]=v;});
  const msg=document.getElementById('msg');const btn=document.getElementById('save');
  if(!Object.keys(keys).length){msg.textContent='Fill at least one key.';msg.className='msg err';return;}
  btn.disabled=true;msg.textContent='Validating & saving…';msg.className='msg muted';
- try{const r=await fetch(api('/api/admin/save'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass,keys})});const j=await r.json();
- if(j.ok){msg.innerHTML=Object.entries(j.results).map(([k,v])=>k+': '+v).join('<br>');msg.className='msg '+(JSON.stringify(j.results).includes('✗')?'err':'ok');inputs().forEach(i=>i.value='');status();}
+ try{const r=await fetch(api('/api/admin/save'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(authBody({keys}))});const j=await r.json();
+ if(j.ok){msg.innerHTML=Object.entries(j.results).map(([k,v])=>k+': '+v).join('<br>');msg.className='msg '+(JSON.stringify(j.results).includes('✗')?'err':'ok');inputs().forEach(i=>i.value='');await maybeRemember(pass);status();}
  else{msg.textContent='✗ '+(j.error||'failed');msg.className='msg err';}}catch(e){msg.textContent='✗ '+e;msg.className='msg err';}
  btn.disabled=false;}
 
-const PKEY='empire_admin_pass';
 function togglePw(){var p=document.getElementById('pass'),e=document.getElementById('eyeBtn');if(p.type==='password'){p.type='text';e.innerHTML='&#128584;';}else{p.type='password';e.innerHTML='&#128065;';}}
-function rememberSync(){var r=document.getElementById('remember'),p=document.getElementById('pass').value;if(r&&r.checked&&p){localStorage.setItem(PKEY,p);}else if(r&&!r.checked){localStorage.removeItem(PKEY);}}
-function quickLogin(){var s=localStorage.getItem(PKEY);if(s){document.getElementById('pass').value=s;var r=document.getElementById('remember');if(r)r.checked=true;status();}else{var m=document.getElementById('msg');m.textContent='No saved password yet — type it once with "Remember me" on, then Quick Login works.';m.className='msg muted';}}
-window.addEventListener('DOMContentLoaded',function(){var s=localStorage.getItem(PKEY);var pi=document.getElementById('pass'),rc=document.getElementById('remember');if(s&&pi){pi.value=s;if(rc)rc.checked=true;status();}if(rc)rc.addEventListener('change',rememberSync);if(pi)pi.addEventListener('input',rememberSync);});
+function quickLogin(){if(getToken()){status();}else{var m=document.getElementById('msg');m.textContent='No remembered device yet — log in once with "Remember me" checked, then Quick Login works.';m.className='msg muted';}}
+async function forgetDevice(){const t=getToken();clearToken();var rc=document.getElementById('remember');if(rc)rc.checked=false;
+ if(t){try{await fetch(api('/api/admin/logout'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})});}catch(e){}}
+ const msg=document.getElementById('msg');msg.textContent='Device forgotten — enter the password to log in again.';msg.className='msg muted';
+ for(const k of ['FREE_GROQ_KEY','OPENAI_API_KEY','ANTHROPIC_API_KEY','COMPOSIO_API_KEY']){const el=document.getElementById('c_'+k);if(el)el.textContent='';}}
+window.addEventListener('DOMContentLoaded',function(){var rc=document.getElementById('remember');if(getToken()){if(rc)rc.checked=true;status();}
+ if(rc)rc.addEventListener('change',function(){if(!rc.checked)forgetDevice();});});
 </script></body></html>`;
 
 const server = http.createServer(async (req, res) => {
@@ -233,10 +281,28 @@ const server = http.createServer(async (req, res) => {
     } catch { return false; }
     return true; // no validator → accept
   }
-  if (req.method === 'POST' && url === '/api/admin/status') {
+  if (req.method === 'POST' && url === '/api/admin/login') {
     let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
       let b = {}; try { b = JSON.parse(raw); } catch {}
       if ((b.pass || '') !== adminPass()) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, token: issueSession() }));
+    });
+    return;
+  }
+  if (req.method === 'POST' && url === '/api/admin/logout') {
+    let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
+      let b = {}; try { b = JSON.parse(raw); } catch {}
+      revokeSession(b.token);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+    return;
+  }
+  if (req.method === 'POST' && url === '/api/admin/status') {
+    let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
+      let b = {}; try { b = JSON.parse(raw); } catch {}
+      if (!authOk(b)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
       const cur = readKeys();
       const out = {};
       for (const d of KEY_DEFS) { const v = (d.id === 'FREE_GROQ_KEY') ? readGroqKey() : (cur[d.id] || ''); out[d.id] = v ? mask(v) : '(none)'; }
@@ -248,7 +314,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url === '/api/admin/save') {
     let raw = ''; req.on('data', c => raw += c); req.on('end', async () => {
       let b = {}; try { b = JSON.parse(raw); } catch {}
-      if ((b.pass || '') !== adminPass()) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
+      if (!authOk(b)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'wrong password' })); }
       const incoming = b.keys || {};
       const cur = readKeys(); if (!cur.admin_pass) cur.admin_pass = adminPass();
       const results = {};
