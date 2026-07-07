@@ -23,7 +23,16 @@ jobs:
           ENV=development JWT_SECRET=ci DATABASE_URL="sqlite+aiosqlite:///./ci.db" \
             python -c "from main import app; assert len(app.openapi()['paths'])>=18; print('API OK')"
       - name: Tests
-        run: pytest -q || echo "no tests yet"
+        run: |
+          set +e
+          pytest -q
+          code=$?
+          set -e
+          if [ "$code" -eq 5 ]; then
+            echo "no tests yet"
+          elif [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
 
   web:
     name: Web — types, build
