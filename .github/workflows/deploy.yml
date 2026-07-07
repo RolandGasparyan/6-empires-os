@@ -1,0 +1,50 @@
+name: Deploy to VPS
+
+on:
+  workflow_run:
+    workflows: ["6-EMPIRE CI"]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  deploy:
+    name: SSH deploy → 6-empires.com
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            REPO_DIR="$HOME/6-empires-os"
+            COMPOSE="docker compose -f config/docker-compose.prod.yml"
+
+            echo "=== $(date) — rolling deploy ==="
+
+            # Pull latest code
+            cd "$REPO_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Rebuild changed images and restart services with zero downtime
+            $COMPOSE build api web
+            $COMPOSE up -d --remove-orphans
+
+            # Wait for API to be healthy
+            echo "Waiting for API…"
+            for i in $(seq 1 12); do
+              HTTP=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://localhost:8000/health || true)
+              if [ "$HTTP" = "200" ]; then
+                echo "API healthy (HTTP 200)"; break
+              fi
+              echo "  attempt $i: HTTP $HTTP — retrying in 10s…"
+              sleep 10
+            done
+
+            echo "=== Deploy complete ==="
+            $COMPOSE ps
