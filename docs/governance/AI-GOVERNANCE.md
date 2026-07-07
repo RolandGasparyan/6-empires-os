@@ -7,7 +7,7 @@ Define permissions, responsibilities, approval levels, escalation rules, and saf
 Founder owns final authority. Security and architecture leadership own policy design. Delivery and platform leads enforce execution.
 
 ## Inputs and outputs
-**Inputs:** approved architecture, security policy, task requests, incident state, deployment state.  
+**Inputs:** approved architecture, security policy, task requests, incident state, deployment state.
 **Outputs:** agent permissions, approval decisions, blocked-action determinations, escalation actions, audit records.
 
 ## Dependencies

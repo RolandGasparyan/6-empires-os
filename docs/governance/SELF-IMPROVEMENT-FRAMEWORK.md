@@ -7,7 +7,7 @@ Define how 6-EMPIRE OS continuously improves its architecture, performance, secu
 Architecture, security, platform, QA, and knowledge leadership share ownership; founder approves major strategic shifts.
 
 ## Inputs and outputs
-**Inputs:** incidents, metrics, delivery retrospectives, debt registers, cost signals, UX feedback, security findings.  
+**Inputs:** incidents, metrics, delivery retrospectives, debt registers, cost signals, UX feedback, security findings.
 **Outputs:** improvement initiatives, prioritized remediation, revised standards, accepted innovations, retired debt.
 
 ## Dependencies

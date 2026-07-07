@@ -7,7 +7,7 @@ Provide the single completion gate for initiatives before release, promotion, or
 Platform, QA, security, and architecture leadership own readiness evidence; founder owns final release approval.
 
 ## Inputs and outputs
-**Inputs:** implementation artifacts, test results, architecture review, security findings, deployment plan, monitoring setup, rollback instructions.  
+**Inputs:** implementation artifacts, test results, architecture review, security findings, deployment plan, monitoring setup, rollback instructions.
 **Outputs:** release recommendation, blocked-release reasons, approved readiness record, future-improvement actions.
 
 ## Dependencies

@@ -7,7 +7,7 @@ Define the lifecycle from current state to autonomous company, with milestones, 
 Founder for strategic approval; CTO/Chief Architect for sequencing; delivery leads for execution tracking.
 
 ## Inputs and outputs
-**Inputs:** architecture status, delivery capacity, risk register, technical debt register, business priorities.  
+**Inputs:** architecture status, delivery capacity, risk register, technical debt register, business priorities.
 **Outputs:** quarterly roadmap, monthly goals, weekly objectives, sprint plans, milestone decisions.
 
 ## Dependencies

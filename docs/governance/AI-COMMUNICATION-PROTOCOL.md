@@ -7,7 +7,7 @@ Define how planner, architect, developer, reviewer, QA, security, deployment, mo
 Platform and architecture leadership own the protocol; all specialist agents must conform to it.
 
 ## Inputs and outputs
-**Inputs:** founder requests, routed tasks, architecture context, validation results, incidents, approvals.  
+**Inputs:** founder requests, routed tasks, architecture context, validation results, incidents, approvals.
 **Outputs:** routed work items, status updates, escalation events, acceptance/rejection decisions, learning records.
 
 ## Dependencies

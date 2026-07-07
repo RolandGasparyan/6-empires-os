@@ -7,7 +7,7 @@ Define the repeatable venture-creation pipeline that turns ideas into validated,
 Founder owns venture portfolio direction. Product, research, architecture, design, engineering, marketing, and analytics functions own their stage outcomes.
 
 ## Inputs and outputs
-**Inputs:** ideas, market research, strategic priorities, reusable platform capabilities, brand and design constraints.  
+**Inputs:** ideas, market research, strategic priorities, reusable platform capabilities, brand and design constraints.
 **Outputs:** validated ventures, architecture packages, MVPs, launches, analytics loops, scale plans.
 
 ## Dependencies

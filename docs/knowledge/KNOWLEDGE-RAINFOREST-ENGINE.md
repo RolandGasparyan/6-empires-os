@@ -7,7 +7,7 @@ Define the knowledge substrate that connects ideas, documents, meetings, project
 Knowledge engineering owns structure and retrieval quality. Architecture owns technical integration. Founder owns strategic relevance.
 
 ## Inputs and outputs
-**Inputs:** repository docs, source code, research artifacts, operational events, founder notes, external references.  
+**Inputs:** repository docs, source code, research artifacts, operational events, founder notes, external references.
 **Outputs:** searchable knowledge nodes, relationship graph edges, summaries, tags, clusters, indexes, retrieval-ready context.
 
 ## Dependencies

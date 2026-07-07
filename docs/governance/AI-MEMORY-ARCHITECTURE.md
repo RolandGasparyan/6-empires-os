@@ -7,7 +7,7 @@ Define how short-term, working, project, repository, business, founder, knowledg
 Knowledge engineering owns structure; architecture owns technical boundaries; founder owns approval for sensitive long-term memory policy.
 
 ## Inputs and outputs
-**Inputs:** task history, architecture docs, repository changes, business context, approved decisions, incident learnings.  
+**Inputs:** task history, architecture docs, repository changes, business context, approved decisions, incident learnings.
 **Outputs:** retrievable memory records, memory indexes, refresh tasks, archive events, cleanup actions.
 
 ## Dependencies

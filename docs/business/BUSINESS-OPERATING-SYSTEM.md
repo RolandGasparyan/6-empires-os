@@ -7,7 +7,7 @@ Define the business-layer operating model for finance, accounting, CRM, HR, recr
 Founder owns business authority. Function leads own domain operations. Platform and knowledge teams enable instrumentation and automation.
 
 ## Inputs and outputs
-**Inputs:** financial events, customer data, hiring plans, legal obligations, partnership activity, investor requirements, platform telemetry.  
+**Inputs:** financial events, customer data, hiring plans, legal obligations, partnership activity, investor requirements, platform telemetry.
 **Outputs:** business workflows, compliance records, revenue reporting, pipeline status, hiring actions, operating dashboards.
 
 ## Dependencies

@@ -7,7 +7,7 @@ Define the founder’s primary dashboard for companies, startups, agents, deploy
 Founder owns product direction. Product, platform, and data leadership own implementation and operational fidelity.
 
 ## Inputs and outputs
-**Inputs:** platform telemetry, business metrics, roadmap state, AI activity, deployment state, risk and opportunity registers.  
+**Inputs:** platform telemetry, business metrics, roadmap state, AI activity, deployment state, risk and opportunity registers.
 **Outputs:** executive dashboards, alerts, approval actions, drill-down workflows, strategic summaries.
 
 ## Dependencies

@@ -1,6 +1,6 @@
 # 6-EMPIRE OS — Executive Operating Manual
 
-**Status:** Governing manual for organization, delivery, memory, and control layers.  
+**Status:** Governing manual for organization, delivery, memory, and control layers.
 **Relationship to architecture:** This manual sits above `docs/architecture/MASTER-ARCHITECTURE.md` and `docs/architecture/SYSTEM-DESIGN.md`. It does not replace them.
 
 ---

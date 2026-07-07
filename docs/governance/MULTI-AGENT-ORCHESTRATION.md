@@ -7,7 +7,7 @@ Define scheduling, dependencies, scaling, synchronization, health checks, recove
 Platform engineering owns runtime orchestration. Architecture owns topology and dependency rules. Founder approves autonomy boundary changes.
 
 ## Inputs and outputs
-**Inputs:** task queues, dependency graphs, capacity limits, policy rules, health signals, approval states.  
+**Inputs:** task queues, dependency graphs, capacity limits, policy rules, health signals, approval states.
 **Outputs:** scheduled agent work, dependency resolution, recovery actions, scaling decisions, execution telemetry.
 
 ## Dependencies
