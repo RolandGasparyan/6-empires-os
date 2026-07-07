@@ -212,6 +212,8 @@ validated (Pydantic), authorized (RBAC dep), and audited. Side-effect tools
 - **Prod topology:** Nginx LB → 2+ API replicas + WS gateway + N workers + managed Postgres (+replica) + Redis + Qdrant + Neo4j; certbot auto-renew.
 - **Backups:** nightly `pg_dump`, volume snapshots, documented restore drill.
 - **Rollback:** tagged images; `down`/`up` keeps volumes; data-safe.
+- **Enterprise observability overlay:** every environment carries metrics, logs, traces, dashboards, alerts, error tracking, infrastructure health, AI health, and business KPIs as defined by `../operations/PRODUCTION-READINESS-CHECKLIST.md`.
+- **Disaster recovery overlay:** backup cadence, recovery ownership, restore drills, and business continuity are part of deployment design, not an appendix; governance lives in `../OPERATING-MANUAL.md`, readiness evidence in `../operations/PRODUCTION-READINESS-CHECKLIST.md`.
 
 ---
 
@@ -223,6 +225,8 @@ validated (Pydantic), authorized (RBAC dep), and audited. Side-effect tools
 - **Audit:** every founder/agent side-effect logged with before/after + confirmer.
 - **AI safety:** tool policy checks; no autonomous money/deploy; prompt-injection guarding on any external content agents ingest.
 - **Compliance posture:** audit log + RBAC + backups = the SOC2-readiness foundation (the "investor-ready" the directive wants).
+- **Security operations center discipline:** threat detection, secret scanning, vulnerability/dependency scanning, audit review, RBAC control, and incident response are required operating practices for any production release; execution evidence is tracked in `../operations/PRODUCTION-READINESS-CHECKLIST.md`.
+- **Approval boundary:** deploys, destructive actions, permission-model changes, and financial side effects remain founder-gated under the operating rules in `../OPERATING-MANUAL.md` and `../governance/AI-GOVERNANCE.md`.
 
 ---
 
@@ -247,6 +251,7 @@ validated (Pydantic), authorized (RBAC dep), and audited. Side-effect tools
 - **G. Tower build-out** — full 10-floor navigable HQ, photoreal backdrops, perf tiers.
 - **H. Orchestration & tools** — planner agent, typed tool registry, workflow DAGs.
 - **I. Scale & multi-tenant** — when revenue demands it.
+- The phase roadmap here is the technical delivery sequence. The broader business and lifecycle roadmap is maintained in `../roadmap/ENTERPRISE-ROADMAP.md`.
 
 ---
 
@@ -257,3 +262,15 @@ boundary stays founder-gated** by design. This is not a limitation to engineer
 around; it is the control that makes the system auditable, investor-ready, and
 safe to run 24/7. "Autonomous within policy" — not "unsupervised with side
 effects."
+
+---
+
+## 13. Operating-manual alignment
+- `../OPERATING-MANUAL.md` defines the executive operating model above this architecture.
+- `../governance/AI-GOVERNANCE.md` defines approvals, responsibilities, and escalation.
+- `../governance/AI-MEMORY-ARCHITECTURE.md` defines durable memory classes and refresh policy.
+- `../governance/AI-COMMUNICATION-PROTOCOL.md` defines handoff and status rules across agent roles.
+- `../governance/MULTI-AGENT-ORCHESTRATION.md` defines scheduler, dependency, and recovery policy.
+- `../governance/SELF-IMPROVEMENT-FRAMEWORK.md` defines the continuous-improvement operating loop.
+- `../roadmap/ENTERPRISE-ROADMAP.md` defines lifecycle staging beyond the technical phases here.
+- `../operations/PRODUCTION-READINESS-CHECKLIST.md` defines the release gate that every implementation must satisfy before founder acceptance.
