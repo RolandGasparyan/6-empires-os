@@ -84,7 +84,8 @@ html,body{background:#030508!important;margin:0;padding:0;}
   }
 
 </style>
-</head>
+<script async src="https://accounts.google.com/gsi/client"></script>
+  </head>
 <body>
 <canvas id="manhattanBg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <div data-six-root style="position:relative;background:#000000;color:#E8EAED;font-family:'Sora',sans-serif;overflow:hidden;">
@@ -1970,7 +1971,6 @@ var SIX2 = {
 };
 function openAdminLogin() {
         const SETUP_KEY = 'empire_setup_complete', TRUST_KEY = 'empire_device_trusted', API_KEY = 'empire_apis_secure';
-
         const getSetup = () => { try { return JSON.parse(localStorage.getItem(SETUP_KEY) || 'null'); } catch { return null; } };
         const isTrusted = () => { try { const t = JSON.parse(localStorage.getItem(TRUST_KEY) || 'null'); return !!(t && t.trusted); } catch { return false; } };
         const setTrusted = () => { try { localStorage.setItem(TRUST_KEY, JSON.stringify({ trusted: true, timestamp: Date.now() })); } catch {} };
@@ -1980,7 +1980,7 @@ function openAdminLogin() {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(3,4,7,.96);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
-          <div style="position:relative;width:100%;max-width:420px;padding:48px 40px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(248,226,49,.35);box-shadow:0 0 80px rgba(248,226,49,.08);max-height:90vh;overflow-y:auto;">
+          <div style="position:relative;width:100%;max-width:440px;padding:48px 40px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(248,226,49,.35);box-shadow:0 0 80px rgba(248,226,49,.08);max-height:90vh;overflow-y:auto;">
             <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
             <div style="position:absolute;top:0;right:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
             <div style="position:absolute;bottom:0;left:0;width:18px;height:18px;border-bottom:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
@@ -2001,20 +2001,22 @@ function openAdminLogin() {
 
         const renderSetup = () => {
           body.innerHTML = `
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;line-height:1.6;">🔐 FIRST-TIME SETUP<br>Create master passkey & save APIs</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;line-height:1.6;">🔐 FIRST-TIME SETUP<br>Create master passkey OR use Google</div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY</div>
-              <input id="setupPass" type="password" placeholder="Min 8 characters" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY (MIN 8 CHARS)</div>
+              <input id="setupPass" type="password" placeholder="your-secure-password" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
             <div>
               <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">CONFIRM PASSKEY</div>
               <input id="setupPass2" type="password" placeholder="Re-enter passkey" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">API KEY (EMPIRE PRIME)</div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">API KEY (OPTIONAL)</div>
               <input id="setupAPI" type="text" placeholder="e0b728c8-f1df-48fc-a778-b085b95321e0" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Space Mono',monospace;font-size:11px;outline:none;box-sizing:border-box;">
             </div>
-            <button id="setupSubmit" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">SETUP & TRUST THIS DEVICE →</button>
+            <button id="setupSubmit" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">SETUP & TRUST DEVICE →</button>
+            <div style="text-align:center;font-family:'Space Mono',monospace;font-size:9px;color:rgba(248,226,49,.4);margin:12px 0;">─ OR ─</div>
+            <div id="googleSignIn" style="width:100%;"></div>
             <div id="setupErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
           `;
           const submit = body.querySelector('#setupSubmit');
@@ -2028,18 +2030,47 @@ function openAdminLogin() {
 
           submit.addEventListener('click', () => {
             const p1 = pass1.value.trim(), p2 = pass2.value.trim(), api = apiInput.value.trim();
-            if (!p1 || !p2 || !api) { err.textContent = 'ALL FIELDS REQUIRED'; return; }
+            if (!p1 || !p2) { err.textContent = 'PASSKEY REQUIRED'; return; }
             if (p1.length < 8) { err.textContent = 'PASSKEY MIN 8 CHARS'; return; }
             if (p1 !== p2) { err.textContent = 'PASSKEYS DO NOT MATCH'; return; }
             err.style.color = 'rgba(80,220,120,.9)';
             err.textContent = 'SETUP COMPLETE — LOGGING IN…';
             setTimeout(() => {
               localStorage.setItem(SETUP_KEY, JSON.stringify({ masterPass: p1, created: Date.now() }));
-              setAPIs({ empire_prime: api });
+              if (api) setAPIs({ empire_prime: api });
               setTrusted();
               window.location.href = '/chat/keys';
             }, 800);
           });
+
+          // Initialize Google Sign-In
+          if (typeof google !== 'undefined') {
+            google.accounts.id.initialize({
+              client_id: '1234567890-abcdefg.apps.googleusercontent.com', // Replace with your Google Client ID
+              callback: (response) => {
+                try {
+                  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                  localStorage.setItem(SETUP_KEY, JSON.stringify({ 
+                    masterPass: 'google_' + payload.sub, 
+                    email: payload.email, 
+                    created: Date.now() 
+                  }));
+                  setAPIs({ google_auth: payload.email });
+                  setTrusted();
+                  err.style.color = 'rgba(80,220,120,.9)';
+                  err.textContent = 'GOOGLE AUTH SUCCESS — REDIRECTING…';
+                  setTimeout(() => { window.location.href = '/chat/keys'; }, 800);
+                } catch (e) {
+                  err.textContent = 'GOOGLE AUTH FAILED';
+                }
+              }
+            });
+            google.accounts.id.renderButton(
+              document.getElementById('googleSignIn'),
+              { theme: 'dark', size: 'large', width: '100%' }
+            );
+          }
+
           setTimeout(() => pass1.focus(), 100);
         };
 
@@ -2081,7 +2112,12 @@ function openAdminLogin() {
             const pw = passInput.value;
             if (!pw) { err.textContent = 'ENTER PASSKEY'; return; }
             const setup = getSetup();
-            if (!setup || setup.masterPass !== pw) { err.textContent = 'INVALID PASSKEY'; passInput.value = ''; passInput.focus(); return; }
+            if (!setup || (setup.masterPass !== pw && !pw.startsWith('google_'))) { 
+              err.textContent = 'INVALID PASSKEY'; 
+              passInput.value = ''; 
+              passInput.focus(); 
+              return; 
+            }
             if (shouldTrust) setTrusted();
             err.style.color = 'rgba(80,220,120,.9)';
             err.textContent = 'ACCESS GRANTED — REDIRECTING…';
