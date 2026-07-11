@@ -752,7 +752,7 @@ html,body{background:#030508!important;margin:0;padding:0;}
           <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="12" height="8" rx="1"/><path d="M6 8V5.5a3 3 0 0 1 6 0V8"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
           ADMIN LOGIN
         </button>
-        <button onClick="openAdminLogin()" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;border:2px solid #F8E231;cursor:pointer;transition:all .22s;">
+        <button onClick="window.location.href='/chat/'" style="display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:transparent;color:#F8E231;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.14em;border:2px solid #F8E231;cursor:pointer;transition:all .22s;">
           <svg viewBox="0 0 18 18" style="width:15px;height:15px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h14v9H2z"/><path d="M5 15l4-3h7"/></svg>
           EMPIRE CHAT
         </button>
@@ -1970,6 +1970,7 @@ var SIX2 = {
 };
 function openAdminLogin() {
         const TRUST_KEY = 'empire_admin_trust', TRUST_DAYS = 30;
+        const ADMIN_PIN = '0660'; // ← your quick 4-digit PIN (change to whatever you want)
         const isTrusted = () => { try { const t = JSON.parse(localStorage.getItem(TRUST_KEY) || 'null'); return !!(t && t.exp && Date.now() < t.exp); } catch { return false; } };
         const setTrusted = () => { try { localStorage.setItem(TRUST_KEY, JSON.stringify({ exp: Date.now() + TRUST_DAYS * 86400000 })); } catch {} };
         const clearTrusted = () => { try { localStorage.removeItem(TRUST_KEY); } catch {} };
@@ -1999,10 +2000,10 @@ function openAdminLogin() {
         const renderForm = () => {
           body.innerHTML = `
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">PASSKEY</div>
-              <input id="adminPass" type="password" placeholder="••••••••••••" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.08em;outline:none;box-sizing:border-box;">
+              <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;text-align:center;">ENTER 4-DIGIT PIN</div>
+              <input id="adminPass" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •" autocomplete="off" style="width:100%;padding:16px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Space Mono',monospace;font-size:28px;letter-spacing:.5em;text-align:center;outline:none;box-sizing:border-box;">
             </div>
-            <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
+            <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">ENTER →</button>
             <div id="adminErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
           `;
           const submit = body.querySelector('#adminSubmit');
@@ -2012,32 +2013,22 @@ function openAdminLogin() {
           submit.addEventListener('mouseleave', () => { submit.style.transform = ''; submit.style.boxShadow = ''; });
           const doSubmit = () => {
             const pw = passInput.value;
-            if (!pw) { err.style.color = 'rgba(220,60,60,.8)'; err.textContent = 'ENTER PASSKEY'; return; }
-            err.style.color = 'rgba(248,226,49,.6)';
-            err.textContent = 'AUTHENTICATING…';
-            submit.disabled = true;
-            fetch('/chat/api/admin/status', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pass: pw })
-            }).then(r => r.json()).then(j => {
-              submit.disabled = false;
-              if (j.ok) {
-                setTrusted();
-                err.style.color = 'rgba(80,220,120,.9)';
-                err.textContent = 'ACCESS GRANTED — REDIRECTING…';
-                setTimeout(() => { window.location.href = '/chat/keys'; }, 600);
-              } else {
-                err.style.color = 'rgba(220,60,60,.8)';
-                err.textContent = 'ACCESS DENIED — INVALID PASSKEY';
-              }
-            }).catch(() => {
-              submit.disabled = false;
+            if (!pw) { err.style.color = 'rgba(220,60,60,.8)'; err.textContent = 'ENTER PIN'; return; }
+            if (pw === ADMIN_PIN) {
+              setTrusted();
+              err.style.color = 'rgba(80,220,120,.9)';
+              err.textContent = 'ACCESS GRANTED — REDIRECTING…';
+              setTimeout(() => { window.location.href = '/chat/keys'; }, 500);
+            } else {
               err.style.color = 'rgba(220,60,60,.8)';
-              err.textContent = 'CONNECTION ERROR — TRY AGAIN';
-            });
+              err.textContent = 'INVALID PIN';
+              passInput.value = '';
+              passInput.focus();
+            }
           };
           submit.addEventListener('click', doSubmit);
+          // auto-submit as soon as 4 digits are entered
+          passInput.addEventListener('input', () => { if (passInput.value.length === 4) doSubmit(); });
           passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
           setTimeout(() => passInput.focus(), 100);
         };
