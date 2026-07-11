@@ -111,26 +111,54 @@
       <div id="modelMenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(6,8,14,.98);border:1px solid rgba(253,199,44,.25);width:220px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.7);">
         <!-- section: model -->
         <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODEL</div>
-        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
-          <button onClick="{{ setModel }}" data-model="PRIME" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">
-            <div style="width:6px;height:6px;background:#FDC72C;border-radius:50%;flex-shrink:0;"></div>PRIME
-          </button>
-          <button onClick="{{ setModel }}" data-model="MEDIA" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
-            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>MEDIA
-          </button>
-          <button onClick="{{ setModel }}" data-model="NEXUS" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">
-            <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>NEXUS
-          </button>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:6px;">
+          <!-- PRIME -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setModel }}" data-model="PRIME" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;border-radius:4px;transition:all .2s;" title="EMPIRE PRIME - Advanced multi-model AI">
+              <div style="width:6px;height:6px;background:#FDC72C;border-radius:50%;flex-shrink:0;"></div>PRIME
+            </button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.35);line-height:1.3;">Advanced multi-model routing. Best for complex tasks.</div>
+          </div>
+          <!-- MEDIA -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setModel }}" data-model="MEDIA" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;border-radius:4px;transition:all .2s;" title="MEDIA - Optimized for content creation">
+              <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>MEDIA
+            </button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.3);line-height:1.3;">Content creation & media generation. Fast & creative.</div>
+          </div>
+          <!-- NEXUS -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setModel }}" data-model="NEXUS" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;border-radius:4px;transition:all .2s;" title="NEXUS - Distributed reasoning network">
+              <div style="width:6px;height:6px;background:rgba(253,199,44,.3);border-radius:50%;flex-shrink:0;"></div>NEXUS
+            </button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.3);line-height:1.3;">Distributed network reasoning. Deep analysis & synthesis.</div>
+          </div>
         </div>
         <!-- divider -->
         <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
         <!-- section: mode -->
         <div style="padding:8px 16px 4px;font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(253,199,44,.3);">MODE</div>
-        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
-          <button id="modeCore" onClick="{{ setMode }}" data-mode="EMPIRE CORE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;">CORE</button>
-          <button onClick="{{ setMode }}" data-mode="RAPID FIRE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RAPID</button>
-          <button onClick="{{ setMode }}" data-mode="DEEP RESEARCH" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">RESEARCH</button>
-          <button onClick="{{ setMode }}" data-mode="CREATIVE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;">CREATIVE</button>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:6px;">
+          <!-- CORE -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button id="modeCore" onClick="{{ setMode }}" data-mode="EMPIRE CORE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:rgba(253,199,44,.08);border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:#FDC72C;cursor:pointer;border-radius:4px;transition:all .2s;" title="CORE - Balanced accuracy & speed">CORE</button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.35);line-height:1.3;">Balanced response. Accuracy + Speed optimized.</div>
+          </div>
+          <!-- RAPID -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setMode }}" data-mode="RAPID FIRE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;border-radius:4px;transition:all .2s;" title="RAPID - Maximum speed">RAPID</button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.3);line-height:1.3;">Lightning-fast responses. Speed prioritized.</div>
+          </div>
+          <!-- RESEARCH -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setMode }}" data-mode="DEEP RESEARCH" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;border-radius:4px;transition:all .2s;" title="RESEARCH - Deep analysis">RESEARCH</button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.3);line-height:1.3;">Thorough analysis. Sources & reasoning included.</div>
+          </div>
+          <!-- CREATIVE -->
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button onClick="{{ setMode }}" data-mode="CREATIVE" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;color:rgba(253,199,44,.45);cursor:pointer;border-radius:4px;transition:all .2s;" title="CREATIVE - Imaginative output">CREATIVE</button>
+            <div style="padding:0 10px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.3);line-height:1.3;">Imaginative & innovative. Original content.</div>
+          </div>
         </div>
         <!-- divider -->
         <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
