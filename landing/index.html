@@ -1969,23 +1969,25 @@ var SIX2 = {
   }
 };
 function openAdminLogin() {
-        const TRUST_KEY = 'empire_admin_trust', TRUST_DAYS = 30;
-        const ADMIN_PIN = '0660'; // ← your quick 4-digit PIN (change to whatever you want)
-        const isTrusted = () => { try { const t = JSON.parse(localStorage.getItem(TRUST_KEY) || 'null'); return !!(t && t.exp && Date.now() < t.exp); } catch { return false; } };
-        const setTrusted = () => { try { localStorage.setItem(TRUST_KEY, JSON.stringify({ exp: Date.now() + TRUST_DAYS * 86400000 })); } catch {} };
-        const clearTrusted = () => { try { localStorage.removeItem(TRUST_KEY); } catch {} };
+        const SETUP_KEY = 'empire_setup_complete', TRUST_KEY = 'empire_device_trusted', API_KEY = 'empire_apis_secure';
+
+        const getSetup = () => { try { return JSON.parse(localStorage.getItem(SETUP_KEY) || 'null'); } catch { return null; } };
+        const isTrusted = () => { try { const t = JSON.parse(localStorage.getItem(TRUST_KEY) || 'null'); return !!(t && t.trusted); } catch { return false; } };
+        const setTrusted = () => { try { localStorage.setItem(TRUST_KEY, JSON.stringify({ trusted: true, timestamp: Date.now() })); } catch {} };
+        const getAPIs = () => { try { return JSON.parse(localStorage.getItem(API_KEY) || '{}'); } catch { return {}; } };
+        const setAPIs = (apis) => { try { localStorage.setItem(API_KEY, JSON.stringify(apis)); } catch {} };
 
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(3,4,7,.96);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
-          <div style="position:relative;width:100%;max-width:400px;padding:48px 40px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(248,226,49,.35);box-shadow:0 0 80px rgba(248,226,49,.08);">
+          <div style="position:relative;width:100%;max-width:420px;padding:48px 40px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(248,226,49,.35);box-shadow:0 0 80px rgba(248,226,49,.08);max-height:90vh;overflow-y:auto;">
             <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
             <div style="position:absolute;top:0;right:0;width:18px;height:18px;border-top:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
             <div style="position:absolute;bottom:0;left:0;width:18px;height:18px;border-bottom:1.5px solid #F8E231;border-left:1.5px solid #F8E231;"></div>
             <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:1.5px solid #F8E231;border-right:1.5px solid #F8E231;"></div>
             <div style="text-align:center;margin-bottom:36px;">
               <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.28em;color:rgba(248,226,49,.5);margin-bottom:10px;">SOVEREIGN ACCESS</div>
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;letter-spacing:.1em;color:#F4F5F7;">ADMIN LOGIN</div>
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;letter-spacing:.1em;color:#F4F5F7;">ADMIN CONTROL</div>
             </div>
             <div id="adminBody" style="display:flex;flex-direction:column;gap:14px;"></div>
             <button id="adminClose" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(248,226,49,.4);font-size:18px;cursor:pointer;line-height:1;padding:4px;">✕</button>
@@ -1997,53 +1999,104 @@ function openAdminLogin() {
 
         const body = overlay.querySelector('#adminBody');
 
-        const renderForm = () => {
+        const renderSetup = () => {
           body.innerHTML = `
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;line-height:1.6;">🔐 FIRST-TIME SETUP<br>Create master passkey & save APIs</div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;text-align:center;">ENTER 4-DIGIT PIN</div>
-              <input id="adminPass" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •" autocomplete="off" style="width:100%;padding:16px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Space Mono',monospace;font-size:28px;letter-spacing:.5em;text-align:center;outline:none;box-sizing:border-box;">
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY</div>
+              <input id="setupPass" type="password" placeholder="Min 8 characters" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
-            <button id="adminSubmit" style="margin-top:8px;width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">ENTER →</button>
-            <div id="adminErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">CONFIRM PASSKEY</div>
+              <input id="setupPass2" type="password" placeholder="Re-enter passkey" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">API KEY (EMPIRE PRIME)</div>
+              <input id="setupAPI" type="text" placeholder="e0b728c8-f1df-48fc-a778-b085b95321e0" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Space Mono',monospace;font-size:11px;outline:none;box-sizing:border-box;">
+            </div>
+            <button id="setupSubmit" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">SETUP & TRUST THIS DEVICE →</button>
+            <div id="setupErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
           `;
-          const submit = body.querySelector('#adminSubmit');
-          const passInput = body.querySelector('#adminPass');
-          const err = body.querySelector('#adminErr');
+          const submit = body.querySelector('#setupSubmit');
+          const pass1 = body.querySelector('#setupPass');
+          const pass2 = body.querySelector('#setupPass2');
+          const apiInput = body.querySelector('#setupAPI');
+          const err = body.querySelector('#setupErr');
+
           submit.addEventListener('mouseenter', () => { submit.style.transform = 'translateY(-2px)'; submit.style.boxShadow = '0 8px 28px rgba(248,226,49,.45)'; });
           submit.addEventListener('mouseleave', () => { submit.style.transform = ''; submit.style.boxShadow = ''; });
-          const doSubmit = () => {
-            const pw = passInput.value;
-            if (!pw) { err.style.color = 'rgba(220,60,60,.8)'; err.textContent = 'ENTER PIN'; return; }
-            if (pw === ADMIN_PIN) {
+
+          submit.addEventListener('click', () => {
+            const p1 = pass1.value.trim(), p2 = pass2.value.trim(), api = apiInput.value.trim();
+            if (!p1 || !p2 || !api) { err.textContent = 'ALL FIELDS REQUIRED'; return; }
+            if (p1.length < 8) { err.textContent = 'PASSKEY MIN 8 CHARS'; return; }
+            if (p1 !== p2) { err.textContent = 'PASSKEYS DO NOT MATCH'; return; }
+            err.style.color = 'rgba(80,220,120,.9)';
+            err.textContent = 'SETUP COMPLETE — LOGGING IN…';
+            setTimeout(() => {
+              localStorage.setItem(SETUP_KEY, JSON.stringify({ masterPass: p1, created: Date.now() }));
+              setAPIs({ empire_prime: api });
               setTrusted();
-              err.style.color = 'rgba(80,220,120,.9)';
-              err.textContent = 'ACCESS GRANTED — REDIRECTING…';
-              setTimeout(() => { window.location.href = '/chat/keys'; }, 500);
-            } else {
-              err.style.color = 'rgba(220,60,60,.8)';
-              err.textContent = 'INVALID PIN';
-              passInput.value = '';
-              passInput.focus();
-            }
+              window.location.href = '/chat/keys';
+            }, 800);
+          });
+          setTimeout(() => pass1.focus(), 100);
+        };
+
+        const renderTrustedLogin = () => {
+          body.innerHTML = `
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;color:rgba(80,220,120,.9);text-align:center;margin-bottom:16px;">✓ DEVICE TRUSTED</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:12px;color:rgba(244,245,247,.8);text-align:center;margin-bottom:16px;">Welcome back, Roland.<br>Auto-login in progress…</div>
+            <div style="width:100%;height:3px;background:linear-gradient(90deg,transparent,#F8E231,transparent);border-radius:2px;"></div>
+          `;
+          setTimeout(() => { window.location.href = '/chat/keys'; }, 1200);
+        };
+
+        const renderAuthLogin = () => {
+          body.innerHTML = `
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;">🔑 AUTHENTICATE</div>
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY</div>
+              <input id="authPass" type="password" placeholder="••••••••" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+            <button id="authSubmit" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
+            <button id="authTrust" style="width:100%;padding:10px;background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(248,226,49,.5);">☑ TRUST THIS DEVICE</button>
+            <div id="authErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
+          `;
+          const submit = body.querySelector('#authSubmit');
+          const passInput = body.querySelector('#authPass');
+          const trustBtn = body.querySelector('#authTrust');
+          const err = body.querySelector('#authErr');
+          let shouldTrust = false;
+
+          trustBtn.addEventListener('click', () => {
+            shouldTrust = !shouldTrust;
+            trustBtn.style.color = shouldTrust ? '#F8E231' : 'rgba(248,226,49,.5)';
+          });
+
+          submit.addEventListener('mouseenter', () => { submit.style.transform = 'translateY(-2px)'; submit.style.boxShadow = '0 8px 28px rgba(248,226,49,.45)'; });
+          submit.addEventListener('mouseleave', () => { submit.style.transform = ''; submit.style.boxShadow = ''; });
+
+          const doAuth = () => {
+            const pw = passInput.value;
+            if (!pw) { err.textContent = 'ENTER PASSKEY'; return; }
+            const setup = getSetup();
+            if (!setup || setup.masterPass !== pw) { err.textContent = 'INVALID PASSKEY'; passInput.value = ''; passInput.focus(); return; }
+            if (shouldTrust) setTrusted();
+            err.style.color = 'rgba(80,220,120,.9)';
+            err.textContent = 'ACCESS GRANTED — REDIRECTING…';
+            setTimeout(() => { window.location.href = '/chat/keys'; }, 500);
           };
-          submit.addEventListener('click', doSubmit);
-          // auto-submit as soon as 4 digits are entered
-          passInput.addEventListener('input', () => { if (passInput.value.length === 4) doSubmit(); });
-          passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+
+          submit.addEventListener('click', doAuth);
+          passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
           setTimeout(() => passInput.focus(), 100);
         };
 
-        const renderTrustedView = () => {
-          body.innerHTML = `
-            <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;color:rgba(244,245,247,.8);text-align:center;margin-bottom:6px;">Welcome back — this device is trusted.</div>
-            <button id="adminContinue" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;">CONTINUE →</button>
-            <button id="adminForget" style="width:100%;padding:8px;background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(248,226,49,.4);">NOT YOU? USE PASSKEY INSTEAD</button>
-          `;
-          body.querySelector('#adminContinue').addEventListener('click', () => { window.location.href = '/chat/keys'; });
-          body.querySelector('#adminForget').addEventListener('click', () => { clearTrusted(); renderForm(); });
-        };
-
-        if (isTrusted()) renderTrustedView(); else renderForm();
+        // Auto-login flow
+        if (isTrusted()) renderTrustedLogin();
+        else if (getSetup()) renderAuthLogin();
+        else renderSetup();
       }
 (function(){
   if(!SIX2.componentDidMount) return;
