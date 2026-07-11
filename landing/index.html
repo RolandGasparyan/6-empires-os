@@ -2003,11 +2003,17 @@ function openAdminLogin() {
           body.innerHTML = `
             <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;line-height:1.6;">🔐 FIRST-TIME SETUP<br>Create master passkey OR use Google</div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY (MIN 8 CHARS)</div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                <span>MASTER PASSKEY (MIN 8 CHARS)</span>
+                <button id="toggleSetupPass" style="background:none;border:none;color:rgba(248,226,49,.5);cursor:pointer;font-size:10px;padding:2px 6px;">👁️</button>
+              </div>
               <input id="setupPass" type="password" placeholder="your-secure-password" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">CONFIRM PASSKEY</div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                <span>CONFIRM PASSKEY</span>
+                <button id="toggleSetupPass2" style="background:none;border:none;color:rgba(248,226,49,.5);cursor:pointer;font-size:10px;padding:2px 6px;">👁️</button>
+              </div>
               <input id="setupPass2" type="password" placeholder="Re-enter passkey" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
             <div>
@@ -2023,7 +2029,28 @@ function openAdminLogin() {
           const pass1 = body.querySelector('#setupPass');
           const pass2 = body.querySelector('#setupPass2');
           const apiInput = body.querySelector('#setupAPI');
+          const toggle1 = body.querySelector('#toggleSetupPass');
+          const toggle2 = body.querySelector('#toggleSetupPass2');
           const err = body.querySelector('#setupErr');
+          let showPass1 = false, showPass2 = false;
+
+          // Toggle password visibility for passkey 1
+          toggle1.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPass1 = !showPass1;
+            pass1.type = showPass1 ? 'text' : 'password';
+            toggle1.textContent = showPass1 ? '🙈' : '👁️';
+            toggle1.style.color = showPass1 ? '#F8E231' : 'rgba(248,226,49,.5)';
+          });
+
+          // Toggle password visibility for passkey 2
+          toggle2.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPass2 = !showPass2;
+            pass2.type = showPass2 ? 'text' : 'password';
+            toggle2.textContent = showPass2 ? '🙈' : '👁️';
+            toggle2.style.color = showPass2 ? '#F8E231' : 'rgba(248,226,49,.5)';
+          });
 
           submit.addEventListener('mouseenter', () => { submit.style.transform = 'translateY(-2px)'; submit.style.boxShadow = '0 8px 28px rgba(248,226,49,.45)'; });
           submit.addEventListener('mouseleave', () => { submit.style.transform = ''; submit.style.boxShadow = ''; });
@@ -2087,22 +2114,59 @@ function openAdminLogin() {
           body.innerHTML = `
             <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(248,226,49,.6);margin-bottom:12px;text-align:center;">🔑 AUTHENTICATE</div>
             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;">MASTER PASSKEY</div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(248,226,49,.5);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                <span>MASTER PASSKEY</span>
+                <button id="togglePass" style="background:none;border:none;color:rgba(248,226,49,.5);cursor:pointer;font-size:10px;padding:2px 6px;">👁️</button>
+              </div>
               <input id="authPass" type="password" placeholder="••••••••" autocomplete="off" style="width:100%;padding:12px 14px;background:rgba(248,226,49,.04);border:1px solid rgba(248,226,49,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:12px;outline:none;box-sizing:border-box;">
             </div>
             <button id="authSubmit" style="width:100%;padding:14px;background:#F8E231;border:none;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:#050608;transition:transform .18s,box-shadow .18s;">AUTHENTICATE →</button>
             <button id="authTrust" style="width:100%;padding:10px;background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(248,226,49,.5);">☑ TRUST THIS DEVICE</button>
+            <button id="forgotPass" style="width:100%;padding:8px;background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:rgba(248,226,49,.4);text-decoration:underline;transition:color .2s;">Forgot Passkey?</button>
             <div id="authErr" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:rgba(220,60,60,.8);text-align:center;min-height:14px;"></div>
           `;
           const submit = body.querySelector('#authSubmit');
           const passInput = body.querySelector('#authPass');
           const trustBtn = body.querySelector('#authTrust');
+          const toggleBtn = body.querySelector('#togglePass');
+          const forgotBtn = body.querySelector('#forgotPass');
           const err = body.querySelector('#authErr');
           let shouldTrust = false;
+          let showPass = false;
+
+          // Toggle password visibility
+          toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPass = !showPass;
+            passInput.type = showPass ? 'text' : 'password';
+            toggleBtn.textContent = showPass ? '🙈' : '👁️';
+            toggleBtn.style.color = showPass ? '#F8E231' : 'rgba(248,226,49,.5)';
+          });
 
           trustBtn.addEventListener('click', () => {
             shouldTrust = !shouldTrust;
             trustBtn.style.color = shouldTrust ? '#F8E231' : 'rgba(248,226,49,.5)';
+          });
+
+          // Forgot password handler
+          forgotBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            err.style.color = 'rgba(248,226,49,.6)';
+            err.innerHTML = `
+              <div style="font-size:9px;line-height:1.5;margin:8px 0;">
+                🔄 RECOVERY OPTIONS:<br>
+                <span style="display:block;margin-top:6px;color:rgba(248,226,49,.5);">• Clear browser data & create new passkey</span>
+                <span style="display:block;color:rgba(248,226,49,.5);">• Use Google OAuth as backup</span>
+                <span style="display:block;color:rgba(248,226,49,.5);">• Contact admin for account reset</span>
+              </div>
+              <button id="resetOption" style="width:100%;margin-top:8px;padding:10px;background:rgba(248,226,49,.12);border:1px solid rgba(248,226,49,.3);color:#F8E231;font-family:'Space Mono',monospace;font-size:8px;cursor:pointer;border-radius:3px;">Clear & Create New Passkey</button>
+            `;
+            const resetBtn = err.querySelector('#resetOption');
+            resetBtn.addEventListener('click', () => {
+              localStorage.clear();
+              err.textContent = 'CLEARING DATA…';
+              setTimeout(() => { window.location.reload(); }, 600);
+            });
           });
 
           submit.addEventListener('mouseenter', () => { submit.style.transform = 'translateY(-2px)'; submit.style.boxShadow = '0 8px 28px rgba(248,226,49,.45)'; });
