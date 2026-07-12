@@ -163,9 +163,12 @@
         <!-- divider -->
         <div style="height:1px;background:rgba(253,199,44,.1);margin:0 8px;"></div>
         <!-- section: actions -->
-        <div style="padding:8px;display:flex;gap:4px;">
-          <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.25);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#FDC72C;cursor:pointer;">PROJECTS</button>
-          <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:none;border:1px solid rgba(253,199,44,.15);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.45);cursor:pointer;">+ NEW</button>
+        <div style="padding:8px;display:flex;gap:4px;flex-direction:column;">
+          <div style="display:flex;gap:4px;">
+            <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:rgba(253,199,44,.07);border:1px solid rgba(253,199,44,.25);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#FDC72C;cursor:pointer;">PROJECTS</button>
+            <button onClick="{{ toggleProjects }}" style="flex:1;padding:8px;background:none;border:1px solid rgba(253,199,44,.15);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.45);cursor:pointer;">+ NEW</button>
+          </div>
+          <button onClick="{{ togglePasskeySettings }}" style="width:100%;padding:8px;background:rgba(253,199,44,.05);border:1px solid rgba(253,199,44,.2);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:rgba(253,199,44,.7);cursor:pointer;border-radius:3px;transition:all .2s;" title="Manage passkey & devices">🔐 PASSKEY SETTINGS</button>
         </div>
       </div>
     </div>
@@ -299,6 +302,47 @@
     <button onClick="{{ regenerateMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">🔄 Regenerate</button>
     <button onClick="{{ editMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:rgba(232,234,237,.8);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(253,199,44,.1);">✏️ Edit</button>
     <button onClick="{{ deleteMessage }}" style="width:100%;padding:10px 14px;background:none;border:none;text-align:left;color:#ff6b6b;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;">🗑️ Delete</button>
+  </div>
+
+  <!-- ── PASSKEY SETTINGS MODAL ── -->
+  <div id="passkeyModal" style="position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(8px);animation:fadeInScale .25s ease-out;">
+    <div style="width:90%;max-width:480px;background:linear-gradient(160deg,#0d1118,#070a0e);border:1px solid rgba(253,199,44,.3);border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,.8);padding:32px;animation:slideUp .3s ease-out;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:18px;color:#FDC72C;margin:0;">🔐 PASSKEY SETTINGS</h2>
+        <button onClick="{{ closePasskeyModal }}" style="background:none;border:none;font-size:20px;color:rgba(253,199,44,.6);cursor:pointer;">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow-y:auto;">
+        <!-- Status -->
+        <div style="padding:12px;background:rgba(253,199,44,.05);border:1px solid rgba(253,199,44,.2);border-radius:8px;">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.5);margin-bottom:6px;">STATUS</div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-size:13px;color:#4ade80;">✓ PASSKEY CONFIGURED</div>
+          <div style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.4);margin-top:4px;">Stored locally • Never sent to server</div>
+        </div>
+
+        <!-- Trusted Devices -->
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.5);margin-bottom:8px;">TRUSTED DEVICES</div>
+          <div id="devicesList" style="display:flex;flex-direction:column;gap:6px;"></div>
+          <button onClick="{{ revokeTrust }}" style="width:100%;margin-top:8px;padding:8px;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.3);color:rgba(220,60,60,.8);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;cursor:pointer;border-radius:4px;transition:all .2s;">REVOKE DEVICE TRUST</button>
+        </div>
+
+        <!-- Change Passkey -->
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(253,199,44,.5);margin-bottom:8px;">CHANGE PASSKEY</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <input id="newPasskey" type="password" placeholder="New passkey (min 8 chars)" style="width:100%;padding:8px 12px;background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:11px;border-radius:4px;outline:none;">
+            <input id="confirmPasskey" type="password" placeholder="Confirm passkey" style="width:100%;padding:8px 12px;background:rgba(253,199,44,.04);border:1px solid rgba(253,199,44,.25);color:#F4F5F7;font-family:'Chakra Petch',sans-serif;font-size:11px;border-radius:4px;outline:none;">
+            <button onClick="{{ updatePasskey }}" style="width:100%;padding:10px;background:rgba(253,199,44,.12);border:1px solid rgba(253,199,44,.3);color:#FDC72C;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;cursor:pointer;border-radius:4px;transition:all .2s;">UPDATE PASSKEY</button>
+          </div>
+        </div>
+
+        <!-- Logout -->
+        <button onClick="{{ logout }}" style="width:100%;padding:10px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);color:rgba(253,199,44,.7);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;cursor:pointer;border-radius:4px;transition:all .2s;">LOGOUT</button>
+
+        <div id="passkeyMsg" style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(253,199,44,.4);text-align:center;min-height:14px;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ── VOICE DISPLAY ── -->
@@ -697,6 +741,80 @@ class Component extends DCLogic {
     const menu = document.getElementById('modelMenu');
     if (menu) menu.style.display = 'none';
   }
+
+  togglePasskeySettings() {
+    const modal = document.getElementById('passkeyModal');
+    if (!modal) return;
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    if (modal.style.display === 'flex') {
+      this.loadDevicesList();
+    }
+  },
+
+  closePasskeyModal() {
+    const modal = document.getElementById('passkeyModal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  loadDevicesList() {
+    const list = document.getElementById('devicesList');
+    if (!list) return;
+    const trusted = localStorage.getItem('empire_device_trusted');
+    const setup = localStorage.getItem('empire_setup_complete');
+
+    if (!trusted && !setup) {
+      list.innerHTML = '<div style="font-family:\'Space Mono\',monospace;font-size:9px;color:rgba(253,199,44,.4);">No trusted devices</div>';
+      return;
+    }
+
+    list.innerHTML = `
+      <div style="padding:8px;background:rgba(253,199,44,.08);border:1px solid rgba(253,199,44,.2);border-radius:6px;font-family:'Space Mono',monospace;font-size:9px;color:rgba(232,234,237,.8);">
+        <div>📱 ${navigator.userAgent.includes('Windows') ? 'Windows' : navigator.userAgent.includes('Mac') ? 'MacOS' : 'Device'}</div>
+        <div style="color:rgba(253,199,44,.5);font-size:8px;margin-top:2px;">This device • Trusted</div>
+      </div>
+    `;
+  },
+
+  updatePasskey() {
+    const newPass = document.getElementById('newPasskey');
+    const confirmPass = document.getElementById('confirmPasskey');
+    const msg = document.getElementById('passkeyMsg');
+
+    if (!newPass || !confirmPass || !msg) return;
+
+    const p1 = newPass.value.trim();
+    const p2 = confirmPass.value.trim();
+
+    if (!p1 || !p2) { msg.textContent = '❌ ENTER NEW PASSKEY'; msg.style.color = 'rgba(220,60,60,.8)'; return; }
+    if (p1.length < 8) { msg.textContent = '❌ MIN 8 CHARACTERS'; msg.style.color = 'rgba(220,60,60,.8)'; return; }
+    if (p1 !== p2) { msg.textContent = '❌ PASSKEYS DO NOT MATCH'; msg.style.color = 'rgba(220,60,60,.8)'; return; }
+
+    const setup = JSON.parse(localStorage.getItem('empire_setup_complete') || '{}');
+    setup.masterPass = p1;
+    setup.updated = Date.now();
+    localStorage.setItem('empire_setup_complete', JSON.stringify(setup));
+
+    msg.textContent = '✅ PASSKEY UPDATED';
+    msg.style.color = 'rgba(74,222,128,.9)';
+    newPass.value = '';
+    confirmPass.value = '';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  },
+
+  revokeTrust() {
+    localStorage.removeItem('empire_device_trusted');
+    const msg = document.getElementById('passkeyMsg');
+    if (msg) {
+      msg.textContent = '✅ DEVICE TRUST REVOKED';
+      msg.style.color = 'rgba(74,222,128,.9)';
+    }
+    this.loadDevicesList();
+  },
+
+  logout() {
+    localStorage.removeItem('empire_device_trusted');
+    window.location.href = '/';
+  },
 
   toggleProjects() {
     const panel = document.getElementById('projectsPanel');
