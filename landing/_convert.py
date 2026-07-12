@@ -107,6 +107,7 @@ method_names = [
     'initBgMesh', 'drawSkyline',
     'initCursorGlow', 'initMagnetic', 'initTextScramble',
     'initAgentCanvas', 'initCityAudio', 'initMeshPyramid', 'initTradingChart',
+    'initSunMoon',
     'toggleTower',
     'componentDidMount',
 ]

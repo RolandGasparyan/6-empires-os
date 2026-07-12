@@ -154,10 +154,15 @@
           </div>
         </div>
       </div>
-      <!-- left panel: bars -->
+      <!-- SUN + MOON SYNC ANIMATION -->
       <div data-depth="54" style="position:absolute;left:9%;bottom:22%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
-        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:12px;">NODE THROUGHPUT</div>
-        <canvas id="tradingChart" style="width:100%;height:54px;display:block;"></canvas>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:10px;">SUN · MOON SYNC</div>
+        <canvas id="sunMoonCanvas" style="width:100%;height:90px;display:block;"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'Space Mono',monospace;font-size:8px;">
+          <span style="color:rgba(248,226,49,.8);">☀ SOLAR</span>
+          <span id="syncPct" style="color:rgba(200,220,255,.8);">SYNC 0%</span>
+          <span style="color:rgba(180,200,255,.8);">☽ LUNAR</span>
+        </div>
       </div>
       <!-- right panel: network -->
       <div data-depth="-60" style="position:absolute;right:8%;top:26%;width:210px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(8px);box-shadow:0 0 30px rgba(248,226,49,.06),inset 0 0 20px rgba(248,226,49,.02);">

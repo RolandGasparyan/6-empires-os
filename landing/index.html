@@ -84,8 +84,7 @@ html,body{background:#030508!important;margin:0;padding:0;}
   }
 
 </style>
-<script async src="https://accounts.google.com/gsi/client"></script>
-  </head>
+</head>
 <body>
 <canvas id="manhattanBg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <div data-six-root style="position:relative;background:#000000;color:#E8EAED;font-family:'Sora',sans-serif;overflow:hidden;">
@@ -244,10 +243,15 @@ html,body{background:#030508!important;margin:0;padding:0;}
           </div>
         </div>
       </div>
-      <!-- left panel: bars -->
+      <!-- SUN + MOON SYNC ANIMATION -->
       <div data-depth="54" style="position:absolute;left:9%;bottom:22%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
-        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:12px;">NODE THROUGHPUT</div>
-        <canvas id="tradingChart" style="width:100%;height:54px;display:block;"></canvas>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:10px;">SUN · MOON SYNC</div>
+        <canvas id="sunMoonCanvas" style="width:100%;height:90px;display:block;"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'Space Mono',monospace;font-size:8px;">
+          <span style="color:rgba(248,226,49,.8);">☀ SOLAR</span>
+          <span id="syncPct" style="color:rgba(200,220,255,.8);">SYNC 0%</span>
+          <span style="color:rgba(180,200,255,.8);">☽ LUNAR</span>
+        </div>
       </div>
       <!-- right panel: network -->
       <div data-depth="-60" style="position:absolute;right:8%;top:26%;width:210px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(8px);box-shadow:0 0 30px rgba(248,226,49,.06),inset 0 0 20px rgba(248,226,49,.02);">
@@ -1928,6 +1932,77 @@ var SIX2 = {
     };
     this._tradingChartRaf=requestAnimationFrame(draw);
   },
+  initSunMoon(){
+    const canvas=document.getElementById('sunMoonCanvas'); if(!canvas) return;
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    const resize=()=>{ canvas.width=canvas.clientWidth*DPR; canvas.height=canvas.clientHeight*DPR; };
+    resize(); window.addEventListener('resize',resize);
+    const ctx=canvas.getContext('2d');
+    let f=0;
+    const draw=()=>{
+      f++; const t=f/60;
+      const W=canvas.width/DPR, H=canvas.height/DPR;
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.clearRect(0,0,W,H);
+      // orbit path
+      const cx=W/2, cy=H*0.58, rx=W*0.38, ry=H*0.3;
+      ctx.strokeStyle='rgba(248,226,49,.08)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+      // sun angle — slow clockwise
+      const sunA=t*0.4;
+      const sx=cx+Math.cos(sunA)*rx, sy=cy+Math.sin(sunA)*ry;
+      // moon angle — opposite + slight phase offset
+      const moonA=sunA+Math.PI+0.3*Math.sin(t*0.15);
+      const mx=cx+Math.cos(moonA)*rx, my=cy+Math.sin(moonA)*ry;
+      // sync % — how close they are in phase (0=opposite, 100=aligned)
+      const sync=Math.round((1-Math.abs(Math.cos(moonA-sunA))/1)*100);
+      const pctEl=document.getElementById('syncPct');
+      if(pctEl) pctEl.textContent='SYNC '+sync+'%';
+      // connector beam
+      const beamA=0.4+0.6*(sync/100);
+      const grad=ctx.createLinearGradient(sx,sy,mx,my);
+      grad.addColorStop(0,'rgba(248,226,49,'+beamA.toFixed(2)+')');
+      grad.addColorStop(0.5,'rgba(220,200,255,'+(beamA*0.6).toFixed(2)+')');
+      grad.addColorStop(1,'rgba(140,180,255,'+beamA.toFixed(2)+')');
+      ctx.strokeStyle=grad; ctx.lineWidth=1+beamA;
+      ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(mx,my); ctx.stroke();
+      ctx.setLineDash([]);
+      // sun
+      const sunPulse=0.7+0.3*Math.sin(t*2.2);
+      const sunG=ctx.createRadialGradient(sx,sy,0,sx,sy,12);
+      sunG.addColorStop(0,'rgba(255,255,200,1)'); sunG.addColorStop(0.4,'rgba(248,226,49,.9)'); sunG.addColorStop(1,'rgba(248,226,49,0)');
+      ctx.globalAlpha=sunPulse; ctx.fillStyle=sunG;
+      ctx.beginPath(); ctx.arc(sx,sy,12,0,Math.PI*2); ctx.fill();
+      // sun rays
+      ctx.globalAlpha=0.4*sunPulse; ctx.strokeStyle='rgba(248,226,49,.7)'; ctx.lineWidth=0.7;
+      for(let r=0;r<6;r++){
+        const ra=r*Math.PI/3+t*0.5;
+        ctx.beginPath(); ctx.moveTo(sx+Math.cos(ra)*7,sy+Math.sin(ra)*7); ctx.lineTo(sx+Math.cos(ra)*13,sy+Math.sin(ra)*13); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      // moon — crescent effect
+      const moonPulse=0.6+0.4*Math.sin(t*1.8+1.5);
+      const moonG=ctx.createRadialGradient(mx,my,0,mx,my,9);
+      moonG.addColorStop(0,'rgba(220,235,255,1)'); moonG.addColorStop(0.5,'rgba(140,180,255,.85)'); moonG.addColorStop(1,'rgba(80,120,220,0)');
+      ctx.globalAlpha=moonPulse; ctx.fillStyle=moonG;
+      ctx.beginPath(); ctx.arc(mx,my,9,0,Math.PI*2); ctx.fill();
+      // crescent cutout
+      ctx.globalCompositeOperation='destination-out';
+      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.beginPath(); ctx.arc(mx+3,my-1,7,0,Math.PI*2); ctx.fill();
+      ctx.globalCompositeOperation='source-over';
+      ctx.globalAlpha=1;
+      // center glow when syncing
+      if(sync>60){
+        const cg=ctx.createRadialGradient(cx,cy,0,cx,cy,18);
+        cg.addColorStop(0,'rgba(200,180,255,'+(0.3*(sync-60)/40).toFixed(2)+')');
+        cg.addColorStop(1,'rgba(200,180,255,0)');
+        ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(cx,cy,18,0,Math.PI*2); ctx.fill();
+      }
+      this._sunMoonRaf=requestAnimationFrame(draw);
+    };
+    this._sunMoonRaf=requestAnimationFrame(draw);
+  },
   toggleTower(){
     this._towerOpen = !this._towerOpen;
     const open = this._towerOpen;
@@ -1944,6 +2019,7 @@ var SIX2 = {
     this.initBgMesh();
     this.initAgentCanvas();
     this.initMeshPyramid();
+    this.initSunMoon();
     this.initTradingChart();
     this.onScroll = this.onScroll.bind(this);
     window.addEventListener('scroll', this.onScroll, {passive:true});
@@ -1958,6 +2034,7 @@ var SIX2 = {
     setTimeout(() => this.initTextScramble(), 600);
   }
 };
+
 (function(){
   if(!SIX2.componentDidMount) return;
   SIX2.componentDidMount();
