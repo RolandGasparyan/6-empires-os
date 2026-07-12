@@ -1,0 +1,125 @@
+name: Sync Obsidian Brain to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "empire-ops/EMPIRE-Vault/**/*.md"
+      - ".github/workflows/sync-obsidian-brain.yml"
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  sync-brain:
+    name: Build and sync brain.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build brain.json from Obsidian vault
+        run: |
+          python3 - empire-ops/EMPIRE-Vault <<'PY' > /tmp/brain.json
+          import json, os, re, sys, glob
+
+          MAX_NOTES = 120
+          MAX_CHARS = 1800
+          EXCLUDE_MARKERS = ["/.git/", "/.obsidian/", "/.trash/", "/node_modules/", "/backups/", "/__pycache__/"]
+          PRIORITY_MARKERS = ["/00_meta/"]
+          PRIORITY_TITLES = {"infrastructure", "empire os", "empire ai chat", "free llm apis",
+                              "god mode prompts", "models", "openhuman", "pending actions"}
+
+          candidates = []
+          for vault in sys.argv[1:]:
+              if not os.path.isdir(vault):
+                  continue
+              for f in glob.glob(os.path.join(vault, "**", "*.md"), recursive=True):
+                  norm = f.replace(os.sep, "/")
+                  if any(m in norm for m in EXCLUDE_MARKERS):
+                      continue
+                  try:
+                      mtime = os.path.getmtime(f)
+                  except OSError:
+                      continue
+                  candidates.append((mtime, f))
+
+          def is_priority(path):
+              norm = path.replace(os.sep, "/").lower()
+              if any(m in norm for m in PRIORITY_MARKERS):
+                  return True
+              title = os.path.splitext(os.path.basename(path))[0].lower()
+              return title in PRIORITY_TITLES
+
+          candidates.sort(key=lambda t: (not is_priority(t[1]), -t[0]))
+
+          seen = {}
+          for _, f in candidates:
+              if len(seen) >= MAX_NOTES:
+                  break
+              title = os.path.splitext(os.path.basename(f))[0]
+              try:
+                  raw = open(f, encoding="utf-8", errors="ignore").read()
+              except OSError:
+                  continue
+              body = re.sub(r'^---.*?---\s*', '', raw, flags=re.S)
+              text = re.sub(r'\n{3,}', '\n\n', body).strip()[:MAX_CHARS]
+              if title in seen and len(text) <= len(seen[title]):
+                  continue
+              seen[title] = text
+
+          brain = {
+              "source": "6-EMPIRE Second Brain (GitHub + Obsidian)",
+              "repository": "${{ github.repository }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "noteCount": len(seen),
+              "maxNotes": MAX_NOTES,
+              "maxCharsPerNote": MAX_CHARS,
+              "updated": __import__("datetime").datetime.now().isoformat(),
+              "notes": [{"title": t, "text": x} for t, x in seen.items()]
+          }
+          print(json.dumps(brain, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload brain.json to VPS
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: /tmp/brain.json
+          target: /opt/empire-sync/
+
+      - name: Restart services and verify
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "=== Obsidian brain sync at $(date) ==="
+            ls -lh /opt/empire-sync/brain.json
+            wc -l /opt/empire-sync/brain.json
+            python3 -c "import json; b=json.load(open('/opt/empire-sync/brain.json')); print(f'Brain has {b[\"noteCount\"]} notes, {sum(len(n[\"text\"]) for n in b[\"notes\"])} chars')"
+            systemctl restart empire-ai 2>/dev/null || true
+            echo "=== Sync complete ==="
+
+      - name: Commit and push brain.json to repo
+        run: |
+          cp /tmp/brain.json empire-sync/brain.json
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          if git diff --quiet empire-sync/brain.json; then
+            echo "No changes to brain.json"
+          else
+            git add empire-sync/brain.json
+            git commit -m "sync: update brain.json from Obsidian vault [automated]"
+            git push
+          fi
