@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMPIRE Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; background: #050608; color: #E8EAED; font-family: 'Sora', sans-serif; }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0e27 0%, #050608 100%);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background: linear-gradient(160deg, #0d1118, #070a0e);
+            border: 1px solid rgba(248, 226, 49, 0.35);
+            border-radius: 12px;
+            padding: 48px 40px;
+            box-shadow: 0 0 80px rgba(248, 226, 49, 0.08);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid #F8E231;
+        }
+
+        .top-left { top: 0; left: 0; border-top: 1.5px solid #F8E231; border-left: 1.5px solid #F8E231; }
+        .top-right { top: 0; right: 0; border-top: 1.5px solid #F8E231; border-right: 1.5px solid #F8E231; }
+        .bottom-left { bottom: 0; left: 0; border-bottom: 1.5px solid #F8E231; border-left: 1.5px solid #F8E231; }
+        .bottom-right { bottom: 0; right: 0; border-bottom: 1.5px solid #F8E231; border-right: 1.5px solid #F8E231; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .header-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.28em;
+            color: rgba(248, 226, 49, 0.5);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .header-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            letter-spacing: 0.1em;
+            color: #F4F5F7;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 0.18em;
+            color: rgba(248, 226, 49, 0.5);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: rgba(248, 226, 49, 0.5);
+            cursor: pointer;
+            font-size: 10px;
+            padding: 2px 6px;
+            transition: color 0.2s;
+        }
+
+        .toggle-btn:hover {
+            color: #F8E231;
+        }
+
+        .toggle-btn.active {
+            color: #F8E231;
+        }
+
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(248, 226, 49, 0.04);
+            border: 1px solid rgba(248, 226, 49, 0.25);
+            color: #F4F5F7;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            outline: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            background: rgba(248, 226, 49, 0.08);
+            border-color: rgba(248, 226, 49, 0.45);
+            box-shadow: 0 0 16px rgba(248, 226, 49, 0.15);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 14px 0;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #F8E231;
+        }
+
+        .checkbox-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: rgba(248, 226, 49, 0.6);
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #F8E231;
+            border: none;
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.14em;
+            color: #050608;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(248, 226, 49, 0.45);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .forgot-link {
+            width: 100%;
+            padding: 8px;
+            background: none;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 0.1em;
+            color: rgba(248, 226, 49, 0.4);
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.2s;
+            margin-top: 8px;
+        }
+
+        .forgot-link:hover {
+            color: rgba(248, 226, 49, 0.6);
+        }
+
+        .message {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            text-align: center;
+            min-height: 18px;
+            margin-top: 12px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .message.error {
+            color: rgba(220, 60, 60, 0.8);
+            background: rgba(220, 60, 60, 0.1);
+        }
+
+        .message.success {
+            color: rgba(74, 222, 128, 0.9);
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .divider {
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: rgba(248, 226, 49, 0.4);
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: calc(50% - 20px);
+            height: 1px;
+            background: rgba(248, 226, 49, 0.2);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+
+        .divider::after {
+            right: 0;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            font-family: 'Space Mono', monospace;
+            font-size: 8px;
+            color: rgba(248, 226, 49, 0.4);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-link a:hover {
+            color: rgba(248, 226, 49, 0.6);
+        }
+
+        .position-relative {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container position-relative">
+        <div class="corner-bracket top-left"></div>
+        <div class="corner-bracket top-right"></div>
+        <div class="corner-bracket bottom-left"></div>
+        <div class="corner-bracket bottom-right"></div>
+
+        <div class="header">
+            <div class="header-label">🔐 SOVEREIGN ACCESS</div>
+            <div class="header-title">ADMIN LOGIN</div>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">
+                    <span>MASTER PASSKEY</span>
+                    <button type="button" class="toggle-btn" id="togglePass" title="Show/hide password">👁️</button>
+                </label>
+                <input type="password" id="passkey" placeholder="••••••••••••" autocomplete="off" required>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="trustDevice">
+                <label class="checkbox-label" for="trustDevice">☑ TRUST THIS DEVICE</label>
+            </div>
+
+            <button type="submit" class="submit-btn">AUTHENTICATE →</button>
+
+            <button type="button" class="forgot-link" id="forgotLink">Forgot Passkey?</button>
+
+            <div class="message" id="message"></div>
+
+            <div class="divider">─ OR ─</div>
+
+            <a href="/chat/" style="display: block; text-align: center; font-family: 'Space Mono', monospace; font-size: 9px; color: rgba(248, 226, 49, 0.5); text-decoration: none; padding: 12px; border: 1px solid rgba(248, 226, 49, 0.2); border-radius: 4px; transition: all 0.2s;">GO TO CHAT</a>
+        </form>
+
+        <div class="back-link">
+            <a href="/">← Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        const passInput = document.getElementById('passkey');
+        const toggleBtn = document.getElementById('togglePass');
+        const trustCheckbox = document.getElementById('trustDevice');
+        const form = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+        const forgotLink = document.getElementById('forgotLink');
+
+        let showPassword = false;
+
+        // Toggle password visibility
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPassword = !showPassword;
+            passInput.type = showPassword ? 'text' : 'password';
+            toggleBtn.textContent = showPassword ? '🙈' : '👁️';
+            toggleBtn.classList.toggle('active', showPassword);
+        });
+
+        // Handle login
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const passkey = passInput.value.trim();
+
+            if (!passkey) {
+                showMessage('ENTER PASSKEY', 'error');
+                return;
+            }
+
+            const setup = localStorage.getItem('empire_setup_complete');
+            if (!setup) {
+                showMessage('NO PASSKEY SET — CREATE ONE FIRST', 'error');
+                return;
+            }
+
+            const setupData = JSON.parse(setup);
+            if (setupData.masterPass !== passkey && !passkey.startsWith('google_')) {
+                showMessage('INVALID PASSKEY', 'error');
+                passInput.value = '';
+                passInput.focus();
+                return;
+            }
+
+            if (trustCheckbox.checked) {
+                localStorage.setItem('empire_device_trusted', JSON.stringify({
+                    trusted: true,
+                    timestamp: Date.now()
+                }));
+            }
+
+            showMessage('ACCESS GRANTED — REDIRECTING…', 'success');
+            setTimeout(() => {
+                window.location.href = '/chat/';
+            }, 800);
+        });
+
+        // Handle forgot passkey
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showMessage('CLEARING DATA — REFRESH TO SETUP NEW PASSKEY', 'error');
+            setTimeout(() => {
+                localStorage.clear();
+                window.location.href = '/';
+            }, 1000);
+        });
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message ' + type;
+        }
+
+        // Auto-focus on load
+        passInput.focus();
+    </script>
+</body>
+</html>
