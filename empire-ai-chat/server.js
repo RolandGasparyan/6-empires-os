@@ -32,7 +32,7 @@ setInterval(loadBrain, 5 * 60 * 1000);   // re-read every 5 min (picks up vault 
 
 const PORT = process.env.PORT || 8090;
 const OLLAMA = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
-const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';
+const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'qwen2.5:7b';  // updated: private local model (Mac)
 
 // 6-EMPIRE router (VPS) — serves the 8 branded EMPIRE models. Any model whose
 // name starts with "empire-" is routed here instead of local Ollama.
