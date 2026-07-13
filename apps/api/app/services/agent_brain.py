@@ -41,10 +41,13 @@ async def think(agent_name: str, division: str, action: str, context: list[str])
     try:
         import httpx
         who, mandate = _ROLE_VOICE.get(division, (agent_name, "execute the task"))
-        mem = "\n".join(f"- {m}" for m in context[-5:]) or "- (no prior memory)"
+        fragments = [str(item)[-2_000:] for item in context[-5:]]
+        mem = ("\n".join(f"- {item}" for item in fragments)[-6_000:]
+               or "- (no prior memory)")
+        bounded_action = action[:2_000]
         prompt = (
             f"You are {who}, an AI agent in the 6-EMPIRE corporation whose job is to {mandate}. "
-            f"Recent memory:\n{mem}\n\nTask: {action}. "
+            f"Recent memory:\n{mem}\n\nTask: {bounded_action}. "
             "Respond in 1-2 concise sentences as a decisive status update."
         )
         async with httpx.AsyncClient(timeout=20) as client:
@@ -54,6 +57,6 @@ async def think(agent_name: str, division: str, action: str, context: list[str])
                 json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}], "max_tokens": 120},
             )
             r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"].strip()
+            return r.json()["choices"][0]["message"]["content"].strip()[:4_000]
     except Exception:
         return _fallback(division, action)

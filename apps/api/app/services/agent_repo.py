@@ -1,83 +1,139 @@
-"""
-Persistence repository for the agent loop (Phase E).
-
-Bridges the in-memory engine to Postgres. Every write goes through here; all
-operations degrade gracefully if the DB is unreachable so the live twin keeps
-running (state simply isn't persisted that tick). On boot, load_state() hydrates
-the engine from the tables so a restart no longer wipes tasks/memory.
-"""
+"""Durable persistence operations for the live agent engine."""
 from __future__ import annotations
-from datetime import datetime
-from sqlalchemy import select, delete
-from app.database import async_session
-from app.models.agent_runtime import TaskRecord, MemoryRecord
 
-# Toggle so a totally DB-less dev run still works (mirrors useHQ mock path).
-_ENABLED = True
+from datetime import datetime, timezone
+from typing import cast
+
+from sqlalchemy import select
+
+from app.database import async_session
+from app.models.agent_runtime import MemoryRecord, TaskRecord
+
+
+class AgentRepositoryError(RuntimeError):
+    """Raised when an agent state transition could not be committed."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _parse(ts: str | None) -> datetime | None:
     if not ts:
         return None
     try:
-        return datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
-    except Exception:
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
         return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
-async def upsert_task(t: dict) -> None:
-    if not _ENABLED:
-        return
+def _iso(ts: datetime | None) -> str | None:
+    if ts is None:
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc).isoformat()
+
+
+async def _upsert_task_in_session(session, task: dict) -> None:
+    existing = await session.get(TaskRecord, task["id"])
+    if existing is None:
+        existing = TaskRecord(
+            id=task["id"],
+            agent_key=task["agent_key"],
+            title=task["title"],
+            created_at=_parse(task.get("created_at")) or _now(),
+        )
+        session.add(existing)
+    existing.state = task["state"]
+    existing.result = task.get("result")
+    existing.error = task.get("error")
+    if task["state"] == "active" and existing.started_at is None:
+        existing.started_at = _now()
+    if task.get("completed_at"):
+        existing.completed_at = _parse(task["completed_at"])
+
+
+async def upsert_task(task: dict) -> None:
     try:
-        async with async_session() as s:
-            existing = await s.get(TaskRecord, t["id"])
-            if existing is None:
-                existing = TaskRecord(id=t["id"], agent_key=t["agent_key"],
-                                      title=t["title"], created_at=_parse(t.get("created_at")) or datetime.utcnow())
-                s.add(existing)
-            existing.state = t["state"]
-            existing.result = t.get("result")
-            if t["state"] == "active" and existing.started_at is None:
-                existing.started_at = datetime.utcnow()
-            if t.get("completed_at"):
-                existing.completed_at = _parse(t["completed_at"])
-            await s.commit()
+        async with async_session() as session:
+            await _upsert_task_in_session(session, task)
+            await session.commit()
     except Exception as exc:
-        print(f"[repo] upsert_task skipped: {exc}")
+        raise AgentRepositoryError("task state could not be persisted") from exc
 
 
-async def add_memory(m: dict) -> None:
-    if not _ENABLED:
-        return
+async def add_memory(memory: dict) -> None:
     try:
-        async with async_session() as s:
-            s.add(MemoryRecord(id=m["id"], agent_key=m["agent_key"], kind=m["kind"],
-                               content=m["content"], importance=m.get("importance", 0.5),
-                               created_at=_parse(m.get("created_at")) or datetime.utcnow()))
-            await s.commit()
+        async with async_session() as session:
+            session.add(
+                MemoryRecord(
+                    id=memory["id"],
+                    agent_key=memory["agent_key"],
+                    kind=memory["kind"],
+                    content=memory["content"],
+                    importance=memory.get("importance", 0.5),
+                    created_at=_parse(memory.get("created_at")) or _now(),
+                )
+            )
+            await session.commit()
     except Exception as exc:
-        print(f"[repo] add_memory skipped: {exc}")
+        raise AgentRepositoryError("agent memory could not be persisted") from exc
+
+
+async def complete_task_with_memory(task: dict, memory: dict) -> None:
+    """Atomically persist task completion and its resulting memory."""
+    try:
+        async with async_session() as session:
+            await _upsert_task_in_session(session, task)
+            session.add(
+                MemoryRecord(
+                    id=memory["id"],
+                    agent_key=memory["agent_key"],
+                    kind=memory["kind"],
+                    content=memory["content"],
+                    importance=memory.get("importance", 0.5),
+                    created_at=_parse(memory.get("created_at")) or _now(),
+                )
+            )
+            await session.commit()
+    except Exception as exc:
+        raise AgentRepositoryError("task completion could not be persisted") from exc
 
 
 async def load_state() -> tuple[dict[str, list[dict]], dict[str, list[dict]]]:
-    """Return (tasks_by_agent, memory_by_agent) from the DB for hydration."""
     tasks: dict[str, list[dict]] = {}
     memory: dict[str, list[dict]] = {}
-    if not _ENABLED:
-        return tasks, memory
     try:
-        async with async_session() as s:
-            for r in (await s.execute(select(TaskRecord).order_by(TaskRecord.created_at))).scalars():
-                tasks.setdefault(r.agent_key, []).append({
-                    "id": r.id, "agent_key": r.agent_key, "title": r.title, "state": r.state,
-                    "result": r.result, "created_at": (r.created_at.isoformat() if r.created_at else ""),
-                    "completed_at": (r.completed_at.isoformat() if r.completed_at else None),
-                })
-            for r in (await s.execute(select(MemoryRecord).order_by(MemoryRecord.created_at))).scalars():
-                memory.setdefault(r.agent_key, []).append({
-                    "id": r.id, "agent_key": r.agent_key, "kind": r.kind, "content": r.content,
-                    "created_at": (r.created_at.isoformat() if r.created_at else ""),
-                })
+        async with async_session() as session:
+            rows = (await session.execute(select(TaskRecord).order_by(TaskRecord.created_at))).scalars()
+            for row in rows:
+                tasks.setdefault(str(row.agent_key), []).append(
+                    {
+                        "id": row.id,
+                        "agent_key": row.agent_key,
+                        "title": row.title,
+                        "state": row.state,
+                        "result": row.result,
+                        "error": row.error,
+                        "created_at": _iso(cast(datetime | None, row.created_at)) or "",
+                        "completed_at": _iso(cast(datetime | None, row.completed_at)),
+                    }
+                )
+            rows = (await session.execute(select(MemoryRecord).order_by(MemoryRecord.created_at))).scalars()
+            for row in rows:
+                memory.setdefault(str(row.agent_key), []).append(
+                    {
+                        "id": row.id,
+                        "agent_key": row.agent_key,
+                        "kind": row.kind,
+                        "content": row.content,
+                        "created_at": _iso(cast(datetime | None, row.created_at)) or "",
+                    }
+                )
     except Exception as exc:
-        print(f"[repo] load_state skipped: {exc}")
+        raise AgentRepositoryError("agent state could not be loaded") from exc
     return tasks, memory

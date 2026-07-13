@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import random
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 
 from app.services import agent_brain
@@ -29,6 +29,7 @@ class Task:
     title: str
     state: str          # queued | active | done
     result: str | None = None
+    error: str | None = None
     created_at: str = ""
     completed_at: str | None = None
 
@@ -96,19 +97,27 @@ async def hydrate() -> None:
     This is what makes a restart no longer wipe agent state (Phase E)."""
     tasks_by, mem_by = await agent_repo.load_state()
     loaded_t = loaded_m = 0
-    for key, rows in tasks_by.items():
+    for task_values in _tasks.values():
+        task_values.clear()
+    for memory_values in _memory.values():
+        memory_values.clear()
+    for key, task_rows in tasks_by.items():
         if key not in _tasks:
             continue
-        for r in rows:
-            _tasks[key].append(Task(id=r["id"], agent_key=key, title=r["title"],
-                                    state=r["state"], result=r.get("result"),
+        for r in task_rows:
+            state = "queued" if r["state"] == "active" else r["state"]
+            task = Task(id=r["id"], agent_key=key, title=r["title"],
+                                    state=state, result=r.get("result"), error=r.get("error"),
                                     created_at=r.get("created_at", ""),
-                                    completed_at=r.get("completed_at")))
+                                    completed_at=r.get("completed_at"))
+            _tasks[key].append(task)
+            if r["state"] == "active":
+                await agent_repo.upsert_task(asdict(task))
             loaded_t += 1
-    for key, rows in mem_by.items():
+    for key, memory_rows in mem_by.items():
         if key not in _memory:
             continue
-        for r in rows:
+        for r in memory_rows:
             _memory[key].append(Memory(id=r["id"], agent_key=key, kind=r["kind"],
                                        content=r["content"], created_at=r.get("created_at", "")))
             loaded_m += 1
@@ -144,35 +153,49 @@ async def _emit_status(agent: Agent) -> None:
 
 
 # ---- task lifecycle ----
-def enqueue_task(agent_key: str, title: str) -> dict | None:
+async def enqueue_task(agent_key: str, title: str) -> dict | None:
     agent = _AGENTS.get(agent_key)
     if not agent:
         return None
-    t = Task(id=str(uuid.uuid4())[:8], agent_key=agent_key, title=title,
+    t = Task(id=str(uuid.uuid4()), agent_key=agent_key, title=title,
              state="queued", created_at=_now())
+    await agent_repo.upsert_task(asdict(t))
     _tasks[agent_key].append(t)
-    # Persist the queued task (fire-and-forget; safe if DB is down).
-    asyncio.create_task(agent_repo.upsert_task(asdict(t)))
     return asdict(t)
 
 
+async def _transition(task: Task, **changes) -> None:
+    updated = replace(task, **changes)
+    await agent_repo.upsert_task(asdict(updated))
+    for name, value in changes.items():
+        setattr(task, name, value)
+
+
 async def _process_task(agent: Agent, task: Task) -> None:
-    task.state = "active"
-    await agent_repo.upsert_task(asdict(task))
+    await _transition(task, state="active", error=None)
     await _emit({"type": "task.active", "id": task.id, "agent": agent.key, "title": task.title, "ts": _now()})
     # think (LLM or fallback) with the agent's recent memory as context
     context = [m.content for m in _memory[agent.key][-5:]]
-    result = await agent_brain.think(agent.name, agent.division, task.title, context)
-    await asyncio.sleep(random.uniform(0.6, 1.4))  # simulate work time
-    task.state = "done"
-    task.result = result
-    task.completed_at = _now()
-    await agent_repo.upsert_task(asdict(task))
-    await _emit({"type": "task.done", "id": task.id, "agent": agent.key, "title": task.title, "result": result, "ts": _now()})
-    # persist a memory line
-    mem = Memory(id=str(uuid.uuid4())[:8], agent_key=agent.key, kind="decision", content=result, created_at=_now())
+    try:
+        result = await agent_brain.think(agent.name, agent.division, task.title, context)
+        await asyncio.sleep(random.uniform(0.6, 1.4))
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"[:500]
+        completed_at = _now()
+        await _transition(task, state="failed", error=error, completed_at=completed_at)
+        await _emit({"type": "task.failed", "id": task.id, "agent": agent.key, "title": task.title, "error": error, "ts": completed_at})
+        return
+
+    completed_at = _now()
+    completed = replace(task, state="done", result=result, error=None, completed_at=completed_at)
+    mem = Memory(id=str(uuid.uuid4()), agent_key=agent.key, kind="decision", content=result, created_at=completed_at)
+    await agent_repo.complete_task_with_memory(asdict(completed), asdict(mem))
+    task.state = completed.state
+    task.result = completed.result
+    task.error = completed.error
+    task.completed_at = completed.completed_at
     _memory[agent.key].append(mem)
-    await agent_repo.add_memory(asdict(mem))
+    await _emit({"type": "task.done", "id": task.id, "agent": agent.key, "title": task.title, "result": result, "ts": completed_at})
     await _emit({"type": "memory.add", "agent": agent.key, "kind": mem.kind, "content": mem.content, "ts": _now()})
 
 
@@ -198,4 +221,11 @@ async def run_worker(interval: float = 1.0) -> None:
         for agent in _AGENTS.values():
             queued = [t for t in _tasks[agent.key] if t.state == "queued"]
             if queued:
-                await _process_task(agent, queued[0])
+                task = queued[0]
+                try:
+                    await _process_task(agent, task)
+                except agent_repo.AgentRepositoryError:
+                    # A durable transition was not acknowledged. Retry the task;
+                    # on process restart hydration also recovers persisted active tasks.
+                    task.state = "queued"
+                    await _emit({"type": "task.retry", "id": task.id, "agent": agent.key, "title": task.title, "ts": _now()})
