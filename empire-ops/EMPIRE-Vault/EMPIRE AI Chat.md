@@ -10,7 +10,7 @@ Part of [[EMPIRE OS]]. Your private gold-themed chat page (`empire-ai-chat/`, No
 ## What changed
 The model dropdown now lists all 8 [[Models|EMPIRE models]] (empire-prime, ceo, trading, coder, strategist, research, media, fast) plus any local Ollama models.
 
-- **empire-*** models → routed to the VPS router `http://64.227.6.197:8000/v1` (key `sk-empire-local`)
+- **empire-*** models → routed to the VPS router `http://64.227.6.197:8000/v1` (key configured through `EMPIRE_KEY`; value `<redacted>`)
 - local models → stay on local Ollama
 - Mode dropdown (EMPIRE CORE / GOD MODE / Academic / Trading / Builder) injects [[GOD MODE Prompts]] server-side
 

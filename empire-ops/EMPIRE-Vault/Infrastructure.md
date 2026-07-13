@@ -12,7 +12,7 @@ Part of [[EMPIRE OS]].
 - Old box `137.184.54.161` **destroyed** 2026-06-19 (stopped ~$48/mo double-billing)
 
 ## Services (Docker)
-- Router/shim `:8000` `/v1` (key `sk-empire-local`) — streaming TTFB ~0.3s
+- Router/shim `:8000` `/v1` (key configured through `EMPIRE_KEY`; value `<redacted>`) — streaming TTFB ~0.3s
 - Open WebUI `:9090` — the [[Models|EMPIRE PRIME]] web interface
 - Postgres, Redis, Qdrant, Neo4j
 - Ollama `:11434` — `OLLAMA_KEEP_ALIVE=-1`

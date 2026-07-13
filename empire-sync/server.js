@@ -1,49 +1,208 @@
 /**
- * 6-EMPIRE — GitHub Sync Service
- * Polls the founder's repositories and exposes a single live state.json that
- * the 3D world + dashboards read. Zero dependencies (Node 18+ global fetch).
+ * 6-EMPIRE GitHub sync service.
  *
- * Env (/opt/empire-sync/.env):
- *   GITHUB_TOKEN   fine-grained PAT, Contents+Metadata+Issues read-only
- *   GITHUB_OWNER   default: RolandGasparyan
- *   SYNC_PORT      default: 8120
- *   SYNC_REPOS     comma list (default: the 5 empire repos)
+ * The public surface is intentionally tiny: health and a signed GitHub webhook.
+ * Every state or mutation endpoint requires the administrator bearer token and
+ * is expected to be blocked from the public internet by the deployment proxy.
  */
-const http = require('http');
+const crypto = require('crypto');
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 
-// load .env (simple parser)
-try {
-  const env = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
-  env.split('\n').forEach((l) => { const m = l.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/); if (m) process.env[m[1]] = m[2].replace(/^["']|["']$/g, ''); });
-} catch {}
+const APP_DIR = __dirname;
+const ENV_FILE = process.env.SYNC_ENV_FILE || path.join(APP_DIR, '.env');
 
-const TOKEN = process.env.GITHUB_TOKEN || '';
-const OWNER = process.env.GITHUB_OWNER || 'RolandGasparyan';
-const PORT = process.env.SYNC_PORT || 8120;
-// CORRECTION (2026-07-01): restored full set after confirming (via the real
-// GITHUB_TOKEN) that these are legitimate PRIVATE repos, not missing ones —
-// an earlier unauthenticated check wrongly read their 404s as "doesn't exist."
-const REPOS = (process.env.SYNC_REPOS || '6-empires-os,trading-guru-empire,strategy-lab-mac,dzayn-app,reincarnation-smm,REINCARNATION-Social-media-Gods,vortex,BOOKING-AI-AGENT,founders-kit')
-  .split(',').map((s) => s.trim()).filter(Boolean);
-
-const STATE_FILE = path.join(__dirname, 'state.json');
-let state = { ok: false, updated: null, owner: OWNER, repos: [], note: 'awaiting first sync' };
-try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch {}
-
-function gh(p) {
-  const tok = process.env.GITHUB_TOKEN || TOKEN;   // live token (updated by setup form)
-  return fetch('https://api.github.com' + p, {
-    headers: {
-      'Accept': 'application/vnd.github+json',
-      'User-Agent': '6-empire-sync',
-      ...(tok ? { 'Authorization': 'Bearer ' + tok } : {}),
-    },
-  }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
+function loadEnvironment() {
+  let contents;
+  try {
+    contents = fs.readFileSync(ENV_FILE, 'utf8');
+  } catch {
+    return;
+  }
+  for (const line of contents.split('\n')) {
+    const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!match || process.env[match[1]] !== undefined) continue;
+    process.env[match[1]] = match[2].replace(/^["']|["']$/g, '');
+  }
 }
 
-// derive a coarse "stage" + progress from recent activity
+loadEnvironment();
+
+const ADMIN_TOKEN = process.env.SYNC_ADMIN_TOKEN || '';
+const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+const OWNER = process.env.GITHUB_OWNER || 'RolandGasparyan';
+const PORT = Number(process.env.SYNC_PORT || 8120);
+const LISTEN_HOST = process.env.SYNC_LISTEN_HOST || '127.0.0.1';
+const MAX_BODY_BYTES = Number(process.env.SYNC_MAX_BODY_BYTES || 16 * 1024);
+const REQUEST_TIMEOUT_MS = Number(process.env.SYNC_REQUEST_TIMEOUT_MS || 10_000);
+const STATE_FILE = process.env.SYNC_STATE_FILE || path.join(APP_DIR, 'state.json');
+const BRAIN_FILE = process.env.SYNC_BRAIN_FILE || path.join(APP_DIR, 'brain.json');
+const REPOS = (process.env.SYNC_REPOS || '6-empires-os,trading-guru-empire,strategy-lab-mac,dzayn-app,reincarnation-smm,REINCARNATION-Social-media-Gods,vortex,BOOKING-AI-AGENT,founders-kit')
+  .split(',').map((value) => value.trim()).filter(Boolean);
+const ALLOWED_ORIGINS = new Set((process.env.SYNC_ALLOWED_ORIGINS || '')
+  .split(',').map((value) => value.trim()).filter(Boolean));
+
+if (ADMIN_TOKEN.length < 32 || /replace/i.test(ADMIN_TOKEN)) {
+  throw new Error('SYNC_ADMIN_TOKEN must be configured with at least 32 random characters');
+}
+if (!Number.isSafeInteger(PORT) || PORT < 0 || PORT > 65535) {
+  throw new Error('SYNC_PORT must be a valid TCP port');
+}
+if (!Number.isSafeInteger(MAX_BODY_BYTES) || MAX_BODY_BYTES < 1024) {
+  throw new Error('SYNC_MAX_BODY_BYTES must be at least 1024');
+}
+
+const agents = require('./agents');
+let state = { ok: false, updated: null, owner: OWNER, repos: [], note: 'awaiting first sync' };
+try {
+  state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+} catch {}
+
+class HttpError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+function fixedTimeEqual(left, right) {
+  const leftHash = crypto.createHash('sha256').update(String(left)).digest();
+  const rightHash = crypto.createHash('sha256').update(String(right)).digest();
+  return crypto.timingSafeEqual(leftHash, rightHash);
+}
+
+function bearerToken(req) {
+  const match = String(req.headers.authorization || '').match(/^Bearer ([^\s]+)$/);
+  return match ? match[1] : '';
+}
+
+function requireAdmin(req) {
+  if (!fixedTimeEqual(bearerToken(req), ADMIN_TOKEN)) {
+    throw new HttpError(401, 'unauthorized');
+  }
+}
+
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (!origin) return;
+  if (!ALLOWED_ORIGINS.has(origin)) throw new HttpError(403, 'origin not allowed');
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Hub-Signature-256');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Vary', 'Origin');
+}
+
+function json(res, statusCode, value) {
+  const body = JSON.stringify(value);
+  res.writeHead(statusCode, {
+    'Cache-Control': 'no-store',
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.end(body);
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let settled = false;
+
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      req.setTimeout(0);
+      callback(value);
+    };
+
+    req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      req.pause();
+      finish(reject, new HttpError(408, 'request timed out'));
+    });
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        req.pause();
+        finish(reject, new HttpError(413, 'request too large'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => finish(resolve, Buffer.concat(chunks)));
+    req.on('error', () => finish(reject, new HttpError(400, 'invalid request')));
+  });
+}
+
+async function readJson(req) {
+  const raw = await readBody(req);
+  let value;
+  try {
+    value = JSON.parse(raw.toString('utf8'));
+  } catch {
+    throw new HttpError(400, 'invalid JSON');
+  }
+  if (!value || Array.isArray(value) || typeof value !== 'object') {
+    throw new HttpError(400, 'JSON object required');
+  }
+  return value;
+}
+
+function atomicWrite(file, contents) {
+  const directory = path.dirname(file);
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const temporary = path.join(directory, `.${path.basename(file)}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`);
+  try {
+    fs.writeFileSync(temporary, contents, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    fs.renameSync(temporary, file);
+    fs.chmodSync(file, 0o600);
+  } finally {
+    try { fs.unlinkSync(temporary); } catch {}
+  }
+}
+
+function updateEnvironment(updates) {
+  for (const [key, value] of Object.entries(updates)) {
+    if (!/^[A-Z][A-Z0-9_]*$/.test(key) || /[\r\n\0]/.test(value)) {
+      throw new HttpError(400, 'invalid environment value');
+    }
+  }
+  let current = '';
+  try { current = fs.readFileSync(ENV_FILE, 'utf8'); } catch {}
+  const remaining = new Map(Object.entries(updates));
+  const lines = current.split('\n').filter((line) => line !== '').map((line) => {
+    const match = line.match(/^([A-Z][A-Z0-9_]*)=/);
+    if (!match || !remaining.has(match[1])) return line;
+    const value = remaining.get(match[1]);
+    remaining.delete(match[1]);
+    return `${match[1]}=${value}`;
+  });
+  for (const [key, value] of remaining) lines.push(`${key}=${value}`);
+  atomicWrite(ENV_FILE, `${lines.join('\n')}\n`);
+  for (const [key, value] of Object.entries(updates)) process.env[key] = value;
+}
+
+function writeState(nextState) {
+  state = nextState;
+  atomicWrite(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`);
+}
+
+function github(pathname) {
+  const token = process.env.GITHUB_TOKEN || '';
+  return fetch(`https://api.github.com${pathname}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': '6-empire-sync',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  }).then(async (response) => ({
+    status: response.status,
+    body: await response.json().catch(() => null),
+  }));
+}
+
 function stageFor(repo) {
   const days = repo.lastPushDays;
   if (days == null) return { stage: 'IDEA', prog: 0.15 };
@@ -54,178 +213,184 @@ function stageFor(repo) {
 }
 
 async function syncOnce() {
-  if (!(process.env.GITHUB_TOKEN || TOKEN)) { state = { ...state, ok: false, updated: new Date().toISOString(), note: 'no GITHUB_TOKEN set' }; return; }
-  // AUTO-DISCOVER: list every repo the token can see, then sync the configured
-  // ones if present plus any others the token grants (so names always match).
+  if (!process.env.GITHUB_TOKEN) {
+    writeState({ ...state, ok: false, updated: new Date().toISOString(), note: 'no GITHUB_TOKEN set' });
+    return state;
+  }
   let repoNames = REPOS.slice();
   try {
-    const disc = await gh('/user/repos?per_page=100&affiliation=owner,collaborator&sort=pushed');
-    if (Array.isArray(disc.body) && disc.body.length) {
-      const all = disc.body.map((r) => r.name);
-      // keep configured names that exist + add any extra accessible repos (cap 12)
-      const exist = REPOS.filter((n) => all.includes(n));
-      const extras = all.filter((n) => !REPOS.includes(n));
-      repoNames = [...new Set([...exist, ...extras])].slice(0, 12);
+    const discovered = await github('/user/repos?per_page=100&affiliation=owner,collaborator&sort=pushed');
+    if (Array.isArray(discovered.body) && discovered.body.length) {
+      const available = discovered.body.map((repo) => repo.name);
+      repoNames = [...new Set([
+        ...REPOS.filter((name) => available.includes(name)),
+        ...available.filter((name) => !REPOS.includes(name)),
+      ])].slice(0, 12);
     }
   } catch {}
-  const out = [];
+
+  const repos = [];
   for (const name of repoNames) {
     try {
-      const { status, body } = await gh(`/repos/${OWNER}/${name}`);
-      if (status !== 200 || !body) { out.push({ name, error: 'status ' + status }); continue; }
+      const { status, body } = await github(`/repos/${OWNER}/${name}`);
+      if (status !== 200 || !body) {
+        repos.push({ name, error: `status ${status}` });
+        continue;
+      }
       const pushedAt = body.pushed_at ? new Date(body.pushed_at) : null;
-      const lastPushDays = pushedAt ? Math.floor((Date.now() - pushedAt.getTime()) / 86400000) : null;
-      const commitsRes = await gh(`/repos/${OWNER}/${name}/commits?per_page=1`);
-      const lastCommit = Array.isArray(commitsRes.body) && commitsRes.body[0]
-        ? { msg: commitsRes.body[0].commit.message.split('\n')[0], date: commitsRes.body[0].commit.author.date }
+      const lastPushDays = pushedAt ? Math.floor((Date.now() - pushedAt.getTime()) / 86_400_000) : null;
+      const commits = await github(`/repos/${OWNER}/${name}/commits?per_page=1`);
+      const lastCommit = Array.isArray(commits.body) && commits.body[0]
+        ? { msg: commits.body[0].commit.message.split('\n')[0], date: commits.body[0].commit.author.date }
         : null;
-      const issuesRes = await gh(`/repos/${OWNER}/${name}/issues?state=open&per_page=1`);
       const repo = {
-        name, url: body.html_url, desc: body.description || '',
-        stars: body.stargazers_count, openIssues: body.open_issues_count,
-        language: body.language, lastPush: body.pushed_at, lastPushDays, lastCommit,
+        name,
+        url: body.html_url,
+        desc: body.description || '',
+        stars: body.stargazers_count,
+        openIssues: body.open_issues_count,
+        language: body.language,
+        lastPush: body.pushed_at,
+        lastPushDays,
+        lastCommit,
       };
-      out.push({ ...repo, ...stageFor(repo) });
-    } catch (e) { out.push({ name, error: String(e) }); }
+      repos.push({ ...repo, ...stageFor(repo) });
+    } catch {
+      repos.push({ name, error: 'sync failed' });
+    }
   }
-  state = { ok: true, updated: new Date().toISOString(), owner: OWNER, repos: out };
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-  console.log('[sync] ok', new Date().toISOString(), out.map((r) => r.name + ':' + (r.stage || r.error)).join(' '));
+  writeState({ ok: true, updated: new Date().toISOString(), owner: OWNER, repos });
+  return state;
 }
 
 function readBrain() {
-  try { return fs.readFileSync(path.join(__dirname, 'brain.json'), 'utf8'); }
-  catch { return JSON.stringify({ source: 'EMPIRE-Vault', noteCount: 0, notes: [] }); }
+  try {
+    return JSON.parse(fs.readFileSync(BRAIN_FILE, 'utf8'));
+  } catch {
+    return { source: 'EMPIRE-Vault', noteCount: 0, notes: [] };
+  }
 }
 
-const SETUP_HTML = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>6-EMPIRE · GitHub Token</title>
-<style>body{margin:0;background:#000;color:#f3ecd9;font-family:-apple-system,system-ui,sans-serif;display:grid;place-items:center;height:100dvh}
-.card{width:min(460px,92vw);background:#0c0b09;border:1px solid #caa44a55;border-radius:18px;padding:28px}
-h1{color:#d4af37;font-size:20px;letter-spacing:.1em;margin:0 0 6px}p{color:#8a8270;font-size:13px;line-height:1.5}
-input{width:100%;box-sizing:border-box;margin:14px 0;padding:12px 14px;border-radius:12px;border:1px solid #caa44a55;background:#15130d;color:#f3ecd9;font-size:14px}
-button{width:100%;padding:13px;border:0;border-radius:12px;background:linear-gradient(135deg,#f4d98b,#c8941a);color:#0a0a0b;font-weight:700;font-size:15px;cursor:pointer}
-.ok{color:#34f5a0}.err{color:#ff6a8a}small{color:#6f6857}</style></head><body>
-<div class="card"><h1>🔐 CONNECT GITHUB</h1>
-<p>Paste your GitHub <b>fine-grained token</b> (Contents + Metadata + Issues read-only on your empire repos). It is saved only on this server and never leaves it.</p>
-<input id="t" type="password" placeholder="github_pat_… or ghp_…" autocomplete="off">
-<button onclick="save()">Save &amp; Sync</button>
-<p style="margin-top:22px"><b style="color:#34f5a0">⚡ FAST MODELS (optional)</b><br>Paste a free <b>Groq</b> key (console.groq.com/keys) to make every agent answer in &lt;1s.</p>
-<input id="g" type="password" placeholder="gsk_… (Groq key)" autocomplete="off">
-<button style="background:linear-gradient(135deg,#7dd87d,#1f8a4c)" onclick="saveGroq()">Save Groq Key</button>
-<p style="margin-top:22px"><b style="color:#6fb3ff">🤖 AUTONOMOUS PRs (optional)</b><br>Paste a GitHub token with <b>Contents + Pull requests = Write</b> to let agents open real Pull Requests (never pushes to main).</p>
-<input id="w" type="password" placeholder="github_pat_… (write token)" autocomplete="off">
-<button style="background:linear-gradient(135deg,#6fb3ff,#2f5fd0)" onclick="saveWrite()">Enable Agent PRs</button>
-<p id="status" style="margin-top:18px;padding:10px 12px;border:1px solid #caa44a33;border-radius:10px;font-size:12.5px;color:#9fdce6"></p>
-<p id="msg"></p><small>Secrets stored at /opt/empire-sync/.env · never leave this server.</small></div>
-<script>
-// show which token is live + how many repos it currently sees
-(async()=>{try{const r=await fetch('/api/empire/state');const j=await r.json();const ok=(j.repos||[]).filter(x=>!x.error).length;const s=document.getElementById('status');s.innerHTML='Active token tail: <b>…'+(j.tokenTail||'?')+'</b> · sees <b>'+ok+'</b> repo'+(ok==1?'':'s')+(ok<4?' — needs All-repos + Contents/Metadata read':' ✓');}catch(e){}})();
-async function save(){const t=document.getElementById('t').value.trim();const m=document.getElementById('msg');if(!t){m.textContent='Enter a token.';return}m.textContent='Saving…';try{const r=await fetch('/api/empire/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})});const j=await r.json();if(j.ok){m.className='ok';m.textContent='✓ Connected! '+(j.synced||0)+' repos syncing.';}else{m.className='err';m.textContent='⚠ '+(j.error||'failed');}}catch(e){m.className='err';m.textContent='⚠ '+e.message}}
-async function saveGroq(){const g=document.getElementById('g').value.trim();const m=document.getElementById('msg');if(!g){m.textContent='Enter a Groq key.';return}m.textContent='Saving…';try{const r=await fetch('/api/empire/groq',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:g})});const j=await r.json();if(j.ok){m.className='ok';m.textContent='⚡ Groq key saved — agents are now fast.';}else{m.className='err';m.textContent='⚠ '+(j.error||'failed');}}catch(e){m.className='err';m.textContent='⚠ '+e.message}}
-async function saveWrite(){const w=document.getElementById('w').value.trim();const m=document.getElementById('msg');if(!w){m.textContent='Enter a write token.';return}m.textContent='Saving…';try{const r=await fetch('/api/empire/writetoken',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:w})});const j=await r.json();if(j.ok){m.className='ok';m.textContent='🤖 Agent PRs enabled — agents will open Pull Requests.';fetch('/api/empire/agents/run',{method:'POST'});}else{m.className='err';m.textContent='⚠ '+(j.error||'failed');}}catch(e){m.className='err';m.textContent='⚠ '+e.message}}
-</script>
-</body></html>`;
-const { execSync } = require('child_process');
-const agents = require('./agents');
+function verifyWebhook(raw, signature) {
+  if (WEBHOOK_SECRET.length < 32 || /replace/i.test(WEBHOOK_SECRET)) return false;
+  if (!/^sha256=[a-f0-9]{64}$/i.test(signature)) return false;
+  const expected = `sha256=${crypto.createHmac('sha256', WEBHOOK_SECRET).update(raw).digest('hex')}`;
+  return fixedTimeEqual(signature.toLowerCase(), expected.toLowerCase());
+}
 
-http.createServer((req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  // --- token setup page (browser form; token goes browser → this server only) ---
-  if (req.method === 'GET' && req.url.startsWith('/api/empire/setup')) {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    return res.end(SETUP_HTML);
-  }
-  if (req.method === 'POST' && req.url.startsWith('/api/empire/setup')) {
-    let body = ''; req.on('data', (c) => (body += c));
-    req.on('end', async () => {
-      try {
-        const tok = (JSON.parse(body).token || '').trim();
-        if (!/^(github_pat_|ghp_)/.test(tok)) { res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'token must start with github_pat_ or ghp_' })); }
-        // write .env preserving the other keys
-        const envPath = path.join(__dirname, '.env');
-        let env = ''; try { env = fs.readFileSync(envPath, 'utf8'); } catch {}
-        if (/^GITHUB_TOKEN=.*$/m.test(env)) env = env.replace(/^GITHUB_TOKEN=.*$/m, 'GITHUB_TOKEN=' + tok);
-        else env += (env.endsWith('\n') || !env ? '' : '\n') + 'GITHUB_TOKEN=' + tok + '\n';
-        fs.writeFileSync(envPath, env);
-        process.env.GITHUB_TOKEN = tok; // hot-reload for this process
-        await syncOnce();
-        const okCount = (state.repos || []).filter((r) => !r.error).length;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, synced: okCount }));
-      } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: String(e) })); }
-    });
-    return;
-  }
-  // --- Groq fast-model key (browser → server only) ---
-  if (req.method === 'POST' && req.url.startsWith('/api/empire/groq')) {
-    let body = ''; req.on('data', (c) => (body += c));
-    req.on('end', () => {
-      try {
-        const key = (JSON.parse(body).key || '').trim();
-        if (!/^gsk_/.test(key)) { res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'Groq key must start with gsk_' })); }
-        const envPath = path.join(__dirname, '.env');
-        let env = ''; try { env = fs.readFileSync(envPath, 'utf8'); } catch {}
-        if (/^FREE_GROQ_KEY=.*$/m.test(env)) env = env.replace(/^FREE_GROQ_KEY=.*$/m, 'FREE_GROQ_KEY=' + key);
-        else env += (env.endsWith('\n') || !env ? '' : '\n') + 'FREE_GROQ_KEY=' + key + '\n';
-        fs.writeFileSync(envPath, env);
-        // also write to the main stack .env so the router picks it up
-        try { execSync(`grep -q '^FREE_GROQ_KEY=' /root/6-empires-os-full/.env 2>/dev/null && sed -i 's#^FREE_GROQ_KEY=.*#FREE_GROQ_KEY=${key}#' /root/6-empires-os-full/.env || echo 'FREE_GROQ_KEY=${key}' >> /root/6-empires-os-full/.env`); } catch {}
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: String(e) })); }
-    });
-    return;
-  }
-  // --- AUTONOMOUS AGENTS: state + run + write-token ---
-  if (req.method === 'GET' && req.url.startsWith('/api/empire/agents/state')) {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(agents.readState()));
-  }
-  if (req.method === 'POST' && req.url.startsWith('/api/empire/agents/run')) {
-    agents.runAll().then((s) => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(s)); })
-      .catch((e) => { res.writeHead(500); res.end(String(e)); });
-    return;
-  }
-  if (req.method === 'POST' && req.url.startsWith('/api/empire/writetoken')) {
-    let body = ''; req.on('data', (c) => (body += c));
-    req.on('end', () => {
-      try {
-        const key = (JSON.parse(body).token || '').trim();
-        if (!/^(github_pat_|ghp_)/.test(key)) { res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: false, error: 'token must start with github_pat_ or ghp_' })); }
-        const envPath = path.join(__dirname, '.env');
-        let env = ''; try { env = fs.readFileSync(envPath, 'utf8'); } catch {}
-        if (/^GITHUB_WRITE_TOKEN=.*$/m.test(env)) env = env.replace(/^GITHUB_WRITE_TOKEN=.*$/m, 'GITHUB_WRITE_TOKEN=' + key);
-        else env += (env.endsWith('\n') || !env ? '' : '\n') + 'GITHUB_WRITE_TOKEN=' + key + '\n';
-        fs.writeFileSync(envPath, env);
-        process.env.GITHUB_WRITE_TOKEN = key;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: String(e) })); }
-    });
-    return;
-  }
-  // --- GitHub webhook → instant re-sync (point a repo webhook here) ---
-  if (req.method === 'POST' && req.url.startsWith('/api/empire/webhook')) {
-    let body = ''; req.on('data', (c) => (body += c));
-    req.on('end', () => { syncOnce().then(() => { res.writeHead(200); res.end('resynced'); }).catch(() => { res.writeHead(200); res.end('ok'); }); });
-    return;
-  }
-  if (req.url.startsWith('/api/empire/brain')) {          // Obsidian second-brain
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(readBrain());
-  }
-  if (req.url.startsWith('/api/empire/state') || req.url === '/' ) {
-    const tok = process.env.GITHUB_TOKEN || TOKEN || '';
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ ...state, tokenTail: tok ? tok.slice(-6) : '' }));
-  }
-  if (req.url === '/api/empire/sync') { syncOnce().then(() => { res.writeHead(200); res.end('synced'); }); return; }
-  res.writeHead(404); res.end('not found');
-}).listen(PORT, () => console.log('empire-sync on :' + PORT + ' owner=' + OWNER + ' repos=' + REPOS.join(',') + ' token=' + (TOKEN ? 'set' : 'MISSING')));
+async function handle(req, res) {
+  applyCors(req, res);
+  const url = new URL(req.url, 'http://localhost');
+  const route = url.pathname;
 
-syncOnce();
-setInterval(syncOnce, 5 * 60 * 1000);   // every 5 minutes
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  if (req.method === 'GET' && (route === '/' || route === '/api/empire/health')) {
+    json(res, 200, { ok: true, service: 'empire-sync' });
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/webhook') {
+    const raw = await readBody(req);
+    if (!verifyWebhook(raw, String(req.headers['x-hub-signature-256'] || ''))) {
+      throw new HttpError(401, 'invalid webhook signature');
+    }
+    await syncOnce();
+    json(res, 202, { ok: true });
+    return;
+  }
 
-// autonomous agent loop — agents review repos + propose PRs every 30 min
-setTimeout(() => { agents.runAll().catch(() => {}); }, 20000);
-setInterval(() => { agents.runAll().catch(() => {}); }, 30 * 60 * 1000);
+  const protectedRoutes = new Set([
+    '/api/empire/state',
+    '/api/empire/brain',
+    '/api/empire/setup',
+    '/api/empire/groq',
+    '/api/empire/writetoken',
+    '/api/empire/agents/state',
+    '/api/empire/agents/run',
+    '/api/empire/sync',
+  ]);
+  if (protectedRoutes.has(route)) requireAdmin(req);
+
+  if (req.method === 'GET' && route === '/api/empire/state') {
+    json(res, 200, state);
+    return;
+  }
+  if (req.method === 'GET' && route === '/api/empire/brain') {
+    json(res, 200, readBrain());
+    return;
+  }
+  if (req.method === 'GET' && route === '/api/empire/agents/state') {
+    json(res, 200, agents.readState());
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/setup') {
+    const { token } = await readJson(req);
+    if (!/^github_pat_[A-Za-z0-9_]{20,}$/.test(token || '') && !/^ghp_[A-Za-z0-9]{20,}$/.test(token || '')) {
+      throw new HttpError(400, 'invalid GitHub token format');
+    }
+    updateEnvironment({ GITHUB_TOKEN: token });
+    await syncOnce();
+    json(res, 200, { ok: true, synced: state.repos.filter((repo) => !repo.error).length });
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/groq') {
+    const { key } = await readJson(req);
+    if (!/^gsk_[A-Za-z0-9_-]{20,}$/.test(key || '')) throw new HttpError(400, 'invalid Groq key format');
+    updateEnvironment({ FREE_GROQ_KEY: key });
+    json(res, 200, { ok: true });
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/writetoken') {
+    const { token } = await readJson(req);
+    if (!/^github_pat_[A-Za-z0-9_]{20,}$/.test(token || '') && !/^ghp_[A-Za-z0-9]{20,}$/.test(token || '')) {
+      throw new HttpError(400, 'invalid GitHub token format');
+    }
+    updateEnvironment({ GITHUB_WRITE_TOKEN: token });
+    json(res, 200, { ok: true });
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/agents/run') {
+    json(res, 200, await agents.runAll());
+    return;
+  }
+  if (req.method === 'POST' && route === '/api/empire/sync') {
+    await syncOnce();
+    json(res, 200, { ok: true, updated: state.updated });
+    return;
+  }
+  if (protectedRoutes.has(route)) throw new HttpError(405, 'method not allowed');
+  throw new HttpError(404, 'not found');
+}
+
+const server = http.createServer((req, res) => {
+  handle(req, res).catch((error) => {
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
+    const statusCode = error instanceof HttpError ? error.statusCode : 500;
+    const message = error instanceof HttpError ? error.message : 'internal error';
+    json(res, statusCode, { ok: false, error: message });
+  });
+});
+server.requestTimeout = REQUEST_TIMEOUT_MS;
+server.headersTimeout = Math.min(REQUEST_TIMEOUT_MS, 5_000);
+server.keepAliveTimeout = 5_000;
+
+server.listen(PORT, LISTEN_HOST, () => {
+  const address = server.address();
+  const boundPort = typeof address === 'object' && address ? address.port : PORT;
+  console.log(`empire-sync listening on ${LISTEN_HOST}:${boundPort}`);
+});
+
+if (process.env.SYNC_DISABLE_JOBS !== '1') {
+  syncOnce().catch(() => {});
+  setInterval(() => syncOnce().catch(() => {}), 5 * 60 * 1000).unref();
+  setTimeout(() => agents.runAll().catch(() => {}), 20_000).unref();
+  setInterval(() => agents.runAll().catch(() => {}), 30 * 60 * 1000).unref();
+}
+
+module.exports = { server };

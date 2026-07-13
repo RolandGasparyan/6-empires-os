@@ -37,6 +37,17 @@ PRIORITY_MARKERS = ["/00_meta/"]
 PRIORITY_TITLES = {"infrastructure", "empire os", "empire ai chat", "free llm apis",
                     "god mode prompts", "models", "openhuman", "pending actions"}
 
+SECRET_PATTERNS = [
+    re.compile(r'(?i)\b(login|password|passphrase|token|api[ _-]?key|client[ _-]?secret)\s*[:=]\s*[^\n`]+'),
+    re.compile(r'(?<![A-Za-z0-9_])(?:github_pat_|ghp_|gsk_|sk-)[A-Za-z0-9_-]{8,}'),
+]
+
+def redact_sensitive(text):
+    for pattern in SECRET_PATTERNS:
+        text = pattern.sub(lambda match: match.group(0).split(":", 1)[0].split("=", 1)[0] + ": [REDACTED]"
+                           if re.search(r'[:=]', match.group(0)) else "[REDACTED]", text)
+    return text
+
 candidates = []  # (mtime, path)
 for vault in sys.argv[1:]:
     if not os.path.isdir(vault):
@@ -70,7 +81,7 @@ for _, f in candidates:
     except OSError:
         continue
     body = re.sub(r'^---.*?---\s*', '', raw, flags=re.S)
-    text = re.sub(r'\n{3,}', '\n\n', body).strip()[:MAX_CHARS]
+    text = redact_sensitive(re.sub(r'\n{3,}', '\n\n', body)).strip()[:MAX_CHARS]
     if title in seen and len(text) <= len(seen[title]):
         continue
     seen[title] = text
@@ -83,5 +94,6 @@ print(json.dumps(brain, ensure_ascii=False, indent=2))
 PY
 
 scp -i "$SSHK" -o StrictHostKeyChecking=no /tmp/empire-brain.json "$H":/opt/empire-sync/brain.json
+ssh -i "$SSHK" -o StrictHostKeyChecking=no "$H" "chown empire-sync:empire-sync /opt/empire-sync/brain.json && chmod 600 /opt/empire-sync/brain.json"
 ssh -i "$SSHK" -o StrictHostKeyChecking=no "$H" "systemctl restart empire-ai 2>/dev/null || true"
 echo "[obsidian-sync] pushed $(python3 -c 'import json;print(json.load(open("/tmp/empire-brain.json"))["noteCount"])') notes (capped, most-recent)  $(date)"

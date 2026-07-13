@@ -17,8 +17,13 @@ const path = require('path');
 
 const OWNER = process.env.GITHUB_OWNER || 'RolandGasparyan';
 const ROUTER = process.env.EMPIRE_ROUTER || 'http://127.0.0.1:8000/v1';
-const KEY = process.env.EMPIRE_KEY || 'sk-empire-local';
-const STATE = path.join(__dirname, 'agents-state.json');
+const KEY = process.env.EMPIRE_KEY || '';
+const STATE = process.env.AGENTS_STATE_FILE || path.join(__dirname, 'agents-state.json');
+const REQUEST_TIMEOUT_MS = Number(process.env.SYNC_REQUEST_TIMEOUT_MS || 10_000);
+
+function request(url, options = {}) {
+  return fetch(url, { ...options, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+}
 
 // repo → owning agent + EMPIRE model
 // CORRECTION (2026-07-01): an earlier pass trimmed this list, wrongly believing
@@ -39,7 +44,7 @@ const ASSIGN = {
 };
 
 function ghGet(p, token) {
-  return fetch('https://api.github.com' + p, {
+  return request('https://api.github.com' + p, {
     headers: { Accept: 'application/vnd.github+json', 'User-Agent': '6e-agents', Authorization: 'Bearer ' + token },
   });
 }
@@ -47,10 +52,11 @@ function ghJson(p, token) { return ghGet(p, token).then((r) => r.json().catch(()
 
 // ask an EMPIRE model for one improvement (returns {title, body, file, content})
 async function propose(repo, agent, model, ctx) {
+  if (!KEY) return { title: `Review ${repo}`, body: 'EMPIRE_KEY is not configured.', note: 'pending review' };
   const sys = `You are ${agent} of 6 EMPIRES. Review the repo "${repo}" and propose exactly ONE small, safe, high-value improvement (docs, README clarity, a config note, or a tiny non-breaking fix). Respond as STRICT JSON: {"title":"short PR title","body":"why + what","note":"one line for an AGENT_NOTES.md entry"}. No code fences.`;
   const user = `Repo context:\n${ctx}\n\nReturn only the JSON.`;
   try {
-    const r = await fetch(ROUTER + '/chat/completions', {
+    const r = await request(ROUTER + '/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + KEY },
       body: JSON.stringify({ model, stream: false, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] }),
@@ -71,7 +77,7 @@ async function openPR(repo, prop, writeTok) {
   if (!sha) throw new Error('no base sha');
   const branch = `empire-agent/${Date.now()}`;
   // create branch
-  await fetch(`https://api.github.com/repos/${OWNER}/${repo}/git/refs`, {
+  await request(`https://api.github.com/repos/${OWNER}/${repo}/git/refs`, {
     method: 'POST', headers: { Authorization: 'Bearer ' + writeTok, 'User-Agent': '6e', 'Content-Type': 'application/json' },
     body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }),
   });
@@ -80,13 +86,13 @@ async function openPR(repo, prop, writeTok) {
   const prev = existing?.content ? Buffer.from(existing.content, 'base64').toString('utf8') : '# 6-EMPIRE Agent Notes\n';
   const updated = prev + `\n- ${new Date().toISOString().slice(0, 10)} — ${prop.note}\n`;
   // commit file
-  const put = await fetch(`https://api.github.com/repos/${OWNER}/${repo}/contents/AGENT_NOTES.md`, {
+  const put = await request(`https://api.github.com/repos/${OWNER}/${repo}/contents/AGENT_NOTES.md`, {
     method: 'PUT', headers: { Authorization: 'Bearer ' + writeTok, 'User-Agent': '6e', 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: `chore(agent): ${prop.title}`, content: Buffer.from(updated).toString('base64'), branch, ...(existing?.sha ? { sha: existing.sha } : {}) }),
   });
   if (!put.ok) throw new Error('commit failed ' + put.status);
   // open PR
-  const pr = await (await fetch(`https://api.github.com/repos/${OWNER}/${repo}/pulls`, {
+  const pr = await (await request(`https://api.github.com/repos/${OWNER}/${repo}/pulls`, {
     method: 'POST', headers: { Authorization: 'Bearer ' + writeTok, 'User-Agent': '6e', 'Content-Type': 'application/json' },
     body: JSON.stringify({ title: `🤖 ${prop.title}`, head: branch, base, body: prop.body + '\n\n— proposed autonomously by the 6-EMPIRE agent team. Review & merge at your discretion.' }),
   })).json();
@@ -115,7 +121,10 @@ async function runAll() {
     } catch (e) { out.push({ repo, agent, error: String(e) }); }
   }
   const state = { ok: true, updated: new Date().toISOString(), writeEnabled: !!writeTok, agents: out };
-  fs.writeFileSync(STATE, JSON.stringify(state, null, 2));
+  const temporary = `${STATE}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+  fs.renameSync(temporary, STATE);
+  fs.chmodSync(STATE, 0o600);
   return state;
 }
 

@@ -17,6 +17,7 @@
 #   6. Verify GPU inference + the public /v1 endpoint
 # ============================================================================
 set -euo pipefail
+: "${EMPIRE_KEY:?EMPIRE_KEY must be set in the environment}"
 
 OLD_IP="137.184.54.161"
 OLD_SSH="root@${OLD_IP}"
@@ -149,7 +150,7 @@ curl -s -m 10 http://localhost:8000/v1/models | jq -r '.data[].id' 2>/dev/null |
 echo "--- stream TTFB through the shim ---"
 curl -s -N -m 20 -o /dev/null -w "stream TTFB %{time_starttransfer}s total %{time_total}s http %{http_code}\n" \
   -X POST http://localhost:8000/v1/chat/completions \
-  -H "Authorization: Bearer sk-empire-local" -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${EMPIRE_KEY}" -H "Content-Type: application/json" \
   -d '{"model":"empire-router","messages":[{"role":"user","content":"hi"}],"stream":true}'
 
 echo ""
@@ -158,6 +159,6 @@ echo "  DONE. New GPU box is serving the EMPIRE stack."
 echo "  NEXT (do these yourself):"
 echo "   1. Point DNS for 6-empires.com -> this droplet's IP (A record)."
 echo "   2. In OpenHuman, update the EMPIRE FAST provider URL to:"
-echo "        http://<NEW_GPU_IP>:8000/v1   (key: sk-empire-local)"
+echo "        http://<NEW_GPU_IP>:8000/v1   (key: configure EMPIRE_KEY; value redacted)"
 echo "   3. Re-run any TLS/nginx certbot if you front it with HTTPS."
 echo "============================================================"

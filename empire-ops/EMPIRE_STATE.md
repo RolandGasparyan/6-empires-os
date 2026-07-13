@@ -3,7 +3,7 @@
 ## Infrastructure
 - Server: empire-cpu @ 64.227.6.197 (nyc1, 4 vCPU AMD / 16GB)
 - Web UI: http://64.227.6.197:9090 (Open WebUI)
-- Router/shim: :8000 /v1 (key sk-empire-local), streaming TTFB ~0.3s
+- Router/shim: :8000 /v1 (key configured through `EMPIRE_KEY`; value `<redacted>`), streaming TTFB ~0.3s
 - Stack: api, postgres, redis, qdrant, neo4j (docker compose), Ollama :11434
 - nginx + certbot installed (HTTPS pending DNS)
 

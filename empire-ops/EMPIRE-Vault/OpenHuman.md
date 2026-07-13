@@ -8,7 +8,7 @@ tags: [empire, openhuman]
 Part of [[EMPIRE OS]].
 
 ## Configured & saved
-- LLM provider **EMPIRE GPU** → `http://64.227.6.197:8000/v1` (key `sk-empire-local`)
+- LLM provider **EMPIRE GPU** → `http://64.227.6.197:8000/v1` (key configured through `EMPIRE_KEY`; value `<redacted>`)
 - Routing: Use Your Own Models → empire-router (saved)
 - Voice: STT + TTS = **OpenHuman (Managed)** (saved)
 

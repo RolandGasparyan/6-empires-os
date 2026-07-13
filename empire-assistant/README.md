@@ -20,7 +20,7 @@ empire                      # interactive REPL (gold EMPIRE banner)
 empire "what's my plan?"    # one-shot
 echo "draft a tweet" | empire   # piped
 ```
-Streams from the cloud brain, auto-falls back to local Ollama. Env overrides: `EMPIRE_API`, `EMPIRE_KEY`, `EMPIRE_MODEL`, `OLLAMA_URL`, `OLLAMA_MODEL`.
+Streams from the cloud brain, auto-falls back to local Ollama. Set the required credential with `EMPIRE_KEY=<redacted>`. Other env overrides: `EMPIRE_API`, `EMPIRE_MODEL`, `OLLAMA_URL`, `OLLAMA_MODEL`.
 
 ## 3 · Desktop app  🖥️
 **/Applications/EMPIRE Assistant.app** — native gold-themed window wrapping the web voice assistant.
