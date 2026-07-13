@@ -1,13 +1,17 @@
-version: "3.9"
 services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: empires
+      POSTGRES_USER: ${POSTGRES_USER:-empire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-empires}
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-empire} -d ${POSTGRES_DB:-empires}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:7
     ports:
@@ -19,6 +23,6 @@ services:
   neo4j:
     image: neo4j:5
     environment:
-      NEO4J_AUTH: neo4j/password
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
     ports:
       - "7687:7687"

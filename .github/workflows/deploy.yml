@@ -15,36 +15,25 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_SHA
           script: |
             set -euo pipefail
             REPO_DIR="$HOME/6-empires-os"
-            COMPOSE="docker compose -f config/docker-compose.prod.yml"
-
-            echo "=== $(date) — rolling deploy ==="
-
-            # Pull latest code
             cd "$REPO_DIR"
+
+            case "$DEPLOY_SHA" in
+              *[!0-9a-f]*|'') echo "invalid workflow_run head SHA" >&2; exit 1 ;;
+            esac
+
+            echo "=== $(date) — deploying verified SHA $DEPLOY_SHA ==="
             git fetch origin main
-            git reset --hard origin/main
-
-            # Rebuild changed images and restart services with zero downtime
-            $COMPOSE build api web
-            $COMPOSE up -d --remove-orphans
-
-            # Wait for API to be healthy
-            echo "Waiting for API…"
-            for i in $(seq 1 12); do
-              HTTP=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://localhost:8000/health || true)
-              if [ "$HTTP" = "200" ]; then
-                echo "API healthy (HTTP 200)"; break
-              fi
-              echo "  attempt $i: HTTP $HTTP — retrying in 10s…"
-              sleep 10
-            done
-
-            echo "=== Deploy complete ==="
-            $COMPOSE ps
+            git cat-file -e "$DEPLOY_SHA^{commit}"
+            git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+            git reset --hard "$DEPLOY_SHA"
+            bash deploy/scripts/deploy-release.sh "$DEPLOY_SHA"

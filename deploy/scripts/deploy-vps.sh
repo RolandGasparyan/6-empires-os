@@ -42,8 +42,9 @@ ENV=production
 APP_NAME=6-EMPIRE OS API
 # --- generated secrets ---
 JWT_SECRET=$(openssl rand -hex 32)
+FOUNDER_BOOTSTRAP_TOKEN=$(openssl rand -hex 32)
 JWT_ALGORITHM=HS256
-JWT_EXPIRE_HOURS=12
+ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_EXPIRE_DAYS=30
 FOUNDER_EMAIL=$EMAIL
 # --- datastores ---
@@ -110,10 +111,10 @@ sleep 8
 say "7. Verify"
 $COMPOSE ps
 echo "--- API health (through HTTPS) ---"
-curl -fsS "https://api.$DOMAIN/health" || echo "(api health not ready — check 'docker compose -f config/docker-compose.prod.yml logs api')"
+curl -fsS "https://api.$DOMAIN/ready"
 echo
 echo "--- Web (through HTTPS) ---"
-curl -s -o /dev/null -w "https://$DOMAIN/hq -> HTTP %{http_code}\n" "https://$DOMAIN/hq"
+curl -fsS -o /dev/null -w "https://$DOMAIN/hq -> HTTP %{http_code}\n" "https://$DOMAIN/hq"
 
 say "DONE"
 cat <<EOF
