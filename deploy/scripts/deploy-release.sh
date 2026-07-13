@@ -29,6 +29,8 @@ done
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
+"${COMPOSE[@]}" up -d --wait --wait-timeout "$WAIT_TIMEOUT_SECONDS" postgres redis
+"${COMPOSE[@]}" run --rm --no-deps api alembic upgrade head
 "${COMPOSE[@]}" up -d --remove-orphans --wait --wait-timeout "$WAIT_TIMEOUT_SECONDS"
 
 health_body="$(
