@@ -18,7 +18,9 @@ Env:
 import json, os, sys, urllib.request, urllib.error
 
 API   = os.environ.get("EMPIRE_API",   "https://6-empires.com/v1").rstrip("/")
-KEY   = os.environ.get("EMPIRE_KEY",   "0cf38f7caa0e64c0148d85228c72f34cb5b43768232e8237")
+KEY   = os.environ.get("EMPIRE_KEY", "").strip()
+if not KEY:
+    raise SystemExit("EMPIRE_KEY must be set in the environment")
 MODEL = os.environ.get("EMPIRE_MODEL", "empire-router")
 OLLAMA      = os.environ.get("OLLAMA_URL",  "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL= os.environ.get("OLLAMA_MODEL","qwen3:14b")

@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select
 from app.database import async_session
 from app.models.message import MessageRecord
@@ -22,6 +22,10 @@ CHANNELS = [
     {"key": "risk",      "name": "Risk Control",    "desc": "Risk management room"},
     {"key": "ops",       "name": "Internal Ops",    "desc": "Operations & execution"},
 ]
+
+
+class ChatRepositoryError(RuntimeError):
+    """Raised when chat data cannot be durably stored or loaded."""
 
 # name/alias → agent key, for @mention resolution
 def _alias_map() -> dict[str, str]:
@@ -35,7 +39,7 @@ def _alias_map() -> dict[str, str]:
 
 
 def _now() -> str:
-    return datetime.now(datetime.now().astimezone().tzinfo).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def parse_mentions(body: str) -> list[str]:
@@ -53,8 +57,8 @@ def parse_mentions(body: str) -> list[str]:
 
 
 async def _persist(channel: str, sender: str, body: str, agent_key: str | None, mentions: list[str]) -> dict:
-    mid = str(uuid.uuid4())[:8]
-    created = datetime.utcnow()
+    mid = str(uuid.uuid4())
+    created = datetime.now(timezone.utc)
     rec = {"id": mid, "channel": channel, "sender": sender, "agent_key": agent_key,
            "body": body, "mentions": mentions, "created_at": created.isoformat()}
     try:
@@ -63,7 +67,7 @@ async def _persist(channel: str, sender: str, body: str, agent_key: str | None, 
                                 body=body, mentions=mentions, created_at=created))
             await s.commit()
     except Exception as exc:
-        print(f"[chat] persist skipped: {exc}")
+        raise ChatRepositoryError("message could not be persisted") from exc
     return rec
 
 
@@ -93,7 +97,17 @@ async def _agents_reply(channel: str, prompt: str, targets: list[str]) -> None:
             continue
         context = [m["content"] for m in agent_state.memory_for(key)[-5:]]
         reply = await agent_brain.think(agent.name, agent.division, prompt.replace("@all", "").strip(), context)
-        rec = await _persist(channel, "agent", f"{reply}", key, [])
+        try:
+            rec = await _persist(channel, "agent", f"{reply}", key, [])
+        except ChatRepositoryError:
+            await agent_state._emit({
+                "type": "message.failed",
+                "channel": channel,
+                "agent": key,
+                "reason": "persistence_unavailable",
+                "ts": _now(),
+            })
+            continue
         await _emit(rec)
         await asyncio.sleep(0.3)  # natural stagger when @all fans out
 
@@ -101,13 +115,13 @@ async def _agents_reply(channel: str, prompt: str, targets: list[str]) -> None:
 async def list_messages(channel: str, limit: int = 50) -> list[dict]:
     try:
         async with async_session() as s:
-            rows = (await s.execute(
+            rows = list((await s.execute(
                 select(MessageRecord).where(MessageRecord.channel == channel)
-                .order_by(MessageRecord.created_at).limit(limit)
-            )).scalars().all()
-            return [{"id": r.id, "channel": r.channel, "sender": r.sender, "agent_key": r.agent_key,
-                     "body": r.body, "mentions": r.mentions or [],
-                     "created_at": r.created_at.isoformat() if r.created_at else ""} for r in rows]
+                .order_by(MessageRecord.created_at.desc()).limit(limit)
+            )).scalars().all())
     except Exception as exc:
-        print(f"[chat] list skipped: {exc}")
-        return []
+        raise ChatRepositoryError("messages could not be loaded") from exc
+    rows.reverse()
+    return [{"id": r.id, "channel": r.channel, "sender": r.sender, "agent_key": r.agent_key,
+             "body": r.body, "mentions": r.mentions or [],
+             "created_at": r.created_at.isoformat() if r.created_at else ""} for r in rows]

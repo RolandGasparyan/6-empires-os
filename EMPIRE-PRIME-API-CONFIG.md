@@ -9,7 +9,7 @@ When adding EMPIRE PRIME as a cloud provider, use these settings:
 **NAME:** EMPIRE PRIME  
 **Slug:** empire-prime  
 **OPENAI URL:** `http://localhost:8090/api/chat`  
-**API KEY:** `sk-empire-prime-test-key`
+**API KEY:** `<redacted>`
 
 ### **Option 2: If Running on VPS**
 
@@ -149,7 +149,7 @@ In the cloud provider settings:
 **NAME:** EMPIRE PRIME  
 **Slug:** empire-prime  
 **OPENAI URL:** `http://137.184.54.161:8091`  
-**API KEY:** `sk-empire-prime`
+**API KEY:** `<redacted>`
 
 ---
 
@@ -190,8 +190,9 @@ This gives you both interactive UI AND API access!
 Once configured, test with:
 
 ```bash
+export EMPIRE_KEY='<redacted>'
 curl http://localhost:8091/v1/models \
-  -H "Authorization: Bearer sk-empire-prime"
+  -H "Authorization: Bearer ${EMPIRE_KEY}"
 ```
 
 You should get back a JSON list of available models.

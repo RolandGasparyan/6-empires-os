@@ -4,6 +4,7 @@
  * Routes to different EMPIRE workspaces based on URL slug
  */
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect } from 'react';
 
 const WORLD_ROUTES = {
@@ -45,7 +46,7 @@ export default function DynamicWorldPage() {
       <div style={{ background: '#050608', color: '#E8EAED', padding: '2rem' }}>
         <h1 style={{ color: '#FDC72C' }}>❌ World not found: {world}</h1>
         <p>Available worlds: {Object.keys(WORLD_ROUTES).join(', ')}</p>
-        <a href="/world" style={{ color: '#FDC72C' }}>← Back to HQ</a>
+        <Link href="/world" style={{ color: '#FDC72C' }}>← Back to HQ</Link>
       </div>
     );
   }

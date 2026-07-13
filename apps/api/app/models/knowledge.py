@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, JSON, Boolean, Text, Uuid
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import Base
 
 
@@ -15,4 +15,4 @@ class KnowledgeDocument(Base):
     # to `doc_metadata`; the underlying DB column is still named "metadata".
     doc_metadata = Column("metadata", JSON)
     indexed = Column(Boolean, default=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

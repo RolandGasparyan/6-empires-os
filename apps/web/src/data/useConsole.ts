@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000/api/v1';
 const USE_MOCK = (process.env.NEXT_PUBLIC_USE_MOCK ?? 'true') === 'true';
 
 export interface Overview {
@@ -43,8 +42,7 @@ export function useConsole() {
     if (USE_MOCK) return;
     let cancelled = false;
     const load = () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('6empire_token') : null;
-      axios.get(`${API}/console/overview`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+      api.get('/console/overview')
         .then(({ data }) => { if (!cancelled) { setData(data); setLive(true); } }).catch(() => {});
     };
     load();

@@ -1,14 +1,12 @@
 'use client';
 import { useState, useMemo } from 'react';
-import axios from 'axios';
 import { clientScene } from '@/components/three/SceneLoader';
 import { useHQ } from '@/data/useHQ';
 import { STATUS_COLOR } from '@/data/hqAgents';
 import type { CamTarget } from '@/components/hq/CameraRig';
+import { api } from '@/lib/api';
 
 const HQScene = clientScene(() => import('@/components/hq/HQScene'));
-const API = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000/api/v1';
-
 const VIEWS: Record<string, { cam: CamTarget; area: string }> = {
   boss:  { cam: { tgt: [-8, 1.6, -3.5], R: 9, theta: 0, phi: 1.05 }, area: 'BOSS COMMAND CENTER' },
   floor: { cam: { tgt: [6, 1.2, 5], R: 11, theta: 0.5, phi: 1.0 }, area: 'AGENT FLOOR · 6 OFFICES' },
@@ -27,10 +25,7 @@ export default function HQPage() {
     if (!cmd.trim() || selected < 0) return;
     setSending(true);
     try {
-      // Note: requires a founder bearer token in production; wired via auth store.
-      const token = typeof window !== 'undefined' ? localStorage.getItem('6empire_token') : null;
-      await axios.post(`${API}/agents/${agents[selected].key}/command`, { title: cmd },
-        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      await api.post(`/agents/${agents[selected].key}/command`, { title: cmd });
       setCmd('');
     } catch { /* surfaced via the live feed when it lands */ }
     finally { setSending(false); }

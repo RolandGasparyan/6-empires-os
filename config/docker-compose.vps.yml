@@ -10,11 +10,11 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: empire
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-empire_vps_pw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: empires
     volumes: ["empire_pgdata:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U empire"]
+      test: ["CMD-SHELL", "pg_isready -U empire -d empires"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,6 +23,13 @@ services:
   empire_redis:
     image: redis:7
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["empire_redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks: [empire_v2]
 
   empire_api:
@@ -30,14 +37,16 @@ services:
     restart: unless-stopped
     environment:
       ENV: production
-      DATABASE_URL: postgresql+asyncpg://empire:${POSTGRES_PASSWORD:-empire_vps_pw}@empire_pg:5432/empires
+      DATABASE_URL: postgresql+asyncpg://empire:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@empire_pg:5432/empires
       REDIS_URL: redis://empire_redis:6379/0
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       FOUNDER_EMAIL: roland.gasparyan@gmail.com
+      FOUNDER_BOOTSTRAP_TOKEN: ${FOUNDER_BOOTSTRAP_TOKEN:?set FOUNDER_BOOTSTRAP_TOKEN}
       CORS_ORIGINS: https://6-empires.com,https://www.6-empires.com
     ports: ["127.0.0.1:8010:8000"]
     depends_on:
       empire_pg: { condition: service_healthy }
+      empire_redis: { condition: service_healthy }
     networks: [empire_v2]
 
   empire_web:
@@ -55,6 +64,7 @@ services:
 
 volumes:
   empire_pgdata: {}
+  empire_redisdata: {}
 
 networks:
   empire_v2: {}

@@ -1,15 +1,17 @@
 import uuid
-from fastapi import Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
-from app.database import get_db
+from app.database import async_session, get_db
+from app.config import settings
 from app.models.user import User
 from app.security.jwt import verify_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+ACCESS_COOKIE_NAME = "empire_access"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> User:
+async def resolve_user(token: str, db) -> User:
     payload = verify_token(token)
     if not payload or "sub" not in payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -24,6 +26,32 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_d
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
     return user
+
+
+async def get_current_user(
+    bearer_token: str | None = Depends(oauth2_scheme),
+    access_cookie: str | None = Cookie(default=None, alias=ACCESS_COOKIE_NAME),
+    db=Depends(get_db),
+) -> User:
+    token = bearer_token or access_cookie
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    return await resolve_user(token, db)
+
+
+async def get_websocket_user(token: str) -> User:
+    async with async_session() as db:
+        return await resolve_user(token, db)
+
+
+def require_cookie_origin(request: Request) -> None:
+    """Protect cookie-authenticated state changes from cross-site requests."""
+    if request.headers.get("authorization"):
+        return
+    if request.cookies.get(ACCESS_COOKIE_NAME):
+        origin = request.headers.get("origin")
+        if not origin or not settings.is_allowed_origin(origin):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Origin not allowed")
 
 
 async def require_founder(user: User = Depends(get_current_user)) -> User:

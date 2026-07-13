@@ -16,16 +16,21 @@ control-plane endpoints; the data-plane `/rpc` is protected by the bearer token.
 """
 from __future__ import annotations
 
+import asyncio
 import hmac
+import ipaddress
+import socket
 import time
+import json
 from typing import Any, Optional
+from urllib.parse import urlsplit
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.config import settings
-from app.security.deps import require_founder
+from app.security.deps import require_cookie_origin, require_founder
 
 router = APIRouter(prefix="/openhuman", tags=["openhuman"])
 
@@ -53,8 +58,50 @@ class TestConnectionRequest(BaseModel):
     )
 
 
+def _resolved_addresses(hostname: str, port: int) -> set[ipaddress.IPv4Address | ipaddress.IPv6Address]:
+    try:
+        return {
+            ipaddress.ip_address(item[4][0])
+            for item in socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+        }
+    except socket.gaierror as exc:
+        raise ValueError("runtime_url hostname could not be resolved") from exc
+
+
+async def validate_runtime_url(raw_url: str) -> str:
+    """Return a normalized public HTTP(S) URL or reject SSRF-capable targets."""
+    url = raw_url.strip()
+    try:
+        parsed = urlsplit(url)
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="runtime_url is invalid") from exc
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise HTTPException(status_code=400, detail="runtime_url must be an absolute http:// or https:// URL")
+    if parsed.username or parsed.password:
+        raise HTTPException(status_code=400, detail="runtime_url must not include credentials")
+    if parsed.fragment:
+        raise HTTPException(status_code=400, detail="runtime_url must not include a fragment")
+
+    try:
+        literal = ipaddress.ip_address(parsed.hostname)
+        addresses = {literal}
+    except ValueError:
+        try:
+            addresses = await asyncio.to_thread(_resolved_addresses, parsed.hostname, port)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not addresses or any(not address.is_global for address in addresses):
+        raise HTTPException(status_code=400, detail="runtime_url must resolve only to public addresses")
+    return url
+
+
 @router.post("/test-connection")
-async def test_connection(req: TestConnectionRequest, _=Depends(require_founder)) -> dict[str, Any]:
+async def test_connection(
+    req: TestConnectionRequest,
+    _=Depends(require_founder),
+    __=Depends(require_cookie_origin),
+) -> dict[str, Any]:
     """Call a remote runtime's /rpc with a ping and report reachability.
 
     Mirrors the settings-form 'Test Connection' button. Never echoes the token.
@@ -62,14 +109,12 @@ async def test_connection(req: TestConnectionRequest, _=Depends(require_founder)
     token = req.auth_token or settings.OPENHUMAN_CORE_TOKEN
     if not token:
         raise HTTPException(status_code=400, detail="No auth token provided or configured.")
-    url = req.runtime_url.strip()
-    if not url.startswith(("http://", "https://")):
-        raise HTTPException(status_code=400, detail="runtime_url must start with http:// or https://")
+    url = await validate_runtime_url(req.runtime_url)
 
     payload = {"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}}
     started = time.perf_counter()
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
             resp = await client.post(url, json=payload, headers={"Authorization": f"Bearer {token}"})
     except httpx.HTTPError as exc:
         return {"ok": False, "error": f"Could not reach runtime: {exc.__class__.__name__}"}
@@ -102,8 +147,19 @@ def require_core_token(authorization: str = Header(default="")) -> None:
 class RpcRequest(BaseModel):
     jsonrpc: str = "2.0"
     id: Any = None
-    method: str
+    method: str = Field(min_length=1, max_length=100)
     params: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_context_bounds(self) -> "RpcRequest":
+        if len(json.dumps(self.params, default=str)) > 50_000:
+            raise ValueError("params exceeds the context limit")
+        items = self.params.get("items")
+        if isinstance(items, list) and len(items) > 100:
+            raise ValueError("memory.sync accepts at most 100 items")
+        if isinstance(items, list) and any(len(json.dumps(item, default=str)) > 10_000 for item in items):
+            raise ValueError("memory.sync item exceeds the per-item limit")
+        return self
 
 
 # Methods this runtime exposes. Extend as the Intelligence Core grows.

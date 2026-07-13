@@ -1,10 +1,10 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000/api/v1';
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/api/v1/ws/updates';
 const USE_MOCK = (process.env.NEXT_PUBLIC_USE_MOCK ?? 'true') === 'true';
+const MAX_CHAT_MESSAGES = 200;
 
 export interface ChatMessage {
   id: string; channel: string; sender: string; agent_key?: string | null;
@@ -26,14 +26,14 @@ export function useChat(channel: string) {
 
   useEffect(() => {
     if (USE_MOCK) return;
-    axios.get(`${API}/chat/channels`).then(({ data }) => setChannels(data.channels)).catch(() => {});
+    api.get('/chat/channels').then(({ data }) => setChannels(data.channels)).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (USE_MOCK) { setMessages([]); return; }
     let cancelled = false;
-    axios.get(`${API}/chat/channels/${channel}/messages`).then(({ data }) => {
-      if (!cancelled) setMessages(data.messages);
+    api.get(`/chat/channels/${channel}/messages`).then(({ data }) => {
+      if (!cancelled) setMessages(Array.isArray(data.messages) ? data.messages.slice(-MAX_CHAT_MESSAGES) : []);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [channel]);
@@ -50,7 +50,9 @@ export function useChat(channel: string) {
       sock.onmessage = (ev) => {
         let f: any; try { f = JSON.parse(ev.data); } catch { return; }
         if (f.type === 'message.new' && f.channel === channel) {
-          setMessages((prev) => prev.some((m) => m.id === f.id) ? prev : [...prev, f]);
+          setMessages((prev) => prev.some((m) => m.id === f.id)
+            ? prev
+            : [...prev, f].slice(-MAX_CHAT_MESSAGES));
         }
       };
       sock.onclose = () => { if (!stopped) setTimeout(connect, 1500); };
@@ -62,14 +64,12 @@ export function useChat(channel: string) {
 
   const send = useCallback(async (body: string) => {
     if (USE_MOCK) {
-      setMessages((prev) => [...prev, { id: String(Date.now()), channel, sender: 'founder', body, created_at: new Date().toISOString() }]);
+      setMessages((prev) => [...prev, { id: String(Date.now()), channel, sender: 'founder', body, created_at: new Date().toISOString() }].slice(-MAX_CHAT_MESSAGES));
       // simulate an agent reply offline
-      setTimeout(() => setMessages((prev) => [...prev, { id: String(Date.now() + 1), channel, sender: 'agent', agent_key: 'strat', body: 'Acknowledged. Routing to the intelligence core.', created_at: new Date().toISOString() }]), 700);
+      setTimeout(() => setMessages((prev) => [...prev, { id: String(Date.now() + 1), channel, sender: 'agent', agent_key: 'strat', body: 'Acknowledged. Routing to the intelligence core.', created_at: new Date().toISOString() }].slice(-MAX_CHAT_MESSAGES)), 700);
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('6empire_token') : null;
-    await axios.post(`${API}/chat/channels/${channel}/messages`, { body },
-      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    await api.post(`/chat/channels/${channel}/messages`, { body });
   }, [channel]);
 
   return { channels, messages, send, source: USE_MOCK ? 'mock' : 'api' as const };

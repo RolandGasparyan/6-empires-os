@@ -7,11 +7,14 @@ rate-limited. This gives natural, varied, human answers instead of the tiny loca
 model's repetitive/templated ones — while keeping the same /v1 contract used by
 OpenHuman, EMPIRE PRIME, and the public web chat.
 """
-import os, time as _t, json as _json
+import json as _json
+import os
+import re as _re
+import time as _t
 import httpx
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from model_router import ChatRequest, _route, OLLAMA_URL, TASK_LOCAL_MODEL
+from model_router import ChatRequest, OLLAMA_URL, _route
 
 oai = APIRouter(tags=["openai-compat"])
 # The last 3 are explicit privacy-mode picks (choose in any model dropdown):
@@ -36,7 +39,6 @@ _CHAT_MODEL = os.getenv("MODEL_CHAT", "mistral")
 
 # HYBRID routing: casual chat stays 100% local/private on your VPS; only genuinely
 # heavy requests (strategy, analysis, long prompts) escalate to the Groq big brain.
-import re as _re
 _HEAVY_RE = _re.compile(
     r"strateg|analy|plan|invest|forecast|research|compare|roadmap|financ|market|"
     r"deep dive|write |draft |code|debug|optimi|architect|proposal|memo|report",
@@ -83,7 +85,10 @@ _GROQ_KEY = _live_groq_key()
 _GROQ_MODEL = os.getenv("GROQ_CHAT_MODEL", "llama-3.3-70b-versatile")
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 _GROQ_TEMP = float(os.getenv("GROQ_TEMP", "0.9"))     # variety -> less repetition
-_GROQ_MAXTOK = int(os.getenv("GROQ_MAXTOK", "1024"))  # keep under free-tier TPM
+_GROQ_MAXTOK = min(max(int(os.getenv("GROQ_MAXTOK", "1024")), 1), 2_048)
+_MAX_MESSAGES = 40
+_MAX_FRAGMENT_CHARS = 8_000
+_MAX_CONTEXT_CHARS = 32_000
 
 # Human, ChatGPT-style persona. Injected only when the caller sends no system msg,
 # so the public web chat (which supplies its own GOD-MODE prompt) is untouched.
@@ -116,6 +121,33 @@ def _mk_messages(msgs):
         if isinstance(m, dict) and m.get("role") and m.get("content") is not None:
             out.append({"role": m["role"], "content": m["content"]})
     return out
+
+
+def _validated_messages(raw):
+    if not isinstance(raw, list):
+        raise HTTPException(status_code=422, detail="messages must be a list")
+    if len(raw) > _MAX_MESSAGES:
+        raise HTTPException(status_code=413, detail=f"messages is limited to {_MAX_MESSAGES} items")
+    messages = []
+    total = 0
+    for item in raw:
+        if not isinstance(item, dict):
+            raise HTTPException(status_code=422, detail="each message must be an object")
+        role = item.get("role")
+        if role == "system":
+            raise HTTPException(status_code=422, detail="client system messages are not allowed")
+        if role not in {"user", "assistant"}:
+            raise HTTPException(status_code=422, detail="message role must be user or assistant")
+        content = item.get("content")
+        if not isinstance(content, str):
+            raise HTTPException(status_code=422, detail="message content must be text")
+        if len(content) > _MAX_FRAGMENT_CHARS:
+            raise HTTPException(status_code=413, detail="message content exceeds the per-message limit")
+        total += len(content)
+        if total > _MAX_CONTEXT_CHARS:
+            raise HTTPException(status_code=413, detail="message context exceeds the total limit")
+        messages.append({"role": role, "content": content})
+    return messages
 
 
 def _mk_cr(msgs):
@@ -165,8 +197,10 @@ async def _groq_complete(msgs):
 @oai.post("/v1/chat/completions")
 async def chat(req: Request):
     b = await req.json()
-    model = b.get("model", "empire-router")
-    msgs = b.get("messages", [])
+    if not isinstance(b, dict):
+        raise HTTPException(status_code=422, detail="request body must be an object")
+    model = str(b.get("model", "empire-router"))[:100]
+    msgs = _validated_messages(b.get("messages", []))
     stream = bool(b.get("stream", False))
     cid = f"empire-{int(_t.time())}"
     created = int(_t.time())

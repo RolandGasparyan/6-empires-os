@@ -1,0 +1,12 @@
+{
+  "name": "empire-ai-chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private, bounded EMPIRE AI chat gateway",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
@@ -11,7 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-empire}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-empire} -d ${POSTGRES_DB:-empires}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,7 +54,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request;urllib.request.urlopen(\"http://localhost:8000/health\")'"]
+      test: ["CMD-SHELL", "python -c 'import urllib.request;urllib.request.urlopen(\"http://localhost:8000/ready\")'"]
       interval: 15s
       timeout: 5s
       retries: 5
