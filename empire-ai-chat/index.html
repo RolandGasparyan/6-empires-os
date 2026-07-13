@@ -61,7 +61,6 @@ html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:h
     #chatMessages>div{padding:0 16px!important;}
     .input-wrap{padding:10px 16px 14px!important;}
     #projectsPanel{width:100vw!important;}
-    #chatMessages .banner-logo{width:80px!important;height:80px!important;}
     .message-bubble{font-size:13px!important;}
   }
   @media(max-width:480px){
@@ -165,7 +164,7 @@ html,body{background:#050608!important;margin:0;padding:0;height:100%;overflow:h
       <!-- typing indicator (hidden by default) -->
       <div id="typingIndicator" style="display:none;margin-bottom:32px;animation:slideUp .3s ease-out;">
         <div style="display:flex;align-items:flex-start;gap:14px;">
-          <img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));animation:bounceIn .5s ease-out;">
+          
           <div style="display:flex;align-items:center;gap:5px;padding:14px 0 6px;">
             <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out infinite;"></div>
             <div style="width:5px;height:5px;background:rgba(253,199,44,.7);border-radius:50%;animation:typingDot 1.2s ease-in-out .2s infinite;"></div>
@@ -427,7 +426,6 @@ function speak(t){if(!t)return;const clean=t.replace(/[*#`>_]/g,'');const b=$('v
 
 /* ---- send / stream from the live brain ---- */
 function handleKey(el,e){if(e&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
-function rmBanner(){const b=document.querySelector('#chatMessages .banner-logo');if(b){const w=b.closest('div[style*="padding:16px 0 24px"]')||b.parentElement;if(w)w.remove();}}
 let _mid=0;
 function bubbleUser(text){
   const inner=$('chatMessages').querySelector('div');const t=$('typingIndicator');
@@ -438,7 +436,7 @@ function bubbleUser(text){
 function bubbleAI(){
   const inner=$('chatMessages').querySelector('div');const t=$('typingIndicator');
   const el=document.createElement('div');el.setAttribute('data-msg-id',++_mid);el.style.cssText='margin-bottom:32px;animation:fadeUp .4s both;';
-  el.innerHTML='<div style="display:flex;align-items:flex-start;gap:14px;"><img src="empire-emblem.png" alt="6" style="flex-shrink:0;width:28px;height:28px;object-fit:contain;margin-top:2px;filter:drop-shadow(0 0 6px rgba(253,199,44,.35));"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-family:\'Chakra Petch\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;color:#FDC72C;">EMPIRE AI</span><span style="font-family:\'Space Mono\',monospace;font-size:9px;color:rgba(253,199,44,.3);">'+ts()+'</span></div><div class="msg-body" style="font-family:\'Sora\',sans-serif;font-size:15px;line-height:1.8;color:#FDC72C;white-space:pre-wrap;"></div></div></div>';
+  el.innerHTML='<div style="display:flex;align-items:flex-start;gap:14px;"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-family:\'Chakra Petch\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;color:#FDC72C;">EMPIRE AI</span><span style="font-family:\'Space Mono\',monospace;font-size:9px;color:rgba(253,199,44,.3);">'+ts()+'</span></div><div class="msg-body" style="font-family:\'Sora\',sans-serif;font-size:15px;line-height:1.8;color:#FDC72C;white-space:pre-wrap;"></div></div></div>';
   inner.insertBefore(el,t);return el.querySelector('.msg-body');
 }
 function ts(){return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});}
