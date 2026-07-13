@@ -8,7 +8,7 @@ RUN npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 600000 \
  && npm config set fetch-timeout 1200000 \
- && (npm ci --no-audit --no-fund || npm install --no-audit --no-fund)
+ && npm ci --no-audit --no-fund
 
 # ---- build ----
 FROM node:20-alpine AS build
@@ -34,13 +34,14 @@ RUN npm run build
 FROM node:20-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./package.json
+COPY --chown=node:node --from=build /app/.next ./.next
+COPY --chown=node:node --from=build /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/package.json ./package.json
 # Static assets (logo SVGs, hero render) — `next start` serves these from /public.
-COPY --from=build /app/public ./public
+COPY --chown=node:node --from=build /app/public ./public
 # next.config.js is needed at runtime so `next start` applies the same config
 # (React-dedup webpack alias, transpilePackages) used during the build.
-COPY --from=build /app/next.config.js ./next.config.js
+COPY --chown=node:node --from=build /app/next.config.js ./next.config.js
+USER node
 EXPOSE 3000
 CMD ["npm", "start"]

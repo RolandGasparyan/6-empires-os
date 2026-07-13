@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000/api/v1';
 
-export const api = axios.create({ baseURL: API });
+export const api = axios.create({ baseURL: API, withCredentials: true });
 
 // Attach bearer token from memory (set by the auth store).
 let token: string | null = null;
@@ -19,6 +19,15 @@ export async function login(email: string, password: string) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
   return data.access_token as string;
+}
+
+export async function refreshAccessToken() {
+  const { data } = await api.post('/auth/refresh');
+  return data.access_token as string;
+}
+
+export async function logoutSession() {
+  await api.post('/auth/logout');
 }
 
 export async function fetchMe() {

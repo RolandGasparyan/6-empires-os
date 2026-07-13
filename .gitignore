@@ -20,6 +20,7 @@ wheels/
 *.egg
 node_modules/
 .next/
+.next*/
 .env
 .env.*
 !.env.example
