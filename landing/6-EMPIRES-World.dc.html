@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6 EMPIRES — 3D Corporation World</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>html,body{background:#030508!important;margin:0;padding:0;}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#050608;color:#e8e6df;font-family:'Sora',sans-serif;overflow:hidden;height:100vh;width:100vw}
+::selection{background:#F8E231;color:#050608}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#0a0c0f}
+::-webkit-scrollbar-thumb{background:#2a2c30;border-radius:3px}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes blink{50%{opacity:.15}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(248,226,49,.3))}50%{filter:drop-shadow(0 0 24px rgba(248,226,49,.7))}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinR{to{transform:rotate(-360deg)}}
+@keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes bootBar{from{width:0}to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes fadeOut{to{opacity:0;visibility:hidden}}
+@keyframes flicker{0%,100%{opacity:1}8%{opacity:.3}12%{opacity:1}40%{opacity:.6}44%{opacity:1}}
+@keyframes beacon{0%,100%{box-shadow:0 0 20px #F8E231,0 0 40px rgba(248,226,49,.5)}50%{box-shadow:0 0 40px #F8E231,0 0 80px rgba(248,226,49,.8)}}
+@keyframes dash{to{stroke-dashoffset:0}}
+@keyframes orbit{from{transform:rotate(0deg) translateX(var(--r)) rotate(0deg)}to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)}}
+@keyframes typewriter{from{width:0}to{width:100%}}
+@keyframes windowFlicker{0%,100%{opacity:.3}50%{opacity:.8}}
+@keyframes dataFlow{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* ═══ BOOT SCREEN ═══ */
+#boot{position:fixed;inset:0;background:#050608;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .8s}
+#boot.done{opacity:0;pointer-events:none}
+#bootLogo{font-family:'Chakra Petch';font-weight:700;font-size:clamp(32px,5vw,64px);letter-spacing:.1em;color:#F8E231;animation:glowPulse 2s ease-in-out infinite;margin-bottom:24px}
+#bootLogo span{color:#e8e6df}
+#bootBar{width:280px;height:2px;background:#1a1c20;border-radius:1px;overflow:hidden;margin-bottom:16px}
+#bootBarFill{height:100%;background:linear-gradient(90deg,#F8E231,#fff);animation:bootBar 2.2s ease-out forwards}
+#bootText{font-family:'Space Mono';font-size:11px;color:#666;letter-spacing:.15em;text-transform:uppercase}
+
+/* ═══ CANVAS BG ═══ */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ═══ SCANLINE ═══ */
+.scanline{position:fixed;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(248,226,49,.15),transparent);animation:scan 8s linear infinite;z-index:1;pointer-events:none}
+
+/* ═══ MAIN LAYOUT ═══ */
+#world{position:relative;width:100vw;height:100vh;display:grid;grid-template-columns:1fr 320px;grid-template-rows:56px 1fr 48px;z-index:2}
+
+/* ═══ TOP BAR ═══ */
+#topBar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,10,14,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(248,226,49,.12)}
+#topBar .brand{font-family:'Chakra Petch';font-weight:700;font-size:15px;letter-spacing:.08em;color:#F8E231;display:flex;align-items:center;gap:10px}
+#topBar .brand .dot{width:6px;height:6px;border-radius:50%;background:#34f5a0;box-shadow:0 0 8px #34f5a0;animation:pulse 2s infinite}
+#topBar .stats{display:flex;gap:24px;font-family:'Space Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+#topBar .stat{display:flex;align-items:center;gap:6px}
+#topBar .stat .label{color:#666}
+#topBar .stat .val{color:#F8E231;font-weight:700}
+#topBar .stat .val.green{color:#34f5a0}
+#topBar .stat .val.red{color:#f56e6e}
+
+/* ═══ ISOMETRIC SCENE ═══ */
+#scene{position:relative;overflow:hidden;perspective:1600px;perspective-origin:50% 38%}
+#isoWorld{position:absolute;left:50%;top:50%;transform-style:preserve-3d;transform:translate(-50%,-50%) rotateX(55deg) rotateZ(45deg);transition:transform .6s cubic-bezier(.22,1,.36,1)}
+#isoWorld.zoomed{transform:translate(-50%,-50%) rotateX(55deg) rotateZ(45deg) scale(1.6)}
+
+/* ═══ TOWER ═══ */
+.tower{position:relative;transform-style:preserve-3d}
+.floor{position:absolute;left:0;width:280px;height:280px;transform-style:preserve-3d;cursor:pointer;transition:filter .3s}
+.floor:hover{filter:brightness(1.3)}
+.floor:hover .floor-top{border-color:rgba(248,226,49,.5)}
+.floor-top{position:absolute;width:280px;height:280px;border:1px solid rgba(248,226,49,.15);border-radius:4px;transform:translateZ(var(--hz));transition:border-color .3s;overflow:hidden}
+.floor-glow{position:absolute;inset:0;opacity:.08;pointer-events:none}
+.floor-label{position:absolute;top:8px;left:8px;font-family:'Chakra Petch';font-weight:600;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#F8E231);z-index:5;transform:rotateZ(-45deg) rotateX(-55deg);transform-origin:0 0}
+.floor-num{position:absolute;bottom:8px;right:8px;font-family:'Space Mono';font-size:8px;color:rgba(255,255,255,.3);z-index:5;transform:rotateZ(-45deg) rotateX(-55deg);transform-origin:100% 100%}
+
+/* Floor inner content */
+.floor-content{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.floor-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:20px 20px}
+
+/* Agent dots on floors */
+.agent-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--c,#F8E231);box-shadow:0 0 6px var(--c,#F8E231);animation:pulse 2s infinite;cursor:pointer;transition:transform .2s;z-index:4}
+.agent-dot:hover{transform:scale(2);z-index:10}
+.agent-dot::after{content:attr(data-name);position:absolute;bottom:12px;left:50%;transform:translateX(-50%) rotateZ(-45deg) rotateX(-55deg);font-family:'Space Mono';font-size:7px;white-space:nowrap;color:var(--c,#F8E231);opacity:0;transition:opacity .2s;pointer-events:none;text-shadow:0 0 4px #000}
+.agent-dot:hover::after{opacity:1}
+
+/* Desk rectangles */
+.desk{position:absolute;width:24px;height:14px;border:1px solid rgba(248,226,49,.2);border-radius:2px;background:rgba(248,226,49,.04)}
+.screen{position:absolute;width:10px;height:7px;border:1px solid var(--accent,#F8E231);border-radius:1px;opacity:.6;animation:flicker 4s infinite}
+
+/* ═══ SIDE PANEL ═══ */
+#sidePanel{background:rgba(8,10,14,.85);backdrop-filter:blur(12px);border-left:1px solid rgba(248,226,49,.12);overflow-y:auto;padding:16px}
+#sidePanel h3{font-family:'Chakra Petch';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#666;margin-bottom:12px}
+.agent-list{display:flex;flex-direction:column;gap:8px}
+.agent-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:12px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.agent-card:hover{border-color:var(--c,#F8E231);background:rgba(255,255,255,.05)}
+.agent-card.active{border-color:var(--c,#F8E231);box-shadow:0 0 12px rgba(248,226,49,.15)}
+.agent-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,#F8E231)}
+.agent-card .name{font-family:'Chakra Petch';font-weight:600;font-size:12px;color:#e8e6df;margin-bottom:2px}
+.agent-card .title{font-size:10px;color:#888;letter-spacing:.04em;margin-bottom:6px}
+.agent-card .status{display:flex;align-items:center;gap:6px;font-family:'Space Mono';font-size:9px;text-transform:uppercase}
+.agent-card .status .dot{width:5px;height:5px;border-radius:50%;background:var(--c,#F8E231);box-shadow:0 0 4px var(--c,#F8E231)}
+.agent-card .status .text{color:var(--c,#F8E231)}
+
+/* ═══ BOTTOM BAR ═══ */
+#bottomBar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,10,14,.85);backdrop-filter:blur(12px);border-top:1px solid rgba(248,226,49,.12);font-family:'Space Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+#bottomBar .left{display:flex;gap:20px;color:#666}
+#bottomBar .left span{color:#F8E231}
+#bottomBar .right{color:#666}
+#bottomBar .right .live{color:#34f5a0;animation:blink 1.5s infinite}
+
+/* ═══ DETAIL PANEL ═══ */
+#detailPanel{position:fixed;top:56px;right:340px;width:340px;max-height:calc(100vh - 104px);background:rgba(10,12,16,.95);backdrop-filter:blur(20px);border:1px solid rgba(248,226,49,.2);border-radius:8px;z-index:100;overflow-y:auto;transform:translateX(380px);transition:transform .4s cubic-bezier(.22,1,.36,1);box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#detailPanel.open{transform:translateX(0)}
+#detailPanel .header{padding:20px;position:relative;overflow:hidden}
+#detailPanel .header::before{content:'';position:absolute;inset:0;opacity:.12;background:linear-gradient(135deg,var(--c,#F8E231),transparent)}
+#detailPanel .close{position:absolute;top:12px;right:12px;width:24px;height:24px;border:1px solid rgba(255,255,255,.1);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#888;font-size:14px;transition:all .2s}
+#detailPanel .close:hover{border-color:#F8E231;color:#F8E231}
+#detailPanel .av-name{font-family:'Chakra Petch';font-weight:700;font-size:18px;color:var(--c,#F8E231);margin-bottom:2px}
+#detailPanel .av-title{font-size:11px;color:#999;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+#detailPanel .av-tag{font-style:italic;font-size:12px;color:#aaa;margin-bottom:16px}
+#detailPanel .body{padding:0 20px 20px}
+#detailPanel .blurb{font-size:13px;color:#bbb;line-height:1.5;margin-bottom:16px}
+#detailPanel .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+#detailPanel .stat-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px}
+#detailPanel .stat-item .k{font-family:'Space Mono';font-size:9px;color:#666;text-transform:uppercase;margin-bottom:4px}
+#detailPanel .stat-item .v{font-family:'Chakra Petch';font-weight:600;font-size:14px;color:var(--c,#F8E231)}
+#detailPanel . dept-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.05);font-size:11px}
+#detailPanel .dept-label{color:#666;font-family:'Space Mono';font-size:9px;text-transform:uppercase}
+
+/* ═══ FLOOR LEGEND ═══ */
+.floor-legend{position:absolute;bottom:12px;left:12px;display:flex;gap:12px;font-family:'Space Mono';font-size:8px;text-transform:uppercase;z-index:10;transform:rotateZ(-45deg) rotateX(-55deg);transform-origin:0 0}
+.floor-legend span{display:flex;align-items:center;gap:4px;color:#888}
+.floor-legend span::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--lc)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+#world{grid-template-columns:1fr;grid-template-rows:48px 1fr 200px 40px}
+#sidePanel{border-left:none;border-top:1px solid rgba(248,226,49,.12)}
+#detailPanel{right:0;width:100%;border-radius:0}
+#topBar .stats{display:none}
+#bottomBar .left{gap:10px}
+}
+
+/* ═══ REDUCED MOTION ═══ */
+@media(prefers-reduced-motion:reduce){
+*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+.scanline{display:none}
+}
+</style>
+</helmet>
+
+<canvas id="bgCanvas"></canvas>
+<div class="scanline"></div>
+
+<!-- ═══ BOOT ═══ -->
+<div id="boot">
+<div id="bootLogo">6<span>·</span>EMPIRES</div>
+<div id="bootBar"><div id="bootBarFill"></div></div>
+<div id="bootText">Initializing Corporation World…</div>
+</div>
+
+<!-- ═══ WORLD ═══ -->
+<div id="world">
+<!-- Top Bar -->
+<div id="topBar">
+<div class="brand"><span class="dot"></span>6·EMPIRES · CORPORATION WORLD</div>
+<div class="stats">
+<div class="stat"><span class="label">Agents</span><span class="val" id="statAgents">14</span></div>
+<div class="stat"><span class="label">Active</span><span class="val green" id="statActive">14</span></div>
+<div class="stat"><span class="label">P&L 24h</span><span class="val green">+$12,450</span></div>
+<div class="stat"><span class="label">Tasks/h</span><span class="val">846</span></div>
+<div class="stat"><span class="label">Health</span><span class="val green">98.2%</span></div>
+</div>
+</div>
+
+<!-- Isometric Scene -->
+<div id="scene">
+<div id="isoWorld">
+<div class="tower" id="tower">
+<!-- Floors rendered by JS -->
+</div>
+</div>
+</div>
+
+<!-- Side Panel -->
+<div id="sidePanel">
+<h3>Empire Team · Live Status</h3>
+<div class="agent-list" id="agentList"></div>
+</div>
+
+<!-- Bottom Bar -->
+<div id="bottomBar">
+<div class="left">
+<span>SYS</span> OPERATIONAL
+<span>·</span> WS <span>CONNECTED</span>
+<span>·</span> SIM <span>ACTIVE</span>
+<span>·</span> <span id="clock">--:--:--</span>
+</div>
+<div class="right"><span class="live">●</span> LIVE · 6-EMPIRES.COM</div>
+</div>
+</div>
+
+<!-- Detail Panel -->
+<div id="detailPanel">
+<div class="header">
+<div class="close" onclick="closeDetail()">✕</div>
+<div class="av-name" id="dpName"></div>
+<div class="av-title" id="dpTitle"></div>
+<div class="av-tag" id="dpTag"></div>
+</div>
+<div class="body">
+<div class="blurb" id="dpBlurb"></div>
+<div class="stats-grid" id="dpStats"></div>
+<div style="border-top:1px solid rgba(255,255,255,.05);padding-top:12px">
+<div class="dept-label" style="color:#666;font-family:'Space Mono';font-size:9px;text-transform:uppercase;margin-bottom:6px">Department</div>
+<div id="dpDept" style="font-family:'Chakra Petch';font-size:13px;color:var(--c,#F8E231)"></div>
+</div>
+</div>
+</div>
+
+<script>
+// ═══ TEAM DATA (from team.ts) ═══
+const TEAM=[
+{id:'ceo',name:'Roland Gasparyan',title:'CEO & FOUNDER',color:'#F8E231',tagline:'Vision. Strategy. Execution.',blurb:'Building the future. Commands all departments and agents.',gesture:'point',status:'COMMANDING',room:'command',x:140,y:140},
+{id:'coo',name:'Olivia Bennett',title:'COO',color:'#7e3ea8',tagline:'Operations. People. Process.',blurb:'Turning plans into action.',gesture:'idle',status:'COORDINATING',room:'workspace',x:80,y:100},
+{id:'cto',name:'Daniel Carter',title:'CTO',color:'#1f8a4c',tagline:'Code. Architecture. Innovation.',blurb:'Engineering the systems.',gesture:'type',status:'BUILDING',room:'datalab',x:180,y:80},
+{id:'cfo',name:'Sophia Reed',title:'CFO',color:'#ee6aa0',tagline:'Numbers. Finance. Growth.',blurb:'Fueling sustainable scale.',gesture:'think',status:'ANALYZING',room:'workspace',x:120,y:180},
+{id:'strat',name:'Marcus Hayes',title:'CHIEF STRATEGIST',color:'#2f5fd0',tagline:'Markets. Execution. Leadership.',blurb:'Turning data into wins.',gesture:'point',status:'PLANNING',room:'meeting',x:140,y:120},
+{id:'analyst',name:'Emma Sullivan',title:'MARKET ANALYST',color:'#e2622a',tagline:'Trends. Insights. Opportunities.',blurb:'Finding tomorrow today.',gesture:'scan',status:'SCANNING',room:'trading',x:100,y:160},
+{id:'ai',name:'Ethan Brooks',title:'AI ENGINEER',color:'#7a3fd0',tagline:'AI Systems. Models. Innovation.',blurb:'Building intelligent solutions.',gesture:'type',status:'TRAINING',room:'datalab',x:200,y:140},
+{id:'data',name:'Ava Mitchell',title:'DATA SCIENTIST',color:'#b83fc4',tagline:'Data. Models. Insights.',blurb:'Turning data into advantage.',gesture:'scan',status:'MODELING',room:'datalab',x:160,y:200},
+{id:'risk',name:'James Foster',title:'RISK MANAGER',color:'#f56e6e',tagline:'Protect. Manage. Control.',blurb:'Securing every move.',gesture:'think',status:'MONITORING',room:'trading',x:60,y:60},
+{id:'auto',name:'Noah Parker',title:'AUTOMATION LEAD',color:'#2f6fd0',tagline:'Automate. Optimize. Scale.',blurb:'Building systems that scale.',gesture:'type',status:'AUTOMATING',room:'workspace',x:200,y:180},
+{id:'mkt',name:'Mia Coleman',title:'MARKETING DIRECTOR',color:'#15b0c0',tagline:'Brand. Growth. Positioning.',blurb:'Making an empire known.',gesture:'wave',status:'CREATING',room:'media',x:120,y:80},
+{id:'ops',name:'Liam Turner',title:'OPERATIONS MANAGER',color:'#24406a',tagline:'Systems. Flow. Efficiency.',blurb:'Making everything run.',gesture:'idle',status:'RUNNING',room:'workspace',x:80,y:200},
+{id:'music',name:'Leo Vance',title:'MUSIC AI PRODUCER',color:'#b83fc4',tagline:'Sound. Songs. Suno.',blurb:'Generating tracks with Suno AI.',gesture:'type',status:'GENERATING',room:'media',x:180,y:100},
+{id:'video',name:'Zoe Hart',title:'VIDEO & REELS AI',color:'#06b6d4',tagline:'Video. Reels. Virality.',blurb:'Generating video content & reels.',gesture:'scan',status:'RENDERING',room:'media',x:220,y:200}
+];
+
+// ═══ DEPARTMENTS ═══
+const DEPTS=[
+{id:'command',label:'COMMAND',accent:'#F8E231',floor:6,hz:300,bubbles:['Reviewing Q3 strategy…','Markets up 8.2% ✦','Deploying agents…','Empire status: optimal']},
+{id:'meeting',label:'STRATEGY',accent:'#2f5fd0',floor:5,hz:250,bubbles:['Planning Q4…','Risk assessment…','New market entry…']},
+{id:'trading',label:'TRADING',accent:'#e2622a',floor:4,hz:200,bubbles:['BTC → $68k…','FX signal: EUR/USD…','Win rate: 78.6%…']},
+{id:'datalab',label:'DATA LAB',accent:'#7a3fd0',floor:3,hz:150,bubbles:['Training model v3…','1,240 sources/min…','Indexing graph…']},
+{id:'workspace',label:'OPERATIONS',accent:'#7e3ea8',floor:2,hz:100,bubbles:['Sprint 14 active…','3 deployments today…','Sync meeting 14:00…']},
+{id:'media',label:'MEDIA',accent:'#15b0c0',floor:1,hz:50,bubbles:['Rendering reel…','New track: Empire Rise…','Thumbnail A/B test…']}
+];
+
+const deptMap={};DEPTS.forEach(d=>deptMap[d.id]=d);
+
+// ═══ RENDER FLOORS ═══
+const tower=document.getElementById('tower');
+const floorSpacing=50;
+DEPTS.forEach((d,di)=>{
+const floor=document.createElement('div');
+floor.className='floor';
+floor.style.top=(-di*floorSpacing)+'px';
+floor.style.setProperty('--hz',d.hz+'px');
+floor.style.setProperty('--accent',d.accent);
+floor.dataset.dept=d.id;
+
+let inner='<div class="floor-top" style="--hz:'+d.hz+'px">';
+inner+='<div class="floor-glow" style="background:radial-gradient(circle at 50% 50%,'+d.accent+',transparent 70%)"></div>';
+inner+='<div class="floor-grid"></div>';
+inner+='<div class="floor-label">'+d.label+'</div>';
+inner+='<div class="floor-num">F'+d.floor+'</div>';
+
+// Add desks
+for(let i=0;i<4;i++){
+const dx=40+Math.random()*200;
+const dy=40+Math.random()*200;
+inner+='<div class="desk" style="left:'+dx+'px;top:'+dy+'px"></div>';
+const sx=dx+6,sy=dy-4;
+inner+='<div class="screen" style="left:'+sx+'px;top:'+sy+'px;--accent:'+d.accent+';animation-delay:'+(i*0.8)+'s"></div>';
+}
+
+// Add agent dots
+TEAM.filter(a=>a.room===d.id).forEach(a=>{
+inner+='<div class="agent-dot" data-name="'+a.name+'" data-id="'+a.id+'" style="left:'+a.x+'px;top:'+a.y+'px;--c:'+a.color+'" onclick="showAgent(\''+a.id+'\')"></div>';
+});
+
+// Add data flow effect
+inner+='<div style="position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,'+d.accent+',transparent);top:'+(Math.random()*280)+'px;opacity:.3;animation:dataFlow '+(3+Math.random()*4)+'s linear infinite"></div>';
+
+inner+='</div>';
+floor.innerHTML=inner;
+floor.onclick=function(e){if(e.target.classList.contains('floor-top')||e.target.classList.contains('floor-grid')||e.target.classList.contains('floor-label')){zoomFloor(d.id)}};
+tower.appendChild(floor);
+});
+
+// ═══ RENDER AGENT LIST ═══
+const agentList=document.getElementById('agentList');
+TEAM.forEach(a=>{
+const card=document.createElement('div');
+card.className='agent-card';
+card.style.setProperty('--c',a.color);
+card.dataset.id=a.id;
+card.onclick=()=>showAgent(a.id);
+card.innerHTML='<div class="name">'+a.name+'</div><div class="title">'+a.title+'</div><div class="status"><span class="dot"></span><span class="text">'+a.status+'</span></div>';
+agentList.appendChild(card);
+});
+
+// ═══ AGENT DETAIL ═══
+function showAgent(id){
+const a=TEAM.find(t=>t.id===id);if(!a)return;
+const d=deptMap[a.room];
+const dp=document.getElementById('detailPanel');
+dp.style.setProperty('--c',a.color);
+document.getElementById('dpName').textContent=a.name;
+document.getElementById('dpTitle').textContent=a.title;
+document.getElementById('dpTag').textContent='"'+a.tagline+'"';
+document.getElementById('dpBlurb').textContent=a.blurb;
+document.getElementById('dpDept').textContent=(d?d.label:'—')+' · F'+(d?d.floor:'—');
+
+const stats=[
+['Status',a.status],
+['Gesture',a.gesture.toUpperCase()],
+['Department',d?d.label:'—'],
+['Floor','F'+(d?d.floor:'—')],
+['Focus',a.gesture==='type'?'CODING':a.gesture==='scan'?'ANALYSIS':a.gesture==='think'?'STRATEGY':a.gesture==='point'?'DIRECTION':a.gesture==='wave'?'OUTREACH':'MANAGEMENT'],
+['Pulse','ACTIVE']
+];
+document.getElementById('dpStats').innerHTML=stats.map(s=>'<div class="stat-item"><div class="k">'+s[0]+'</div><div class="v">'+s[1]+'</div></div>').join('');
+
+dp.classList.add('open');
+document.querySelectorAll('.agent-card').forEach(c=>c.classList.toggle('active',c.dataset.id===id));
+document.querySelectorAll('.agent-dot').forEach(d=>d.style.transform=d.dataset.id===id?'scale(2.5)':'');
+}
+function closeDetail(){
+document.getElementById('detailPanel').classList.remove('open');
+document.querySelectorAll('.agent-card').forEach(c=>c.classList.remove('active'));
+document.querySelectorAll('.agent-dot').forEach(d=>d.style.transform='');
+}
+
+// ═══ ZOOM FLOOR ═══
+let currentZoom=null;
+function zoomFloor(id){
+if(currentZoom===id){document.getElementById('isoWorld').classList.remove('zoomed');currentZoom=null;return}
+currentZoom=id;
+document.getElementById('isoWorld').classList.add('zoomed');
+}
+
+// ═══ CLOCK ═══
+function updateClock(){
+const d=new Date();
+const t=d.toLocaleTimeString('en-US',{hour12:false});
+document.getElementById('clock').textContent=t;
+}
+setInterval(updateClock,1000);updateClock();
+
+// ═══ BG CANVAS ═══
+const bgC=document.getElementById('bgCanvas');
+const bgX=bgC.getContext('2d');
+function resizeBg(){bgC.width=innerWidth;bgC.height=innerHeight}
+resizeBg();addEventListener('resize',resizeBg);
+
+const stars=[];
+for(let i=0;i<120;i++){
+stars.push({x:Math.random()*bgC.width,y:Math.random()*bgC.height,z:Math.random()*0.8+0.2,tw:Math.random()*Math.PI*2});
+}
+
+const particles=[];
+for(let i=0;i<30;i++){
+particles.push({x:Math.random()*bgC.width,y:bgC.height+Math.random()*200,vy:-(0.2+Math.random()*0.5),size:0.5+Math.random()*1.5,life:Math.random()})
+}
+
+function drawBg(){
+bgX.fillStyle='rgba(5,6,8,0.95)';
+bgX.fillRect(0,0,bgC.width,bgC.height);
+
+// Stars
+stars.forEach(s=>{
+s.tw+=0.02;
+const a=0.3+Math.sin(s.tw)*0.3;
+bgX.fillStyle='rgba(248,226,49,'+(a*s.z*0.4)+')';
+bgX.fillRect(s.x,s.y,s.z*1.5,s.z*1.5);
+});
+
+// Rising particles
+particles.forEach(p=>{
+p.y+=p.vy;p.life+=0.005;
+if(p.y<-10){p.y=bgC.height+10;p.x=Math.random()*bgC.width;p.life=0}
+const a=Math.sin(p.life*Math.PI)*0.3;
+bgX.fillStyle='rgba(248,226,49,'+a+')';
+bgX.beginPath();bgX.arc(p.x,p.y,p.size,0,Math.PI*2);bgX.fill();
+});
+
+requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ═══ MOUSE PARALLAX ═══
+const scene=document.getElementById('scene');
+const iso=document.getElementById('isoWorld');
+let baseRotX=55,baseRotZ=45;
+scene.addEventListener('mousemove',e=>{
+if(iso.classList.contains('zoomed'))return;
+const r=scene.getBoundingClientRect();
+const mx=(e.clientX-r.left)/r.width-0.5;
+const my=(e.clientY-r.top)/r.height-0.5;
+iso.style.transform="translate(-50%,-50%) rotateZ("+(baseRotZ+mx*8)+"deg) rotateX("+(baseRotX+my*-6)+"deg)";
+});
+
+// ═══ BOOT SEQUENCE ═══
+setTimeout(()=>{
+document.getElementById('boot').classList.add('done');
+setTimeout(()=>document.getElementById('boot').style.display='none',800);
+},2400);
+
+// ═══ LIVE STATUS SIMULATION ═══
+setInterval(()=>{
+// Randomly update agent statuses
+const agents=document.querySelectorAll('.agent-card .status .text');
+if(agents.length>0){
+const idx=Math.floor(Math.random()*agents.length);
+const statuses=['COMMANDING','COORDINATING','BUILDING','ANALYZING','PLANNING','SCANNING','TRAINING','MODELING','MONITORING','AUTOMATING','CREATING','RUNNING','GENERATING','RENDERING'];
+agents[idx].textContent=statuses[Math.floor(Math.random()*statuses.length)];
+}
+},4000);
+
+// ═══ KEYBOARD ═══
+addEventListener('keydown',e=>{
+if(e.key==='Escape'){closeDetail();if(currentZoom){zoomFloor(currentZoom)}}
+});
+</script>
+</x-dc>
+</body>
+</html>
