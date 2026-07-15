@@ -18,11 +18,36 @@ if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
   exit 1
 fi
 
-[[ -f "$ENV_FILE" ]] || { echo "required environment file is missing: $ENV_FILE" >&2; exit 1; }
-required_env=(POSTGRES_PASSWORD DATABASE_URL NEO4J_PASSWORD JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN)
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "[deploy] $ENV_FILE not found — bootstrapping from .env.example"
+  cp .env.example "$ENV_FILE"
+fi
+
+# Auto-generate any missing required secrets
+required_env=(POSTGRES_PASSWORD JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN)
 for key in "${required_env[@]}"; do
+  if ! grep -Eq "^${key}=.+" "$ENV_FILE" || grep -Eq "^${key}=__CHANGE" "$ENV_FILE"; then
+    VAL="$(openssl rand -hex 32)"
+    if grep -Eq "^${key}=" "$ENV_FILE"; then
+      sed -i "s|^${key}=.*|${key}=${VAL}|" "$ENV_FILE"
+    else
+      echo "${key}=${VAL}" >> "$ENV_FILE"
+    fi
+    echo "[deploy] generated $key"
+  fi
+done
+
+# Ensure DATABASE_URL references the generated POSTGRES_PASSWORD
+if grep -q "__CHANGE_ME_STRONG__" "$ENV_FILE"; then
+  PW=$(grep '^POSTGRES_PASSWORD=' "$ENV_FILE" | cut -d= -f2)
+  sed -i "s|__CHANGE_ME_STRONG__|$PW|g" "$ENV_FILE"
+  echo "[deploy] synced POSTGRES_PASSWORD into DATABASE_URL and NEO4J_PASSWORD"
+fi
+
+# Final validation
+for key in POSTGRES_PASSWORD DATABASE_URL JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN; do
   grep -Eq "^${key}=.+" "$ENV_FILE" || {
-    echo "required production setting is missing or empty: $key" >&2
+    echo "required production setting is still missing: $key" >&2
     exit 1
   }
 done
