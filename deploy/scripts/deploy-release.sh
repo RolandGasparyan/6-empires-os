@@ -18,38 +18,69 @@ if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
   exit 1
 fi
 
+# Bootstrap .env from template if missing
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "[deploy] $ENV_FILE not found — bootstrapping from .env.example"
   cp .env.example "$ENV_FILE"
 fi
 
-# Auto-generate any missing required secrets
-required_env=(POSTGRES_PASSWORD JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN)
-for key in "${required_env[@]}"; do
-  if ! grep -Eq "^${key}=.+" "$ENV_FILE" || grep -Eq "^${key}=__CHANGE" "$ENV_FILE"; then
-    VAL="$(openssl rand -hex 32)"
-    if grep -Eq "^${key}=" "$ENV_FILE"; then
-      sed -i "s|^${key}=.*|${key}=${VAL}|" "$ENV_FILE"
-    else
-      echo "${key}=${VAL}" >> "$ENV_FILE"
-    fi
-    echo "[deploy] generated $key"
+# Generate or replace any secret that is missing, empty, or still a placeholder
+generate_secret() {
+  local key="$1" val
+  val="$(openssl rand -hex 32)"
+  if grep -Eq "^${key}=" "$ENV_FILE"; then
+    sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+  else
+    echo "${key}=${val}" >> "$ENV_FILE"
+  fi
+  echo "[deploy] generated ${key}"
+}
+
+needs_gen() {
+  local key="$1"
+  # Returns 0 (true) if the key needs to be generated
+  if ! grep -Eq "^${key}=.+" "$ENV_FILE"; then
+    return 0  # missing entirely
+  fi
+  if grep -Eq "^${key}=__CHANGE" "$ENV_FILE"; then
+    return 0  # placeholder value
+  fi
+  if grep -Eq "^${key}=$" "$ENV_FILE"; then
+    return 0  # empty value
+  fi
+  return 1  # has a valid value
+}
+
+for key in POSTGRES_PASSWORD JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN; do
+  if needs_gen "$key"; then
+    generate_secret "$key"
   fi
 done
 
-# Ensure DATABASE_URL references the generated POSTGRES_PASSWORD
+# Sync POSTGRES_PASSWORD into DATABASE_URL and NEO4J_PASSWORD if they still have placeholders
+PW=$(grep '^POSTGRES_PASSWORD=' "$ENV_FILE" | cut -d= -f2-)
 if grep -q "__CHANGE_ME_STRONG__" "$ENV_FILE"; then
-  PW=$(grep '^POSTGRES_PASSWORD=' "$ENV_FILE" | cut -d= -f2)
-  sed -i "s|__CHANGE_ME_STRONG__|$PW|g" "$ENV_FILE"
+  sed -i "s|__CHANGE_ME_STRONG__|${PW}|g" "$ENV_FILE"
   echo "[deploy] synced POSTGRES_PASSWORD into DATABASE_URL and NEO4J_PASSWORD"
 fi
 
+# Also sync JWT_SECRET if it has a placeholder
+if grep -q "__CHANGE_ME_64_HEX__" "$ENV_FILE"; then
+  JWT=$(grep '^JWT_SECRET=' "$ENV_FILE" | cut -d= -f2-)
+  sed -i "s|__CHANGE_ME_64_HEX__|${JWT}|g" "$ENV_FILE"
+  echo "[deploy] synced JWT_SECRET placeholder"
+fi
+
+# Print .env keys for debugging (values redacted)
+echo "[deploy] .env keys present:"
+grep -E '^[A-Z_]+=' "$ENV_FILE" | sed 's/=.*/=<redacted>/' || true
+
 # Final validation
 for key in POSTGRES_PASSWORD DATABASE_URL JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN; do
-  grep -Eq "^${key}=.+" "$ENV_FILE" || {
-    echo "required production setting is still missing: $key" >&2
+  if ! grep -Eq "^${key}=[^[:space:]]+" "$ENV_FILE"; then
+    echo "required production setting is still missing or empty: $key" >&2
     exit 1
-  }
+  fi
 done
 
 "${COMPOSE[@]}" config --quiet
