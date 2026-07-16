@@ -6,7 +6,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-config/docker-compose.prod.yml}"
 HEALTH_URL="${HEALTH_URL:-https://api.6-empires.com/ready}"
 WAIT_TIMEOUT_SECONDS="${WAIT_TIMEOUT_SECONDS:-180}"
 ENV_FILE="${ENV_FILE:-.env}"
-COMPOSE=(docker compose -f "$COMPOSE_FILE")
+COMPOSE=(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE")
 
 case "$EXPECTED_SHA" in
   *[!0-9a-f]*|'') echo "invalid commit SHA: $EXPECTED_SHA" >&2; exit 2 ;;
@@ -82,6 +82,11 @@ for key in POSTGRES_PASSWORD DATABASE_URL JWT_SECRET FOUNDER_BOOTSTRAP_TOKEN; do
     exit 1
   fi
 done
+
+# Source .env to export variables into the shell environment
+set -a
+source "$ENV_FILE"
+set +a
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
