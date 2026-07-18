@@ -108,26 +108,38 @@ if [ -n "$OLD_CONTAINERS" ]; then
   echo "$OLD_CONTAINERS" | xargs -r docker rm -f 2>/dev/null || true
 fi
 
-# Kill anything still holding ports 80/443
-# Stop ALL containers that publish to ports 80 or 443 (any project)
-PORT_CONTAINERS=$(docker ps --format '{{.ID}} {{.Ports}}' 2>/dev/null | grep -E ':80->|:443->' | awk '{print $1}' || true)
-if [ -n "$PORT_CONTAINERS" ]; then
-  echo "[deploy] stopping containers on ports 80/443: $PORT_CONTAINERS"
-  echo "$PORT_CONTAINERS" | xargs -r docker stop 2>/dev/null || true
-  sleep 3
-fi
-# Also stop any container named nginx regardless of port
-docker ps -q --filter "name=nginx" 2>/dev/null | xargs -r docker stop 2>/dev/null || true
-# Fallback: try ss/netstat to find and kill host processes
+# Free ports 80/443 from any process (Docker containers or host-level)
+echo "[deploy] freeing ports 80/443..."
+
+# 1. Stop all Docker containers that might use these ports
+docker stop $(docker ps -q) 2>/dev/null || true
+sleep 2
+
+# 2. Kill host processes on port 80/443 using fuser
+fuser -k 80/tcp 2>/dev/null || true
+fuser -k 443/tcp 2>/dev/null || true
+sleep 2
+
+# 3. Kill host processes using lsof
+for PORT in 80 443; do
+  PIDS=$(lsof -t -i :${PORT} 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then
+    echo "[deploy] killing PIDs on port $PORT: $PIDS"
+    echo "$PIDS" | xargs -r kill -9 2>/dev/null || true
+  fi
+done
+sleep 1
+
+# 4. Also try ss as fallback
 for PORT in 80 443; do
   PID=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' | head -1 || true)
   if [ -n "$PID" ]; then
-    echo "[deploy] killing host PID $PID on port $PORT"
-    kill "$PID" 2>/dev/null || true
-    sleep 2
+    echo "[deploy] ss: killing PID $PID on port $PORT"
+    kill -9 "$PID" 2>/dev/null || true
   fi
 done
-echo "[deploy] port cleanup done"
+
+echo "[deploy] port cleanup complete"
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
