@@ -96,6 +96,10 @@ set -a
 source "$ENV_FILE"
 set +a
 
+# Stop existing containers to free ports
+"${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
+echo "[deploy] stopped old containers"
+
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
 "${COMPOSE[@]}" up -d --wait --wait-timeout "$WAIT_TIMEOUT_SECONDS" postgres redis
