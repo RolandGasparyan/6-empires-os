@@ -71,6 +71,14 @@ if grep -q "__CHANGE_ME_64_HEX__" "$ENV_FILE"; then
   echo "[deploy] synced JWT_SECRET placeholder"
 fi
 
+# Clear placeholder values for optional tokens (set to empty)
+for key in OPENHUMAN_CORE_TOKEN OPENHUMAN_RUNTIME_URL OPENAI_API_KEY OPENHUMAN_CLIENT_ID OPENHUMAN_CLIENT_SECRET; do
+  if grep -Eq "^${key}=__CHANGE" "$ENV_FILE" 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=|" "$ENV_FILE"
+    echo "[deploy] cleared placeholder for ${key}"
+  fi
+done
+
 # Print .env keys for debugging (values redacted)
 echo "[deploy] .env keys present:"
 grep -E '^[A-Z_]+=' "$ENV_FILE" | sed 's/=.*/=<redacted>/' || true
