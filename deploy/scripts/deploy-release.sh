@@ -98,7 +98,20 @@ set +a
 
 # Stop existing containers to free ports
 "${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
-echo "[deploy] stopped old containers"
+echo "[deploy] stopped compose containers"
+
+# Kill anything still holding ports 80/443 (stale nginx, host process, etc.)
+for PORT in 80 443; do
+  PID=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true)
+  if [ -n "$PID" ]; then
+    echo "[deploy] killing PID $PID holding port $PORT"
+    kill "$PID" 2>/dev/null || true
+    sleep 2
+  fi
+done
+# Also stop any stray nginx containers
+docker ps -q --filter "name=nginx" 2>/dev/null | xargs -r docker stop 2>/dev/null || true
+echo "[deploy] cleared ports 80/443"
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
