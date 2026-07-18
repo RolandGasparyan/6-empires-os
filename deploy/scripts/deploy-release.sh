@@ -97,8 +97,16 @@ source "$ENV_FILE"
 set +a
 
 # Stop existing containers to free ports
-"${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
+"${COMPOSE[@]}" down --remove-orphans --volumes=false 2>/dev/null || true
 echo "[deploy] stopped compose containers"
+
+# Force remove any lingering containers from previous deploys
+# (docker compose down can miss containers from different project names)
+OLD_CONTAINERS=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^config-' || true)
+if [ -n "$OLD_CONTAINERS" ]; then
+  echo "[deploy] removing old containers: $OLD_CONTAINERS"
+  echo "$OLD_CONTAINERS" | xargs -r docker rm -f 2>/dev/null || true
+fi
 
 # Kill anything still holding ports 80/443
 # Stop ALL containers that publish to ports 80 or 443 (any project)
