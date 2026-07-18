@@ -100,18 +100,26 @@ set +a
 "${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
 echo "[deploy] stopped compose containers"
 
-# Kill anything still holding ports 80/443 (stale nginx, host process, etc.)
+# Kill anything still holding ports 80/443
+# Stop ALL containers that publish to ports 80 or 443 (any project)
+PORT_CONTAINERS=$(docker ps --format '{{.ID}} {{.Ports}}' 2>/dev/null | grep -E ':80->|:443->' | awk '{print $1}' || true)
+if [ -n "$PORT_CONTAINERS" ]; then
+  echo "[deploy] stopping containers on ports 80/443: $PORT_CONTAINERS"
+  echo "$PORT_CONTAINERS" | xargs -r docker stop 2>/dev/null || true
+  sleep 3
+fi
+# Also stop any container named nginx regardless of port
+docker ps -q --filter "name=nginx" 2>/dev/null | xargs -r docker stop 2>/dev/null || true
+# Fallback: try ss/netstat to find and kill host processes
 for PORT in 80 443; do
-  PID=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true)
+  PID=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' | head -1 || true)
   if [ -n "$PID" ]; then
-    echo "[deploy] killing PID $PID holding port $PORT"
+    echo "[deploy] killing host PID $PID on port $PORT"
     kill "$PID" 2>/dev/null || true
     sleep 2
   fi
 done
-# Also stop any stray nginx containers
-docker ps -q --filter "name=nginx" 2>/dev/null | xargs -r docker stop 2>/dev/null || true
-echo "[deploy] cleared ports 80/443"
+echo "[deploy] port cleanup done"
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
