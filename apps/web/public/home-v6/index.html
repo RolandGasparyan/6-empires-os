@@ -1215,7 +1215,7 @@ class Component extends DCLogic {
         const err = document.getElementById('adminLoginError');
         if (u === 'admin' && pw === '19866666') {
           document.getElementById('adminLoginModal').style.display = 'none';
-          alert('Welcome back, Sovereign Admin.');
+          window.location.href = '/chat';
         } else if (err) { err.style.display = 'block'; }
       },
       openAdminLogin: () => {
