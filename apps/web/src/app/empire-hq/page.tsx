@@ -6,6 +6,7 @@
  * click room → fly in. Enter-gate + spatial audio.
  */
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { clientScene } from '@/components/three/SceneLoader';
 import { createExecAudio } from '@/components/executive/useExecAudio';
 import { TEAM, type TeamMember } from '@/components/executive/team';
@@ -251,6 +252,12 @@ export default function EmpireHQPage() {
           className="absolute bottom-5 left-5 px-3 py-2 rounded-lg text-[11px] backdrop-blur"
           style={{ background: '#0c0c0ecc', border: `1px solid ${GOLD}44`, color: GOLD }}>♪ ambience</button>
       )}
+
+      <Link href="/founder/login"
+        className="absolute bottom-5 right-5 z-30 px-3 py-2 rounded-lg text-[11px] font-semibold backdrop-blur transition"
+        style={{ background: '#0c0c0ecc', border: `1px solid ${GOLD}55`, color: GOLD }}>
+        Admin Login
+      </Link>
 
       {/* agent profile card — side card on desktop, bottom sheet on phones */}
       {sel && (
