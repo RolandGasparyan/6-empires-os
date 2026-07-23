@@ -1,0 +1,4 @@
+# Static assets served verbatim from public/ are third-party / generated
+# bundles (fonts, images, the home-v6 dc-runtime + React vendor files) and are
+# never authored here — linting them is meaningless and trips vendor-code rules.
+public/
