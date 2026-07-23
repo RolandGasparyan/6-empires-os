@@ -19,7 +19,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.11.0",
     "gsap": "^3.12.5",
-    "next": "15.5.20",
+    "next": "^15.5.21",
     "postprocessing": "^6.36.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -43,6 +43,7 @@
     "postcss": "8.5.19",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "sharp": "^0.35.3",
     "three": "0.169.0",
     "@react-three/fiber": {
       "react": "18.3.1",
