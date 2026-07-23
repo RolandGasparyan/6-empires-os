@@ -29,32 +29,62 @@ const nextConfig = {
     }];
   },
 
+  // The front door is the cinematic "Sovereign OS v6" scrollytelling page,
+  // shipped as a self-contained static bundle under public/home-v6/. Serve it
+  // at "/" via a beforeFiles rewrite so the URL stays clean (no redirect) while
+  // the App Router still owns every other route (/founder/login, /empire-hq…).
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: '/', destination: '/home-v6/index.html' }],
+    };
+  },
+
   async headers() {
-    const contentSecurityPolicy = [
+    // scriptSrc is the only directive that differs between the app and the
+    // landing bundle. The cinematic home-v6 page ships a "dc-runtime" that
+    // compiles its scrollytelling logic class at load time (new Function),
+    // which requires 'unsafe-eval'. That relaxation is confined to "/" and the
+    // "/home-v6/*" assets — every App Router route keeps the strict policy.
+    const buildCsp = (scriptSrc, mediaSrc) => [
       "default-src 'self'",
       "base-uri 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
       "img-src 'self' data: blob:",
-      "media-src 'self' blob:",
+      mediaSrc,
       "worker-src 'self' blob:",
       `connect-src 'self' ${publicConnectOrigins()}`,
     ].join('; ');
 
-    return [{
-      source: '/:path*',
-      headers: [
-        { key: 'Content-Security-Policy', value: contentSecurityPolicy },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'X-Frame-Options', value: 'DENY' },
-        { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), microphone=(self)' },
-      ],
-    }];
+    const strictCsp = buildCsp("script-src 'self' 'unsafe-inline'", "media-src 'self' blob:");
+    // The landing bundle also streams a (user-gated) ambient audio bed from the
+    // Pixabay CDN, so its media-src is widened by exactly that one host.
+    const landingCsp = buildCsp(
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "media-src 'self' blob: https://cdn.pixabay.com",
+    );
+
+    const securityHeaders = (csp) => [
+      { key: 'Content-Security-Policy', value: csp },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), microphone=(self)' },
+    ];
+
+    return [
+      // Landing bundle (root + its static assets) — relaxed script-src.
+      { source: '/', headers: securityHeaders(landingCsp) },
+      { source: '/home-v6/:path*', headers: securityHeaders(landingCsp) },
+      // Everything else keeps the strict policy. The negative lookahead + `.+`
+      // excludes both "/" (needs ≥1 char) and "/home-v6/*" so no route receives
+      // two conflicting CSP headers (browsers enforce the intersection).
+      { source: '/((?!home-v6).+)', headers: securityHeaders(strictCsp) },
+    ];
   },
 
   // StrictMode double-invokes render in dev/build and is a known trigger for
