@@ -12,6 +12,10 @@ jobs:
   sync-brain:
     name: Build and sync brain.json
     runs-on: ubuntu-latest
+    # Needed so the final step can commit the regenerated brain.json back to the
+    # repo — the default GITHUB_TOKEN is read-only and returned 403 on push.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
