@@ -77,7 +77,16 @@ echo ""
 # FIX 5: Ensure Groq key prompt
 say "FIX 5: Check Groq API Key configuration"
 GROQ_KEY=$(grep "^FREE_GROQ_KEY=" "$ENV_FILE" | cut -d= -f2)
-if [[ "$GROQ_KEY" == "__CHANGE_ME__" || -z "$GROQ_KEY" ]]; then
+
+# If GROQ_API_KEY env var is provided (e.g., from GitHub Actions), use it
+if [[ -n "${GROQ_API_KEY:-}" && "$GROQ_API_KEY" != "__CHANGE_ME__" ]]; then
+  if [[ "$GROQ_KEY" != "$GROQ_API_KEY" ]]; then
+    sed -i "s|^FREE_GROQ_KEY=.*|FREE_GROQ_KEY=$GROQ_API_KEY|" "$ENV_FILE"
+    ok "Groq API key configured from environment"
+  else
+    ok "Groq API key already configured: ${GROQ_KEY:0:10}..."
+  fi
+elif [[ "$GROQ_KEY" == "__CHANGE_ME__" || -z "$GROQ_KEY" ]]; then
   echo ""
   echo "⚠️  Groq API key needs to be configured:"
   echo ""
