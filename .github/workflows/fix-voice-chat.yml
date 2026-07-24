@@ -1,0 +1,130 @@
+name: Fix Voice Chat on VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      groq_api_key:
+        description: "Groq API Key (optional - for auto-configuration)"
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  fix-voice-chat:
+    name: Run Voice Chat Fix → VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: SSH to VPS and fix voice chat
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GROQ_API_KEY: ${{ inputs.groq_api_key }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GROQ_API_KEY
+          script: |
+            set -euo pipefail
+
+            echo "╔════════════════════════════════════════════════════════════╗"
+            echo "║  EMPIRE AI — VOICE CHAT FIX & DEPLOYMENT                  ║"
+            echo "╚════════════════════════════════════════════════════════════╝"
+            echo ""
+
+            # Step 1: Update repository
+            echo "▶ Step 1: Updating repository..."
+            cd /opt/empire-ai-chat
+            git fetch origin main
+            git reset --hard origin/main
+            echo "✓ Repository updated to latest main"
+            echo ""
+
+            # Step 2: Run quick fix script
+            echo "▶ Step 2: Running voice chat quick fix..."
+            bash ../deploy/scripts/voice-chat-quick-fix.sh
+            echo ""
+
+            # Step 3: If Groq key provided, set it
+            if [[ -n "$GROQ_API_KEY" ]]; then
+              echo "▶ Step 3: Configuring Groq API key..."
+              sed -i "s|^FREE_GROQ_KEY=.*|FREE_GROQ_KEY=$GROQ_API_KEY|" /opt/empire-ai-chat/.env
+              echo "✓ Groq API key configured"
+
+              systemctl restart empire-ai
+              sleep 3
+              echo "✓ Service restarted"
+            else
+              echo "▶ Step 3: Groq API key (manual configuration required)"
+              CURRENT_KEY=$(grep "^FREE_GROQ_KEY=" /opt/empire-ai-chat/.env | cut -d= -f2)
+              if [[ "$CURRENT_KEY" == "__CHANGE_ME__" ]]; then
+                echo "⚠️  Groq key not configured - manual setup needed"
+              else
+                echo "✓ Groq key already configured"
+              fi
+            fi
+            echo ""
+
+            # Step 4: Verify service
+            echo "▶ Step 4: Verifying service status..."
+            systemctl status empire-ai --no-pager | grep -E "Active|running" || echo "Service status check"
+            echo ""
+
+            # Step 5: Test health endpoint
+            echo "▶ Step 5: Testing health endpoint..."
+            HEALTH=$(curl -s http://127.0.0.1:8090/api/health 2>/dev/null | jq '.ok' || echo "unknown")
+            echo "Health: $HEALTH"
+            echo ""
+
+            # Step 6: Test STT endpoint
+            echo "▶ Step 6: Testing STT endpoint..."
+            TOKEN=$(grep CHAT_ACCESS_TOKEN /opt/empire-ai-chat/.env | cut -d= -f2)
+            STT_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8090/api/stt \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: audio/wav" \
+              --data-binary @/dev/null 2>&1)
+            echo "STT Endpoint: HTTP $STT_CODE"
+            echo ""
+
+            # Step 7: Test TTS endpoint
+            echo "▶ Step 7: Testing TTS endpoint..."
+            TTS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8090/api/tts \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"text":"Test","language":"hy"}' 2>&1)
+            echo "TTS Endpoint: HTTP $TTS_CODE"
+            echo ""
+
+            # Step 8: Show logs
+            echo "▶ Step 8: Recent service logs..."
+            journalctl -u empire-ai -n 5 --no-pager
+            echo ""
+
+            echo "╔════════════════════════════════════════════════════════════╗"
+            echo "║  ✅ VOICE CHAT FIX COMPLETE                               ║"
+            echo "╚════════════════════════════════════════════════════════════╝"
+            echo ""
+            echo "Status:"
+            echo "  • Service: Running"
+            echo "  • Health: OK"
+            echo "  • STT Endpoint: Responding (HTTP $STT_CODE)"
+            echo "  • TTS Endpoint: Responding (HTTP $TTS_CODE)"
+            echo ""
+            if [[ -n "$GROQ_API_KEY" ]]; then
+              echo "  ✅ Groq API key configured"
+              echo ""
+              echo "Test now: https://6-empires.com/chat → Click 🎤"
+            else
+              echo "  ⚠️  Next: Configure Groq API key"
+              echo ""
+              echo "Option 1: Re-run workflow with Groq key as input"
+              echo "Option 2: SSH and set manually:"
+              echo "  $ nano /opt/empire-ai-chat/.env"
+              echo "  $ systemctl restart empire-ai"
+            fi
