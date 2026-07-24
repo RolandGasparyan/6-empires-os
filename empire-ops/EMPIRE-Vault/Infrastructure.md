@@ -16,7 +16,8 @@ Part of [[EMPIRE OS]].
 - Open WebUI `:9090` — the [[Models|EMPIRE PRIME]] web interface
 - Postgres, Redis, Qdrant, Neo4j
 - Ollama `:11434` — `OLLAMA_KEEP_ALIVE=-1`
-- nginx + certbot installed → HTTPS ready (see [[Pending Actions]])
+- Dockerized nginx + certbot (`config/docker-compose.prod.yml`) → **HTTPS live** for 6-empires.com, www, api, chat, booking. Certs auto-issue on deploy (self-heal). See [[Production Deployment]].
+- Booking Flask app (`reincarnation-booking`) on **172.17.0.1:5000** (docker gateway — behind nginx, not public).
 
 ## Base models
 `llama3.2:1b` (chat default), `llama3.2`, `mistral`, `nous-hermes2`, `nomic-embed-text`
