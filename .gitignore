@@ -41,3 +41,6 @@ apps/api/*.db
 apps/api/*.db-journal
 apps/api/.fuse_hidden*
 .env
+
+# Booking vhost is generated at deploy time from deploy/nginx/optional/ (only when its cert exists)
+deploy/nginx/conf.d/40-booking.conf
