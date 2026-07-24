@@ -143,6 +143,60 @@ echo "[deploy] port cleanup complete"
 
 "${COMPOSE[@]}" config --quiet
 "${COMPOSE[@]}" build --pull api web
+
+# ── TLS certificate bootstrap ───────────────────────────────────────────────
+# nginx refuses to start if any referenced certificate file is missing, which
+# crash-loops the whole stack. Before bringing anything up (port 80 is free at
+# this point — old containers are down and the new nginx isn't started yet),
+# make sure the certbot volume holds a cert for every domain. On a fresh/empty
+# volume this issues them automatically instead of leaving the site down.
+CERTBOT_CONF_VOLUME="${CERTBOT_CONF_VOLUME:-config_certbotconf}"
+CERTBOT_WWW_VOLUME="${CERTBOT_WWW_VOLUME:-config_certbotwww}"
+CERTBOT_CONF_DIR="${CERTBOT_CONF_DIR:-/var/lib/docker/volumes/${CERTBOT_CONF_VOLUME}/_data}"
+CERTBOT_EMAIL="${CERTBOT_EMAIL:-${FOUNDER_EMAIL:-admin@6-empires.com}}"
+
+cert_present() { [[ -f "${CERTBOT_CONF_DIR}/live/$1/fullchain.pem" ]]; }
+
+ensure_cert() {  # $1 = lineage/primary domain, remaining args = extra SANs
+  local primary="$1"; shift
+  if cert_present "$primary"; then
+    echo "[deploy] TLS cert present for $primary"
+    return 0
+  fi
+  echo "[deploy] no TLS cert for $primary — issuing via certbot standalone…"
+  local args=(-d "$primary") d
+  for d in "$@"; do args+=(-d "$d"); done
+  if docker run --rm -p 80:80 \
+       -v "${CERTBOT_CONF_VOLUME}:/etc/letsencrypt" \
+       -v "${CERTBOT_WWW_VOLUME}:/var/www/certbot" \
+       certbot/certbot certonly --standalone "${args[@]}" \
+       --email "$CERTBOT_EMAIL" --agree-tos --no-eff-email --non-interactive; then
+    echo "[deploy] issued TLS cert for $primary"
+  else
+    echo "[deploy] WARNING: certbot could not issue $primary (check DNS + that port 80 is free) — continuing"
+  fi
+}
+
+echo "[deploy] ensuring TLS certificates…"
+ensure_cert 6-empires.com www.6-empires.com api.6-empires.com
+
+# Optional booking reverse proxy: materialise its vhost into the always-loaded
+# conf.d ONLY when a cert exists, so a missing booking cert can never crash the
+# nginx that serves the main site. The source lives in nginx/optional/ and is
+# re-applied every deploy, surviving `git reset --hard`.
+BOOKING_SRC="deploy/nginx/optional/40-booking.conf"
+BOOKING_DST="deploy/nginx/conf.d/40-booking.conf"
+if [[ -f "$BOOKING_SRC" ]]; then
+  ensure_cert booking.6-empires.com
+  if cert_present booking.6-empires.com; then
+    cp "$BOOKING_SRC" "$BOOKING_DST"
+    echo "[deploy] booking vhost enabled (cert present)"
+  else
+    rm -f "$BOOKING_DST"
+    echo "[deploy] booking vhost skipped (no cert yet)"
+  fi
+fi
+
 "${COMPOSE[@]}" up -d --wait --wait-timeout "$WAIT_TIMEOUT_SECONDS" postgres redis
 "${COMPOSE[@]}" run --rm --no-deps api alembic upgrade head
 "${COMPOSE[@]}" up -d --remove-orphans --wait --wait-timeout "$WAIT_TIMEOUT_SECONDS"
