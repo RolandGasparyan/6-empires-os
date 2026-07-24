@@ -24,7 +24,7 @@ jobs:
       - name: SSH to VPS and fix voice chat
         uses: appleboy/ssh-action@v1.0.3
         env:
-          GROQ_API_KEY: ${{ inputs.groq_api_key }}
+          GROQ_API_KEY: ${{ inputs.groq_api_key || secrets.GROQ_API_KEY }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
