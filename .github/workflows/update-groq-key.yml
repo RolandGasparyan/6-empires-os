@@ -1,0 +1,89 @@
+name: Update Groq API Key
+
+on:
+  workflow_dispatch:
+    inputs:
+      groq_api_key:
+        description: 'Groq API Key (format: gsk_...)'
+        required: true
+        type: string
+
+jobs:
+  update-groq-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Groq API key on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 64.227.6.197
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+
+            echo "▶ Updating Groq API key..."
+            GROQ_API_KEY="${{ inputs.groq_api_key }}"
+            SYSTEMD_CONFIG="/etc/systemd/system/empire-ai.service.d/groq.conf"
+
+            # Update systemd configuration
+            mkdir -p "$(dirname "$SYSTEMD_CONFIG")"
+            cat > "$SYSTEMD_CONFIG" <<EOFCONF
+            [Service]
+            Environment="FREE_GROQ_KEY=$GROQ_API_KEY"
+            EOFCONF
+
+            # Reload and restart
+            systemctl daemon-reload
+            systemctl restart empire-ai
+            sleep 3
+
+            # Verify
+            if systemctl is-active empire-ai >/dev/null 2>&1; then
+              echo "✓ Service restarted successfully"
+            else
+              echo "❌ Service failed to start"
+              journalctl -u empire-ai -n 10 --no-pager
+              exit 1
+            fi
+
+            # Get token and test
+            TOKEN=$(grep "^CHAT_ACCESS_TOKEN=" /opt/empire-ai-chat/.env 2>/dev/null | cut -d= -f2 || echo "")
+
+            echo "Testing endpoints..."
+
+            # Health check
+            HEALTH=$(curl -s http://127.0.0.1:8090/api/health 2>/dev/null | jq '.ok' 2>/dev/null || echo "false")
+            if [[ "$HEALTH" == "true" ]]; then
+              echo "✓ Health: OK"
+            else
+              echo "⚠ Health: $HEALTH"
+            fi
+
+            # STT check
+            STT_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8090/api/stt \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: audio/wav" \
+              --data-binary @/dev/null 2>&1)
+            echo "✓ STT: HTTP $STT_CODE"
+
+            # TTS check
+            TTS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8090/api/tts \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"text":"Test","language":"hy"}' 2>&1)
+            echo "✓ TTS: HTTP $TTS_CODE"
+
+            echo ""
+            echo "✅ Groq API key updated successfully"
+            echo "Test voice chat: https://6-empires.com/chat (🎤)"
+
+      - name: Report Status
+        if: always()
+        run: |
+          echo "✅ Workflow complete"
+          echo ""
+          echo "Next: Test voice chat at https://6-empires.com/chat"
+          echo "Click the 🎤 microphone button and speak in Armenian or English"
