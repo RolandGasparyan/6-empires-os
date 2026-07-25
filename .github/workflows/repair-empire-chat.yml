@@ -1,0 +1,136 @@
+name: Repair Empire Chat (audit + auto-fix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_fix:
+        description: 'Apply fixes (false = audit only, no changes)'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit and repair chat on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 64.227.6.197
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            APPLY="${{ inputs.apply_fix }}"
+            CHATDIR=/opt/empire-ai-chat
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 1. CONFIG SOURCE"
+            echo "═══════════════════════════════════════════════════"
+            grep -E "Environment|ExecStart" /etc/systemd/system/empire-ai.service
+            echo "--- drop-ins ---"
+            for f in /etc/systemd/system/empire-ai.service.d/*.conf; do
+              [ -e "$f" ] || continue
+              echo "[$f]"
+              sed 's/\(FREE_GROQ_KEY=\).\{10\}.*/\1<hidden>/' "$f"
+            done
+            echo ""
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 2. OLLAMA MODELS — which actually generate?"
+            echo "═══════════════════════════════════════════════════"
+            MODELS=$(curl -s http://127.0.0.1:11434/api/tags | jq -r '.models[].name')
+            echo "$MODELS" | tr '\n' ' '; echo; echo ""
+            WORKING=""
+            for M in $MODELS; do
+              case "$M" in *:cloud|*embed*) echo "-  $M (skipped: cloud/embedding)"; continue;; esac
+              R=$(curl -s -m 60 http://127.0.0.1:11434/v1/chat/completions \
+                -H "Content-Type: application/json" \
+                -d "{\"model\":\"$M\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"max_tokens\":5}")
+              if echo "$R" | jq -e '.choices[0].message.content' >/dev/null 2>&1; then
+                echo "OK $M"
+                [ -z "$WORKING" ] && WORKING="$M"
+              else
+                echo "XX $M -> $(echo "$R" | jq -r '.error.message // "no response"' 2>/dev/null | head -c 70)"
+              fi
+            done
+            echo ""
+            echo "Selected model: ${WORKING:-NONE}"
+            echo ""
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 3. MISSING empire-* MODELS — recoverable?"
+            echo "═══════════════════════════════════════════════════"
+            echo "$MODELS" | grep -q "^empire-" \
+              && echo "empire-* models present" \
+              || echo "empire-* models MISSING from ollama"
+            echo "--- Modelfiles on disk ---"
+            find /opt /root /etc -iname "*odelfile*" 2>/dev/null | head -20 || true
+            echo "--- leftover manifests ---"
+            find /usr/share/ollama /root/.ollama /var/lib/ollama -path "*manifests*" 2>/dev/null \
+              | grep -i empire | head -10 || echo "(none)"
+            echo ""
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 4. CURRENT CHAT BEHAVIOUR (before fix)"
+            echo "═══════════════════════════════════════════════════"
+            curl -s -m 60 -X POST http://127.0.0.1:8090/api/chat \
+              -H "Content-Type: application/json" \
+              -d '{"messages":[{"role":"user","content":"Say hi"}]}' | head -c 300
+            echo ""; echo ""
+
+            if [ "$APPLY" != "true" ]; then
+              echo "AUDIT ONLY — no changes applied."
+              exit 0
+            fi
+
+            if [ -z "$WORKING" ]; then
+              echo "STOP: no working Ollama model. Refusing to change config."
+              exit 1
+            fi
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 5. APPLYING FIX"
+            echo "═══════════════════════════════════════════════════"
+            mkdir -p /root/empire-backups
+            cp -a /etc/systemd/system/empire-ai.service.d /root/empire-backups/dropins.$(date +%s) 2>/dev/null || true
+
+            # Point the OpenAI-compatible router at Ollama's own /v1 endpoint
+            # (default was http://64.227.6.197:8000/v1 which is not running)
+            cat > /etc/systemd/system/empire-ai.service.d/router.conf <<EOF
+            [Service]
+            Environment="EMPIRE_ROUTER=http://127.0.0.1:11434/v1"
+            Environment="EMPIRE_MODEL=$WORKING"
+            EOF
+
+            systemctl daemon-reload
+            systemctl restart empire-ai
+            sleep 5
+            echo "Applied: EMPIRE_ROUTER=ollama/v1  EMPIRE_MODEL=$WORKING"
+            echo ""
+
+            echo "═══════════════════════════════════════════════════"
+            echo " 6. VERIFY"
+            echo "═══════════════════════════════════════════════════"
+            systemctl is-active empire-ai && echo "service: active"
+            echo ""
+            echo "--- health ---"
+            curl -s http://127.0.0.1:8090/api/health | jq -c '{ok, ollama}'
+            echo ""
+            echo "--- chat (English) ---"
+            curl -s -m 90 -X POST http://127.0.0.1:8090/api/chat \
+              -H "Content-Type: application/json" \
+              -d '{"messages":[{"role":"user","content":"Say hello in one short sentence"}]}' | head -c 400
+            echo ""
+            echo "--- chat (Armenian) ---"
+            curl -s -m 90 -X POST http://127.0.0.1:8090/api/chat \
+              -H "Content-Type: application/json" \
+              -d '{"messages":[{"role":"user","content":"Բարև, ինչպե՞ս ես"}]}' | head -c 400
+            echo ""
+            echo "--- stt / tts ---"
+            echo "stt: $(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8090/api/stt -H 'Content-Type: audio/wav' --data-binary @/dev/null)"
+            echo "tts: $(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8090/api/tts -H 'Content-Type: application/json' -d '{"text":"Բարև","language":"hy"}')"
+            echo ""
+            echo "--- recent errors ---"
+            journalctl -u empire-ai -n 25 --no-pager | grep -iE "error|unreachable|fail" | tail -5 || echo "(none)"
