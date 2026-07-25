@@ -6,14 +6,20 @@
 # even as the vault grows, and pushes it to the VPS so every agent always
 # reads the latest second-brain.
 # Source of truth = your Obsidian vault on the Mac. Run on a schedule / on change.
-set -e
-SSHK=~/.ssh/empire_vps
-H=root@64.227.6.197
+set -euo pipefail
+
+# Prefer the dedicated key when present, but keep the sync usable with the
+# configured default identity/agent on machines where that key is absent.
+SSHK="${EMPIRE_SSH_KEY:-$HOME/.ssh/empire_vps}"
+if [[ ! -r "$SSHK" ]]; then
+  SSHK="$HOME/.ssh/id_ed25519"
+fi
+H="${EMPIRE_VPS_HOST:-root@6-empires.com}"
 
 # single canonical vault (all ventures consolidated here 2026-07-03;
 # add more paths here only if you start a genuinely separate vault later)
 VAULTS=(
-  "/Users/rolandgasparyan/EmpireMemory/Obsidian_Second_Brain"
+  "${EMPIRE_OBSIDIAN_VAULT:-/Users/rolandgasparyan/Documents/Guru}"
 )
 
 # cap how many notes get injected into the live chat context -- the vault
