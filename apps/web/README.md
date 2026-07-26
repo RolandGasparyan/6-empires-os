@@ -7,7 +7,8 @@ Black Obsidian Glass + Liquid Gold · Apple Vision Pro / JARVIS aesthetic.
 
 ```bash
 cd apps/web
-npm install          # installs Next 15, R3F, Drei, postprocessing, framer-motion
+nvm use              # Node 20 (or install the version in ../../.nvmrc)
+npm ci               # installs locked dependencies
 npm run dev          # http://localhost:3000
 ```
 
@@ -35,10 +36,10 @@ The data shape is identical in both modes — no component changes needed.
 
 ## Verified
 
-- `npx tsc --noEmit` → **0 errors** (all 34 files type-check clean).
+- `npm run build` followed by `npx tsc --noEmit` → **0 errors** (all 34 files type-check clean on a fresh tree).
 - Architecture, component tree, and scene design: `docs/architecture/3D-COMMAND-CENTER.md`.
 
 ## Stack
 
-Next.js 15 · React 18.3 · TypeScript · TailwindCSS · Three.js · React Three Fiber ·
+Next.js 14.2 · React 18.3 · TypeScript · TailwindCSS · Three.js · React Three Fiber ·
 Drei · @react-three/postprocessing (Bloom/Vignette/ChromaticAberration) · Framer Motion · Zustand.

@@ -2,7 +2,7 @@ name: 6-EMPIRE CI
 
 on:
   push:
-    branches: [ main, "claude/**" ]
+    branches: [ main, "claude/**", "codex/**" ]
   pull_request:
     branches: [ main ]
 
@@ -44,15 +44,31 @@ jobs:
         with: { node-version: "20" }
       - name: Install
         run: npm ci || npm install
-      - name: Typecheck
-        run: npx tsc --noEmit
       - name: Build
         run: npm run build
         env: { NEXT_TELEMETRY_DISABLED: "1" }
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+  sync:
+    name: Sync automation tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Python sync tools
+        run: |
+          python3 -m compileall -q empire-sync scripts deploy/scripts
+          python3 -m unittest discover -s empire-sync -p 'test_*.py' -v
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+          python3 -m unittest discover -s deploy/scripts -p 'test_*.py' -v
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/install-obsidian-sync-macos.sh
+          bash -n deploy/scripts/reconcile-vps.sh
 
   images:
     name: Build Docker images
-    needs: [api, web]
+    needs: [api, web, sync]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
