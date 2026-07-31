@@ -23,16 +23,20 @@ jobs:
             NGINX_CONTAINER="$(docker ps --format '{{.ID}} {{.Image}}' | awk '$2 ~ /^nginx:/ {print $1; exit}')"
             if test -n "$NGINX_CONTAINER"; then
               echo "nginx-container=$NGINX_CONTAINER"
-              docker inspect "$NGINX_CONTAINER" --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}'
-              docker inspect "$NGINX_CONTAINER" --format '{{range $name, $network := .NetworkSettings.Networks}}{{println $name $network.Gateway $network.IPAddress}}{{end}}'
-              ss -lntp | grep ':8090 ' || true
+              CONFIG_DIR="$(docker inspect "$NGINX_CONTAINER" --format '{{range .Mounts}}{{if eq .Destination "/etc/nginx/conf.d"}}{{.Source}}{{end}}{{end}}')"
+              GATEWAY="$(docker inspect "$NGINX_CONTAINER" --format '{{range $name, $network := .NetworkSettings.Networks}}{{$network.Gateway}}{{end}}')"
+              VHOST_LINK="$(grep -Rsl 'proxy_pass http://web:3000' "$CONFIG_DIR" | head -1)"
+              CHAT_PROXY="http://$GATEWAY:8090"
+            else
+              VHOST_LINK="$(grep -Rsl 'proxy_pass http://127.0.0.1:3010' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)"
+              CHAT_PROXY="$CHAT_UPSTREAM"
             fi
+            ss -lntp | grep ':8090 '
             BACKUP_DIR=/root/empire-backups/nginx
             mkdir -p "$BACKUP_DIR"
             find /etc/nginx/sites-enabled /etc/nginx/conf.d -maxdepth 1 \
               -type f -name '*.before-chat-fix.*' \
               -exec mv -t "$BACKUP_DIR" {} + 2>/dev/null || true
-            VHOST_LINK="$(grep -Rsl 'proxy_pass http://127.0.0.1:3010' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)"
             VHOST="$(readlink -f "$VHOST_LINK")"
             test -n "$VHOST"
             test -f "$VHOST"
@@ -40,18 +44,19 @@ jobs:
             BACKUP="$BACKUP_DIR/$(basename "$VHOST").before-chat-fix.$(date +%s)"
             cp -aL "$VHOST" "$BACKUP"
 
-            python3 - "$VHOST" <<'PY'
+            python3 - "$VHOST" "$CHAT_PROXY" <<'PY'
             from pathlib import Path
             import re
             import sys
 
             path = Path(sys.argv[1])
+            chat_proxy = sys.argv[2]
             source = path.read_text()
             marker = "# EMPIRE AI chat routing (managed by fix-chat-routing.yml)"
-            block = r'''    # EMPIRE AI chat routing (managed by fix-chat-routing.yml)
-                location = /chat { return 308 /chat/; }
-                location /chat/ {
-                    proxy_pass http://127.0.0.1:8090;
+            block = f'''    # EMPIRE AI chat routing (managed by fix-chat-routing.yml)
+                location = /chat {{ return 308 /chat/; }}
+                location /chat/ {{
+                    proxy_pass {chat_proxy};
                     proxy_http_version 1.1;
                     proxy_set_header Host $host;
                     proxy_set_header X-Real-IP $remote_addr;
@@ -60,7 +65,7 @@ jobs:
                     proxy_buffering off;
                     proxy_cache off;
                     proxy_read_timeout 600s;
-                }
+                }}
 
             '''
             if marker not in source:
@@ -75,7 +80,10 @@ jobs:
                     "",
                     source,
                 )
-                upstream = source.find("proxy_pass http://127.0.0.1:3010")
+                upstream = max(
+                    source.find("proxy_pass http://web:3000"),
+                    source.find("proxy_pass http://127.0.0.1:3010"),
+                )
                 locations = list(re.finditer(r"(?m)^\s*location\b.*\{", source[:upstream]))
                 if upstream < 0 or not locations:
                     raise SystemExit("dashboard proxy location not found")
@@ -84,12 +92,18 @@ jobs:
                 path.write_text(source)
             PY
 
-            if ! nginx -t; then
+            test_config() {
+              if test -n "$NGINX_CONTAINER"; then docker exec "$NGINX_CONTAINER" nginx -t;
+              else nginx -t; fi
+            }
+            if ! test_config; then
               cp -a "$BACKUP" "$VHOST"
-              nginx -t
+              test_config
               exit 1
             fi
-            if systemctl is-active --quiet nginx; then
+            if test -n "$NGINX_CONTAINER"; then
+              docker exec "$NGINX_CONTAINER" nginx -s reload
+            elif systemctl is-active --quiet nginx; then
               systemctl reload nginx
             else
               nginx -s reload
