@@ -148,7 +148,6 @@ jobs:
 
             # Add the OpenRouter/NVIDIA route to the older live server without
             # exposing the credential in the repository or workflow logs.
-            test -n "${OPENROUTER_API_KEY:-}"
             if ! grep -q 'EMPIRE_OPENROUTER_NVIDIA' "$SERVER"; then
               cp -a "$SERVER" "$BACKUP_DIR/server.js.before-openrouter.$(date +%s)"
               python3 - "$SERVER" <<'PY'
