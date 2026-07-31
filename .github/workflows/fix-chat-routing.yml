@@ -118,7 +118,7 @@ jobs:
             # Compatibility for the older live server: branded empire-* names
             # are routing aliases, not installed Ollama model names.
             SERVER=/opt/empire-ai-chat/server.js
-            if grep -qE 'function empireChat\(DEFAULT_MODEL|empireChat\(model, messages\)\.then' "$SERVER"; then
+            if grep -qE 'const model = payload\.model \|\| DEFAULT_MODEL|empireChat\(DEFAULT_MODEL, messages\)\.then' "$SERVER"; then
               cp -a "$SERVER" "$BACKUP_DIR/server.js.before-model-alias.$(date +%s)"
               python3 - "$SERVER" <<'PY'
             from pathlib import Path
@@ -131,8 +131,12 @@ jobs:
                 "function empireChat(model, messages)",
             )
             source = source.replace(
-                "empireChat(model, messages).then",
                 "empireChat(DEFAULT_MODEL, messages).then",
+                "empireChat(model, messages).then",
+            )
+            source = source.replace(
+                "const model = payload.model || DEFAULT_MODEL;",
+                "const requestedModel = payload.model || DEFAULT_MODEL;\n      const model = isEmpire(requestedModel) ? DEFAULT_MODEL : requestedModel;",
             )
             path.write_text(source)
             PY
