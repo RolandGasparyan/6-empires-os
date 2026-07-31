@@ -82,7 +82,11 @@ jobs:
               nginx -t
               exit 1
             fi
-            systemctl reload nginx
+            if systemctl is-active --quiet nginx; then
+              systemctl reload nginx
+            else
+              nginx -s reload
+            fi
 
             curl --fail --silent --show-error --max-time 15 https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
             grep -q 'EMPIRE AI' /tmp/empire-chat-page
