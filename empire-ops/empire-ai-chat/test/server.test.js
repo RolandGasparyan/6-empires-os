@@ -167,7 +167,7 @@ test('both deployable server copies are byte-identical', () => {
 test('chat UI exposes the Kimi K3 cloud model explicitly', () => {
   const index = fs.readFileSync(path.join(APP_DIR, 'index.html'), 'utf8');
   assert.match(index, /data-model="KIMI K3"/);
-  assert.match(index, /'KIMI K3':'kimi-k3:cloud'/);
+  assert.match(index, /'KIMI K3':'moonshotai\/kimi-k3'/);
   assert.match(index, /data-model="NEMOTRON ULTRA"/);
   assert.match(index, /nvidia\/nemotron-3-super-120b-a12b:free/);
 });

@@ -112,11 +112,14 @@ jobs:
               nginx -s reload
             fi
 
-            curl --fail --silent --show-error --max-time 15 \
-              --retry 5 --retry-all-errors --retry-delay 2 \
-              https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
-            grep -q 'EMPIRE AI' /tmp/empire-chat-page
-            ! grep -q '__next_f.push' /tmp/empire-chat-page
+            for attempt in 1 2 3 4 5; do
+              curl --fail --silent --show-error --max-time 15 \
+                https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
+              if grep -q 'EMPIRE AI' /tmp/empire-chat-page && \
+                 ! grep -q '__next_f.push' /tmp/empire-chat-page; then break; fi
+              test "$attempt" != 5
+              sleep 2
+            done
 
             # Compatibility for the older live server: branded empire-* names
             # are routing aliases, not installed Ollama model names.
@@ -168,8 +171,9 @@ jobs:
                 "const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';\nconst OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';",
             )
             provider = r'''
-            // EMPIRE_OPENROUTER_NVIDIA: allowlisted NVIDIA chat models only.
+            // EMPIRE_OPENROUTER_NVIDIA: allowlisted hosted chat models only.
             const OPENROUTER_NVIDIA = new Set([
+              'moonshotai/kimi-k3',
               'nvidia/nemotron-3-ultra-550b-a55b:free',
               'nvidia/nemotron-3-super-120b-a12b:free',
               'nvidia/nemotron-3-nano-30b-a3b:free',
@@ -209,6 +213,19 @@ jobs:
             source = source.replace('      // EMPIRE models → HYBRID', route + '      // EMPIRE models → HYBRID')
             path.write_text(source)
             PY
+            elif ! grep -q 'moonshotai/kimi-k3' "$SERVER"; then
+              python3 - "$SERVER" <<'PY'
+            from pathlib import Path
+            import sys
+
+            path = Path(sys.argv[1])
+            source = path.read_text()
+            source = source.replace(
+                "const OPENROUTER_NVIDIA = new Set([",
+                "const OPENROUTER_NVIDIA = new Set([\n  'moonshotai/kimi-k3',",
+            )
+            path.write_text(source)
+            PY
             fi
             mkdir -p /etc/systemd/system/empire-ai.service.d
             umask 077
@@ -231,17 +248,6 @@ jobs:
               curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
             fi
 
-            # Register Moonshot's open-weight Kimi K3 through Ollama Cloud.
-            # The weights are far too large for this VPS; Ollama owns the cloud
-            # authentication and usage accounting for the :cloud model.
-            if ! ollama list | awk '{print $1}' | grep -qx 'kimi-k3:cloud'; then
-              if ! ollama pull kimi-k3:cloud >/tmp/kimi-k3-pull.log 2>&1; then
-                tail -30 /tmp/kimi-k3-pull.log >&2
-                exit 1
-              fi
-            fi
-            ollama list | awk '{print $1}' | grep -qx 'kimi-k3:cloud'
-
             UI_TMP="$(mktemp)"
             curl --fail --silent --show-error \
               "https://raw.githubusercontent.com/RolandGasparyan/6-empires-os/${{ github.sha }}/empire-ai-chat/index.html" \
@@ -252,8 +258,7 @@ jobs:
             rm -f "$UI_TMP"
             systemctl restart empire-ai
             sleep 3
-            curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" \
-              | grep -q 'kimi-k3:cloud'
+            curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
 
             response="$(curl --fail --silent --show-error --max-time 180 \
               -H 'Content-Type: application/json' \

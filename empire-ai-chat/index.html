@@ -351,7 +351,7 @@ const BASE=(location.pathname.replace(/\/[^/]*$/,'')+'/').replace(/\/+$/,'/');
 const api=(p)=>BASE.replace(/\/$/,'')+p;
 let MODEL='empire-prime', MODE='empire', speakOut=false, history=[];
 let ROUTE=(localStorage.getItem('empireRoute')||'hybrid');
-const MODELMAP={PRIME:'empire-prime',MEDIA:'empire-media',NEXUS:'empire-research','KIMI K3':'kimi-k3:cloud','NEMOTRON ULTRA':'nvidia/nemotron-3-ultra-550b-a55b:free','NEMOTRON SUPER':'nvidia/nemotron-3-super-120b-a12b:free','NEMOTRON NANO':'nvidia/nemotron-3-nano-30b-a3b:free'};
+const MODELMAP={PRIME:'empire-prime',MEDIA:'empire-media',NEXUS:'empire-research','KIMI K3':'moonshotai/kimi-k3','NEMOTRON ULTRA':'nvidia/nemotron-3-ultra-550b-a55b:free','NEMOTRON SUPER':'nvidia/nemotron-3-super-120b-a12b:free','NEMOTRON NANO':'nvidia/nemotron-3-nano-30b-a3b:free'};
 const MODEMAP={'EMPIRE CORE':'empire','RAPID FIRE':'empire','DEEP RESEARCH':'academic','CREATIVE':'builder'};
 const $=(id)=>document.getElementById(id);
 

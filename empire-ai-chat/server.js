@@ -72,6 +72,7 @@ const EMPIRE_MODELS = new Set([
   'empire-strategist', 'empire-research', 'empire-media', 'empire-fast',
 ]);
 const OPENROUTER_MODELS = new Set([
+  'moonshotai/kimi-k3',
   'nvidia/nemotron-3-ultra-550b-a55b:free',
   'nvidia/nemotron-3-super-120b-a12b:free',
   'nvidia/nemotron-3-nano-30b-a3b:free',
