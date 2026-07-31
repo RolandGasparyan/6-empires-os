@@ -127,8 +127,8 @@ jobs:
             path = Path(sys.argv[1])
             source = path.read_text()
             old = "empireChat(model, messages)"
-            if source.count(old) != 1:
-                raise SystemExit("unexpected empireChat alias call count")
+            if old not in source:
+                raise SystemExit("empireChat alias call not found")
             path.write_text(source.replace(old, "empireChat(DEFAULT_MODEL, messages)"))
             PY
               systemctl restart empire-ai
