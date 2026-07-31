@@ -20,6 +20,13 @@ jobs:
           script: |
             set -Eeuo pipefail
             CHAT_UPSTREAM=http://127.0.0.1:8090
+            NGINX_CONTAINER="$(docker ps --format '{{.ID}} {{.Image}}' | awk '$2 ~ /^nginx:/ {print $1; exit}')"
+            if test -n "$NGINX_CONTAINER"; then
+              echo "nginx-container=$NGINX_CONTAINER"
+              docker inspect "$NGINX_CONTAINER" --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}'
+              docker inspect "$NGINX_CONTAINER" --format '{{range $name, $network := .NetworkSettings.Networks}}{{println $name $network.Gateway $network.IPAddress}}{{end}}'
+              ss -lntp | grep ':8090 ' || true
+            fi
             BACKUP_DIR=/root/empire-backups/nginx
             mkdir -p "$BACKUP_DIR"
             find /etc/nginx/sites-enabled /etc/nginx/conf.d -maxdepth 1 \
