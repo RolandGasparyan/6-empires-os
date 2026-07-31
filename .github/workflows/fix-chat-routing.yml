@@ -51,10 +51,12 @@ jobs:
 
             '''
             if marker not in source:
-                match = re.search(r"(?m)^\s*location\s+/\s*\{", source)
-                if not match:
-                    raise SystemExit("main location block not found")
-                source = source[:match.start()] + block + source[match.start():]
+                upstream = source.find("proxy_pass http://127.0.0.1:3010")
+                locations = list(re.finditer(r"(?m)^\s*location\b.*\{", source[:upstream]))
+                if upstream < 0 or not locations:
+                    raise SystemExit("dashboard proxy location not found")
+                insertion = locations[-1].start()
+                source = source[:insertion] + block + source[insertion:]
                 path.write_text(source)
             PY
 
