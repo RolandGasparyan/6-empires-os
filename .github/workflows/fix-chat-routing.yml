@@ -164,6 +164,30 @@ jobs:
               curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
             fi
 
+            # Register Moonshot's open-weight Kimi K3 through Ollama Cloud.
+            # The weights are far too large for this VPS; Ollama owns the cloud
+            # authentication and usage accounting for the :cloud model.
+            if ! ollama list | awk '{print $1}' | grep -qx 'kimi-k3:cloud'; then
+              if ! ollama pull kimi-k3:cloud >/tmp/kimi-k3-pull.log 2>&1; then
+                tail -30 /tmp/kimi-k3-pull.log >&2
+                exit 1
+              fi
+            fi
+            ollama list | awk '{print $1}' | grep -qx 'kimi-k3:cloud'
+
+            UI_TMP="$(mktemp)"
+            curl --fail --silent --show-error \
+              "https://raw.githubusercontent.com/RolandGasparyan/6-empires-os/${{ github.sha }}/empire-ai-chat/index.html" \
+              -o "$UI_TMP"
+            grep -q 'data-model="KIMI K3"' "$UI_TMP"
+            cp -a /opt/empire-ai-chat/index.html "$BACKUP_DIR/index.html.before-kimi-k3.$(date +%s)"
+            install -m 0644 "$UI_TMP" /opt/empire-ai-chat/index.html
+            rm -f "$UI_TMP"
+            systemctl restart empire-ai
+            sleep 3
+            curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" \
+              | grep -q 'kimi-k3:cloud'
+
             response="$(curl --fail --silent --show-error --max-time 180 \
               -H 'Content-Type: application/json' \
               -d '{"model":"empire-prime","mode":"empire","route":"hybrid","messages":[{"role":"user","content":"hi"}]}' \

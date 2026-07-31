@@ -48,6 +48,8 @@ const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_BASE = (process.env.OPENAI_BASE || 'https://api.openai.com/v1').replace(/\/$/, '');
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
+const OPENROUTER_BASE = (process.env.OPENROUTER_BASE || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
 const ENABLE_PRIVATE_BRAIN = process.env.ENABLE_PRIVATE_BRAIN === 'true';
 const BRAIN_PATH = process.env.EMPIRE_BRAIN || '/opt/empire-sync/brain.json';
 
@@ -68,6 +70,11 @@ const TTS_MAX_CONCURRENCY = positiveInt('CHAT_TTS_MAX_CONCURRENCY', 2, 8);
 const EMPIRE_MODELS = new Set([
   'empire-prime', 'empire-ceo', 'empire-trading', 'empire-coder',
   'empire-strategist', 'empire-research', 'empire-media', 'empire-fast',
+]);
+const OPENROUTER_MODELS = new Set([
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'nvidia/nemotron-3-nano-30b-a3b:free',
 ]);
 const ALLOWED_MODES = new Set(['empire', 'god', 'academic', 'trading', 'builder']);
 const ALLOWED_ROUTES = new Set(['local', 'hybrid', 'cloud', 'groq']);
@@ -415,6 +422,10 @@ async function openAiChat(base, key, model, messages) {
 }
 
 async function answerChat(model, route, messages) {
+  if (OPENROUTER_MODELS.has(model)) {
+    if (!OPENROUTER_KEY) throw new HttpError(503, 'OpenRouter is not configured');
+    return openAiChat(OPENROUTER_BASE, OPENROUTER_KEY, model, messages);
+  }
   if (!EMPIRE_MODELS.has(model)) return ollamaChat(model, messages);
   if (route === 'local') return ollamaChat(DEFAULT_MODEL, messages);
 
@@ -452,9 +463,9 @@ async function handleModels(res) {
     const local = Array.isArray(parsed.models)
       ? parsed.models.map((item) => item && item.name).filter((name) => typeof name === 'string').slice(0, 100)
       : [];
-    sendJson(res, 200, { models: [...EMPIRE_MODELS, ...local] });
+    sendJson(res, 200, { models: [...EMPIRE_MODELS, ...OPENROUTER_MODELS, ...local] });
   } catch {
-    sendJson(res, 200, { models: [...EMPIRE_MODELS] });
+    sendJson(res, 200, { models: [...EMPIRE_MODELS, ...OPENROUTER_MODELS] });
   }
 }
 

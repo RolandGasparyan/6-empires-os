@@ -41,6 +41,11 @@ async function startStub() {
         res.end(JSON.stringify({ models: [{ name: 'stub-model' }] }));
         return;
       }
+      if (req.url === '/chat/completions') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ choices: [{ message: { content: 'provider answer' } }] }));
+        return;
+      }
       const last = Array.isArray(parsed.messages) ? parsed.messages.at(-1) : null;
       const delay = last && last.content === 'hold' ? 300 : 0;
       setTimeout(() => {
@@ -74,6 +79,7 @@ async function startChat(serverPath, stubPort, extraEnv = {}) {
       EMPIRE_KEY: '',
       FREE_GROQ_KEY: '',
       OPENAI_API_KEY: '',
+      OPENROUTER_API_KEY: '',
       ENABLE_PRIVATE_BRAIN: 'false',
       CHAT_UPSTREAM_TIMEOUT_MS: '2000',
       ...extraEnv,
@@ -156,6 +162,33 @@ function waitFor(predicate, timeout = 2000) {
 
 test('both deployable server copies are byte-identical', () => {
   assert.deepEqual(fs.readFileSync(SERVER), fs.readFileSync(MIRROR_SERVER));
+});
+
+test('chat UI exposes the Kimi K3 cloud model explicitly', () => {
+  const index = fs.readFileSync(path.join(APP_DIR, 'index.html'), 'utf8');
+  assert.match(index, /data-model="KIMI K3"/);
+  assert.match(index, /'KIMI K3':'kimi-k3:cloud'/);
+  assert.match(index, /data-model="NEMOTRON ULTRA"/);
+  assert.match(index, /nvidia\/nemotron-3-super-120b-a12b:free/);
+});
+
+test('OpenRouter NVIDIA models are allowlisted and use the configured provider', async (t) => {
+  const stub = await startStub();
+  const chat = await startChat(SERVER, stub.port, {
+    OPENROUTER_API_KEY: 'test-openrouter-key',
+    OPENROUTER_BASE: `http://127.0.0.1:${stub.port}`,
+  });
+  t.after(async () => { await chat.stop(); await stub.close(); });
+
+  const response = await request(chat.port, '/api/chat', {
+    body: {
+      model: 'nvidia/nemotron-3-super-120b-a12b:free',
+      messages: [{ role: 'user', content: 'hello' }],
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.body, 'provider answer');
+  assert.equal(stub.requests.at(-1).parsed.model, 'nvidia/nemotron-3-super-120b-a12b:free');
 });
 
 test('startup fails closed without a strong access token', async () => {
