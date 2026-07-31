@@ -118,7 +118,7 @@ jobs:
             # Compatibility for the older live server: branded empire-* names
             # are routing aliases, not installed Ollama model names.
             SERVER=/opt/empire-ai-chat/server.js
-            if grep -q 'empireChat(model, messages)' "$SERVER"; then
+            if grep -qE 'function empireChat\(DEFAULT_MODEL|empireChat\(model, messages\)\.then' "$SERVER"; then
               cp -a "$SERVER" "$BACKUP_DIR/server.js.before-model-alias.$(date +%s)"
               python3 - "$SERVER" <<'PY'
             from pathlib import Path
@@ -126,10 +126,15 @@ jobs:
 
             path = Path(sys.argv[1])
             source = path.read_text()
-            old = "empireChat(model, messages)"
-            if old not in source:
-                raise SystemExit("empireChat alias call not found")
-            path.write_text(source.replace(old, "empireChat(DEFAULT_MODEL, messages)"))
+            source = source.replace(
+                "function empireChat(DEFAULT_MODEL, messages)",
+                "function empireChat(model, messages)",
+            )
+            source = source.replace(
+                "empireChat(model, messages).then",
+                "empireChat(DEFAULT_MODEL, messages).then",
+            )
+            path.write_text(source)
             PY
               systemctl restart empire-ai
               sleep 3
@@ -141,5 +146,5 @@ jobs:
               -d '{"model":"empire-prime","mode":"empire","route":"local","messages":[{"role":"user","content":"Reply with exactly: EMPIRE CHAT VERIFIED"}]}' \
               "$CHAT_UPSTREAM/chat/api/chat")"
             test -n "$response"
-            ! grep -q '__next_f.push\|This page could not be found' <<<"$response"
+            ! grep -q '__next_f.push\|This page could not be found\|router unreachable\|model is not defined\|⚠️' <<<"$response"
             printf 'Verified live chat response: %.300s\n' "$response"
