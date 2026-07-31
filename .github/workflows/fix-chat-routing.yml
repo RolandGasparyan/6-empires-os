@@ -12,10 +12,13 @@ jobs:
     steps:
       - name: Repair Nginx routing and verify live chat
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: OPENROUTER_API_KEY
           command_timeout: 10m
           script: |
             set -Eeuo pipefail
@@ -148,6 +151,70 @@ jobs:
               sleep 3
               curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
             fi
+
+            # Add the OpenRouter/NVIDIA route to the older live server without
+            # exposing the credential in the repository or workflow logs.
+            test -n "${OPENROUTER_API_KEY:-}"
+            if ! grep -q 'EMPIRE_OPENROUTER_NVIDIA' "$SERVER"; then
+              cp -a "$SERVER" "$BACKUP_DIR/server.js.before-openrouter.$(date +%s)"
+              python3 - "$SERVER" <<'PY'
+            from pathlib import Path
+            import sys
+
+            path = Path(sys.argv[1])
+            source = path.read_text()
+            source = source.replace(
+                "const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';",
+                "const DEFAULT_MODEL = process.env.EMPIRE_MODEL || 'llama3.2:1b';\nconst OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';",
+            )
+            provider = r'''
+            // EMPIRE_OPENROUTER_NVIDIA: allowlisted NVIDIA chat models only.
+            const OPENROUTER_NVIDIA = new Set([
+              'nvidia/nemotron-3-ultra-550b-a55b:free',
+              'nvidia/nemotron-3-super-120b-a12b:free',
+              'nvidia/nemotron-3-nano-30b-a3b:free',
+            ]);
+            function openRouterChat(model, messages) {
+              return new Promise((resolve, reject) => {
+                const https = require('https');
+                const data = JSON.stringify({ model, messages, stream: false, max_tokens: 512 });
+                const req = https.request(
+                  { hostname: 'openrouter.ai', path: '/api/v1/chat/completions', method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY,
+                      'HTTP-Referer': 'https://www.6-empires.com', 'X-OpenRouter-Title': '6-EMPIRES Chat',
+                      'Content-Length': Buffer.byteLength(data) } },
+                  (up) => { let body = ''; up.on('data', (c) => (body += c)); up.on('end', () => {
+                    try {
+                      const parsed = JSON.parse(body);
+                      if (up.statusCode < 200 || up.statusCode >= 300) throw new Error(parsed.error?.message || `OpenRouter ${up.statusCode}`);
+                      resolve(parsed.choices[0].message.content);
+                    } catch (error) { reject(error); }
+                  }); }
+                );
+                req.setTimeout(180000, () => req.destroy(new Error('OpenRouter timeout')));
+                req.on('error', reject); req.write(data); req.end();
+              });
+            }
+
+            '''
+            source = source.replace('// Call the EMPIRE router', provider + '// Call the EMPIRE router')
+            route = r'''      if (OPENROUTER_NVIDIA.has(model)) {
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+                    if (!OPENROUTER_KEY) return res.end('OpenRouter is not configured');
+                    openRouterChat(model, messages).then((text) => res.end(text || '…')).catch((error) => res.end('OpenRouter error: ' + error.message));
+                    return;
+                  }
+
+            '''
+            source = source.replace('      // EMPIRE models → HYBRID', route + '      // EMPIRE models → HYBRID')
+            path.write_text(source)
+            PY
+            fi
+            mkdir -p /etc/systemd/system/empire-ai.service.d
+            umask 077
+            printf '[Service]\nEnvironment="OPENROUTER_API_KEY=%s"\n' "$OPENROUTER_API_KEY" \
+              > /etc/systemd/system/empire-ai.service.d/zz-openrouter.conf
+            systemctl daemon-reload
 
             # Keep interactive chat responsive. The 8B multilingual model is
             # available for explicit selection, but is too slow as the default.
