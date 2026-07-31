@@ -109,9 +109,32 @@ jobs:
               nginx -s reload
             fi
 
-            curl --fail --silent --show-error --max-time 15 https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
+            curl --fail --silent --show-error --max-time 15 \
+              --retry 5 --retry-all-errors --retry-delay 2 \
+              https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
             grep -q 'EMPIRE AI' /tmp/empire-chat-page
             ! grep -q '__next_f.push' /tmp/empire-chat-page
+
+            # Compatibility for the older live server: branded empire-* names
+            # are routing aliases, not installed Ollama model names.
+            SERVER=/opt/empire-ai-chat/server.js
+            if grep -q 'empireChat(model, messages)' "$SERVER"; then
+              cp -a "$SERVER" "$BACKUP_DIR/server.js.before-model-alias.$(date +%s)"
+              python3 - "$SERVER" <<'PY'
+            from pathlib import Path
+            import sys
+
+            path = Path(sys.argv[1])
+            source = path.read_text()
+            old = "empireChat(model, messages)"
+            if source.count(old) != 1:
+                raise SystemExit("unexpected empireChat alias call count")
+            path.write_text(source.replace(old, "empireChat(DEFAULT_MODEL, messages)"))
+            PY
+              systemctl restart empire-ai
+              sleep 3
+              curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
+            fi
 
             response="$(curl --fail --silent --show-error --max-time 120 \
               -H 'Content-Type: application/json' \
