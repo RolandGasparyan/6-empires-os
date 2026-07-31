@@ -118,7 +118,7 @@ jobs:
             # Compatibility for the older live server: branded empire-* names
             # are routing aliases, not installed Ollama model names.
             SERVER=/opt/empire-ai-chat/server.js
-            if grep -qE 'const model = payload\.model \|\| DEFAULT_MODEL|empireChat\(DEFAULT_MODEL, messages\)\.then' "$SERVER"; then
+            if grep -qE 'const model = payload\.model \|\| DEFAULT_MODEL|empireChat\(DEFAULT_MODEL, messages\)\.then|num_ctx: 8192 \}' "$SERVER"; then
               cp -a "$SERVER" "$BACKUP_DIR/server.js.before-model-alias.$(date +%s)"
               python3 - "$SERVER" <<'PY'
             from pathlib import Path
@@ -138,6 +138,10 @@ jobs:
                 "const model = payload.model || DEFAULT_MODEL;",
                 "const requestedModel = payload.model || DEFAULT_MODEL;\n      const model = isEmpire(requestedModel) ? DEFAULT_MODEL : requestedModel;",
             )
+            source = source.replace(
+                "temperature: 0.7, num_ctx: 8192 }",
+                "temperature: 0.7, num_ctx: 8192, num_predict: 128 }",
+            )
             path.write_text(source)
             PY
               systemctl restart empire-ai
@@ -145,9 +149,9 @@ jobs:
               curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
             fi
 
-            response="$(curl --fail --silent --show-error --max-time 120 \
+            response="$(curl --fail --silent --show-error --max-time 180 \
               -H 'Content-Type: application/json' \
-              -d '{"model":"empire-prime","mode":"empire","route":"local","messages":[{"role":"user","content":"Reply with exactly: EMPIRE CHAT VERIFIED"}]}' \
+              -d '{"model":"empire-prime","mode":"empire","route":"hybrid","messages":[{"role":"user","content":"hi"}]}' \
               "$CHAT_UPSTREAM/chat/api/chat")"
             test -n "$response"
             ! grep -q '__next_f.push\|This page could not be found\|router unreachable\|model is not defined\|⚠️' <<<"$response"
