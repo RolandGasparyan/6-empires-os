@@ -20,12 +20,18 @@ jobs:
           script: |
             set -Eeuo pipefail
             CHAT_UPSTREAM=http://127.0.0.1:8090
-            VHOST="$(grep -Rsl 'proxy_pass http://127.0.0.1:3010' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)"
+            BACKUP_DIR=/root/empire-backups/nginx
+            mkdir -p "$BACKUP_DIR"
+            find /etc/nginx/sites-enabled /etc/nginx/conf.d -maxdepth 1 \
+              -type f -name '*.before-chat-fix.*' \
+              -exec mv -t "$BACKUP_DIR" {} + 2>/dev/null || true
+            VHOST_LINK="$(grep -Rsl 'proxy_pass http://127.0.0.1:3010' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)"
+            VHOST="$(readlink -f "$VHOST_LINK")"
             test -n "$VHOST"
             test -f "$VHOST"
             curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
-            BACKUP="${VHOST}.before-chat-fix.$(date +%s)"
-            cp -a "$VHOST" "$BACKUP"
+            BACKUP="$BACKUP_DIR/$(basename "$VHOST").before-chat-fix.$(date +%s)"
+            cp -aL "$VHOST" "$BACKUP"
 
             python3 - "$VHOST" <<'PY'
             from pathlib import Path
