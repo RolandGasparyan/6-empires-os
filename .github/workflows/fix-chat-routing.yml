@@ -57,6 +57,17 @@ jobs:
 
             '''
             if marker not in source:
+                chat_location = r"location\s+(?:=\s*)?/chat/?\s*"
+                source = re.sub(
+                    rf"(?m)^\s*{chat_location}\{{[^\n]*\}}\s*$\n?",
+                    "",
+                    source,
+                )
+                source = re.sub(
+                    rf"(?ms)^\s*{chat_location}\{{\s*\n.*?^\s*\}}\s*\n?",
+                    "",
+                    source,
+                )
                 upstream = source.find("proxy_pass http://127.0.0.1:3010")
                 locations = list(re.finditer(r"(?m)^\s*location\b.*\{", source[:upstream]))
                 if upstream < 0 or not locations:
