@@ -220,7 +220,7 @@ jobs:
             fi
             mkdir -p /etc/systemd/system/empire-ai.service.d
             umask 077
-            printf '[Service]\nEnvironment="OPENROUTER_API_KEY=%s"\n' "$OPENROUTER_API_KEY" \
+            printf '[Service]\nEnvironment="OPENROUTER_API_KEY=%s"\n' "${OPENROUTER_API_KEY:-}" \
               > /etc/systemd/system/empire-ai.service.d/zz-openrouter.conf
             systemctl daemon-reload
 
