@@ -20,7 +20,6 @@ jobs:
           script: |
             set -Eeuo pipefail
             CHAT_UPSTREAM=http://127.0.0.1:8090
-<<<<<<< ours
             NGINX_CONTAINER="$(docker ps --format '{{.ID}} {{.Image}}' | awk '$2 ~ /^nginx:/ {print $1; exit}')"
             if test -n "$NGINX_CONTAINER"; then
               echo "nginx-container=$NGINX_CONTAINER"
@@ -46,22 +45,11 @@ jobs:
             cp -aL "$VHOST" "$BACKUP"
 
             python3 - "$VHOST" "$CHAT_PROXY" <<'PY'
-=======
-            VHOST="$(grep -RslE 'server_name[[:space:]]+(www\.)?6-empires\.com' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)"
-            test -n "$VHOST"
-            test -f "$VHOST"
-            curl --fail --silent --show-error --max-time 10 "$CHAT_UPSTREAM/api/health" >/dev/null
-            BACKUP="${VHOST}.before-chat-fix.$(date +%s)"
-            cp -a "$VHOST" "$BACKUP"
-
-            python3 - "$VHOST" <<'PY'
->>>>>>> theirs
             from pathlib import Path
             import re
             import sys
 
             path = Path(sys.argv[1])
-<<<<<<< ours
             chat_proxy = sys.argv[2]
             source = path.read_text()
             marker = "# EMPIRE AI chat routing (managed by fix-chat-routing.yml)"
@@ -69,14 +57,6 @@ jobs:
                 location = /chat {{ return 308 /chat/; }}
                 location /chat/ {{
                     proxy_pass {chat_proxy};
-=======
-            source = path.read_text()
-            marker = "# EMPIRE AI chat routing (managed by fix-chat-routing.yml)"
-            block = r'''    # EMPIRE AI chat routing (managed by fix-chat-routing.yml)
-                location = /chat { return 308 /chat/; }
-                location /chat/ {
-                    proxy_pass http://127.0.0.1:8090;
->>>>>>> theirs
                     proxy_http_version 1.1;
                     proxy_set_header Host $host;
                     proxy_set_header X-Real-IP $remote_addr;
@@ -85,7 +65,6 @@ jobs:
                     proxy_buffering off;
                     proxy_cache off;
                     proxy_read_timeout 600s;
-<<<<<<< ours
                 }}
 
             '''
@@ -191,34 +170,4 @@ jobs:
               "$CHAT_UPSTREAM/chat/api/chat")"
             test -n "$response"
             ! grep -q '__next_f.push\|This page could not be found\|router unreachable\|model is not defined\|⚠️' <<<"$response"
-=======
-                }
-
-            '''
-            if marker not in source:
-                match = re.search(r"(?m)^\s*location\s+/\s*\{", source)
-                if not match:
-                    raise SystemExit("main location block not found")
-                source = source[:match.start()] + block + source[match.start():]
-                path.write_text(source)
-            PY
-
-            if ! nginx -t; then
-              cp -a "$BACKUP" "$VHOST"
-              nginx -t
-              exit 1
-            fi
-            systemctl reload nginx
-
-            curl --fail --silent --show-error --max-time 15 https://www.6-empires.com/chat/ -o /tmp/empire-chat-page
-            grep -q 'EMPIRE AI' /tmp/empire-chat-page
-            ! grep -q '__next_f.push' /tmp/empire-chat-page
-
-            response="$(curl --fail --silent --show-error --max-time 120 \
-              -H 'Content-Type: application/json' \
-              -d '{"model":"empire-prime","mode":"empire","route":"local","messages":[{"role":"user","content":"Reply with exactly: EMPIRE CHAT VERIFIED"}]}' \
-              "$CHAT_UPSTREAM/chat/api/chat")"
-            test -n "$response"
-            ! grep -q '__next_f.push\|This page could not be found' <<<"$response"
->>>>>>> theirs
             printf 'Verified live chat response: %.300s\n' "$response"
