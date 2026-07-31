@@ -458,6 +458,7 @@ async function sendMessage(){
   const out=bubbleAI();let acc='';
   try{
     const res=await fetch(api('/api/chat'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,mode:MODE,route:ROUTE,messages:history})});
+    if(!res.ok){const kind=res.headers.get('content-type')||'';let detail='';try{detail=kind.includes('application/json')?((await res.json()).error||''):await res.text();}catch(_){}throw new Error((detail&&!detail.includes('<!DOCTYPE')&&!detail.includes('__next_f.push'))?detail.trim().slice(0,240):'Chat service unavailable (HTTP '+res.status+')');}
     typing.style.display='none';const rd=res.body.getReader(),dec=new TextDecoder();
     while(true){const{done,value}=await rd.read();if(done)break;acc+=dec.decode(value,{stream:true});out.textContent=acc;msgs.scrollTop=msgs.scrollHeight;}
     out.textContent=acc||'(no response)';history.push({role:'assistant',content:acc});if(speakOut&&acc)speak(acc);

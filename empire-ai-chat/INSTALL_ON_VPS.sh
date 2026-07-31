@@ -81,7 +81,8 @@ server {
     server_name 6-empires.com www.6-empires.com;
 
     # EMPIRE AI private chat  →  https://6-empires.com/chat
-    location /chat {
+    location = /chat { return 308 /chat/; }
+    location /chat/ {
         proxy_pass http://127.0.0.1:8090;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -89,6 +90,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_buffering off;            # token streaming
+        proxy_cache off;
         proxy_read_timeout 600s;
     }
 

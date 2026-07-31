@@ -196,6 +196,14 @@ for (const [label, serverPath] of [['current copy', SERVER], ['repository mirror
     assert.equal(authorized.status, 200);
     assert.match(authorized.body, /EMPIRE AI/);
 
+    const prefixedPage = await request(chat.port, '/chat/');
+    assert.equal(prefixedPage.status, 200);
+    assert.match(prefixedPage.body, /EMPIRE AI/);
+
+    const prefixedHealth = await request(chat.port, '/chat/api/health', { auth: false });
+    assert.equal(prefixedHealth.status, 200);
+    assert.deepEqual(JSON.parse(prefixedHealth.body), { ok: true });
+
     const removedAdmin = await request(chat.port, '/admin');
     assert.equal(removedAdmin.status, 404);
   });
