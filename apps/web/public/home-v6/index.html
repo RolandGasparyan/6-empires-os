@@ -404,6 +404,7 @@
     [data-scene="console"] [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important;}
     [data-scene="close"] [style*="gap:16px;justify-content:center;flex-wrap:wrap"]{flex-direction:column!important;align-items:center!important;}
     [data-scene="exterior"] [style*="height:18%"]{flex-direction:column!important;gap:8px!important;padding:16px!important;height:auto!important;}
+    [data-scene="interior"] .sun-moon-sync{top:56%!important;}
   }
   /* ═══ RESPONSIVE — 480px ═══ */
   @media(max-width:480px){
@@ -571,7 +572,7 @@
         </div>
       </div>
       <!-- SUN + MOON SYNC ANIMATION -->
-      <div data-depth="54" style="position:absolute;left:9%;top:72%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
+      <div class="sun-moon-sync" data-depth="54" style="position:absolute;left:9%;top:58%;width:188px;padding:16px;background:rgba(8,11,18,.88);border:1px solid rgba(248,226,49,.3);backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(248,226,49,.06);">
         <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:rgba(248,226,49,.7);margin-bottom:10px;">SUN · MOON SYNC</div>
         <canvas id="sunMoonCanvas" style="width:100%;height:90px;display:block;"></canvas>
         <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'Space Mono',monospace;font-size:8px;">
