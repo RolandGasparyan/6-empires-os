@@ -398,9 +398,13 @@ function hideMsgMenu(){const mm=$('messageMenu');if(mm)mm.style.display='none';}
 /* ---- voice ---- */
 let _mrec=null,_mstream=null,_mchunks=[],_listening=false,_vadTimer=null,_vac=null;
 function vDisp(t){const d=$('voiceDisplay');if(!d)return;if(t){d.textContent=t;d.style.display='block';}else{d.style.display='none';}}
+function _voiceLang(t){return /[Ա-֏ﬓ-ﬗ]/.test(t)?'hy':(/[\u0400-\u04FF]/.test(t)?'ru':'en');}
+function _playServerVoice(text,language){const b=$('voiceSpeakerBtn');if(b)b.classList.add('voice-speaking');return fetch(api('/api/tts'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,lang:language||'hy'})}).then(r=>{if(!r.ok)throw new Error('tts');return r.arrayBuffer();}).then(buf=>{const a=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));a.onended=()=>b&&b.classList.remove('voice-speaking');a.onerror=()=>b&&b.classList.remove('voice-speaking');return a.play().catch(()=>b&&b.classList.remove('voice-speaking'));}).catch(()=>{b&&b.classList.remove('voice-speaking');});}
+function _voiceInputSupported(){return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);}
 async function _pickMic(){try{const ds=await navigator.mediaDevices.enumerateDevices();const ins=ds.filter(d=>d.kind==='audioinput');const g=ins.find(d=>/pixy/i.test(d.label)&&!/virtual/i.test(d.label))||ins.find(d=>d.label&&!/virtual/i.test(d.label))||ins[0];return g?g.deviceId:null;}catch(_){return null;}}
 async function toggleVoiceInput(){const b=$('voiceMicBtn');
   if(_listening){try{_mrec&&_mrec.state!=='inactive'&&_mrec.stop();}catch(_){}return;}
+  if(!_voiceInputSupported()){vDisp('Voice input needs Chrome or Edge');return;}
   try{const s0=await navigator.mediaDevices.getUserMedia({audio:true});s0.getTracks().forEach(t=>t.stop());}catch(e){vDisp('Mic blocked — allow microphone access');return;}
   const dev=await _pickMic();
   try{_mstream=await navigator.mediaDevices.getUserMedia({audio:dev?{deviceId:{exact:dev},echoCancellation:true,noiseSuppression:true}:{echoCancellation:true,noiseSuppression:true}});}catch(e){vDisp('Mic error: '+e.name);return;}
@@ -433,14 +437,11 @@ async function toggleVoiceInput(){const b=$('voiceMicBtn');
 function setSpeaker(on){const b=$('voiceSpeakerBtn');if(b){b.style.color=on?'#FDC72C':'rgba(253,199,44,.45)';b.classList.toggle('voice-speaking',false);}}
 function toggleVoiceOutput(){speakOut=!speakOut;setSpeaker(speakOut);if(!speakOut)speechSynthesis.cancel();}
 function _armScript(t){return /[Ա-֏ﬓ-ﬗ]/.test(t);}
-function speak(t){if(!t)return;const clean=t.replace(/[*#`>_]/g,'');const b=$('voiceSpeakerBtn');
-  if(_armScript(t)){try{speechSynthesis.cancel();}catch(_){}b&&b.classList.add('voice-speaking');
-    fetch(api('/api/tts'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean,lang:'hy'})})
-      .then(r=>r.ok?r.arrayBuffer():Promise.reject())
-      .then(buf=>{const a=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));a.onended=()=>b&&b.classList.remove('voice-speaking');a.onerror=()=>b&&b.classList.remove('voice-speaking');a.play().catch(()=>b&&b.classList.remove('voice-speaking'));})
-      .catch(()=>b&&b.classList.remove('voice-speaking'));
-    return;}
-  if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.rate=1.02;u.pitch=.95;const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Daniel|Google UK English Male|Alex/i.test(x.name))||vs.find(x=>/en[-_]/i.test(x.lang));if(v)u.voice=v;b&&b.classList.add('voice-speaking');u.onend=()=>b&&b.classList.remove('voice-speaking');speechSynthesis.speak(u);}
+function speak(t){if(!t)return;const clean=t.replace(/[*#`>_]/g,'');const lang=_voiceLang(clean);const b=$('voiceSpeakerBtn');
+  if(_armScript(clean)||!('speechSynthesis'in window)){if('speechSynthesis'in window)try{speechSynthesis.cancel();}catch(_){}return _playServerVoice(clean,lang);}
+  const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Daniel|Google UK English Male|Alex/i.test(x.name))||vs.find(x=>new RegExp(`^${lang}[-_]`,'i').test(x.lang))||vs.find(x=>/en[-_]/i.test(x.lang));
+  if(!v)return _playServerVoice(clean,lang);
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.rate=1.02;u.pitch=.95;u.voice=v;b&&b.classList.add('voice-speaking');u.onend=()=>b&&b.classList.remove('voice-speaking');u.onerror=()=>{b&&b.classList.remove('voice-speaking');_playServerVoice(clean,lang);};speechSynthesis.speak(u);}
 
 /* ---- send / stream from the live brain ---- */
 function handleKey(el,e){if(e&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
